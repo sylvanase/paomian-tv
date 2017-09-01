@@ -2,8 +2,8 @@
     <section>
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="createTime" label="日期" min-width="180"></el-table-column>
-            <el-table-column prop="vpId" label="帖子id"></el-table-column>
+            <el-table-column prop="createTime" label="日期" width="180"></el-table-column>
+            <el-table-column prop="vpId" label="帖子id" width="180"></el-table-column>
             <el-table-column label="内容" width="100">
                 <template scope="scope">
                     <el-button size="small" @click="playVideo(scope.row)">播放</el-button>
@@ -75,11 +75,11 @@
                         this.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
                             if (item.type == 0) {
-                                item.type = '违规';
+                                item.type = '低俗内容';
                             } else if (item.type == 1) {
-                                item.type = '色情';
+                                item.type = '违法行为';
                             } else if (item.type == 2) {
-                                item.type = '政治敏感';
+                                item.type = '垃圾广告';
                             } else {
                                 item.type = '尚未定义';
                             }

@@ -168,7 +168,7 @@
                     </el-input>
                     <el-button v-else class="button-new-tag" size="small" @click="showInputWord">添加</el-button>
                 </el-form-item>
-                <el-form-item label="片段标签" prop="tagIds">
+                <el-form-item label="片段标签" prop="tagIds" style="margin-bottom: -20px;">
                     <template>
                         <el-select style="width: 50%;" v-model="formData.tagIds" multiple filterable remote
                                    loading-text="搜索中" placeholder="输入关键词搜索标签" :remote-method="handleTag"
@@ -181,8 +181,8 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
 

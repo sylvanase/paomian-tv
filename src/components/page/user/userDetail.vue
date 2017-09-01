@@ -20,10 +20,20 @@
                 {{ formData.time }}
             </el-form-item>
             <el-form-item label="昵称" prop="name">
-                <el-input v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
+                <el-input disabled="true" v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
             </el-form-item>
-            <el-form-item label="地址" prop="address">
-                <el-input v-model.trim="formData.address" auto-complete="off"></el-input>
+            <el-form-item label="地址">
+                <el-select v-model="formData.regionId" @change="fetchCity" style="width: 200px;margin-right: 10px;"
+                           filterable placeholder="请选择地区">
+                    <el-option label="无" value="0"></el-option>
+                    <el-option v-for="item in regionList" :key="item.regionId" :label="item.regionName"
+                               :value="item.regionId"></el-option>
+                </el-select>
+                <el-select v-model="formData.cityId" style="width: 200px;" filterable placeholder="请选择城市">
+                    <el-option label="无" value="0"></el-option>
+                    <el-option v-for="item in cityList" :key="item.cityId" :label="item.cityName"
+                               :value="item.cityId"></el-option>
+                </el-select>
             </el-form-item>
             <el-form-item label="手机号" prop="phone">
                 <el-input style="width: 200px;" v-model.trim="formData.phone" auto-complete="off"></el-input>
@@ -31,18 +41,18 @@
             </el-form-item>
             <el-form-item label="QQ">
                 <template v-if="formData.qq">
-                    <span style="width: 200px;display: inline-block;">{{ formData.qq }}</span>
+                    <el-tag type="success" style="margin-right: 10px;" >已绑定</el-tag>
                     <el-button type="danger" :plain="true" class="ml-10" size="small" @click.native="unbindThird('0')">
                         解绑
                     </el-button>
                 </template>
                 <template v-else>
-                    <el-tag :type="danger" close-transition>未绑定</el-tag>
+                    <el-tag :type="danger">未绑定</el-tag>
                 </template>
             </el-form-item>
             <el-form-item label="微信" prop="wechat">
                 <template v-if="formData.wechat">
-                    <span style="width: 200px;display: inline-block;">{{ formData.wechat }}</span>
+                    <el-tag type="success" style="margin-right: 10px;" >已绑定</el-tag>
                     <el-button type="danger" :plain="true" class="ml-10" size="small" @click.native="unbindThird('1')">
                         解绑
                     </el-button>
@@ -51,9 +61,9 @@
                     <el-tag :type="danger" close-transition>未绑定</el-tag>
                 </template>
             </el-form-item>
-            <el-form-item label="微博" style="margin-bottom: 0;">
+            <el-form-item label="微博" style="margin-bottom: -20px;">
                 <template v-if="formData.weibo">
-                    <span style="width: 200px;display: inline-block;">{{ formData.weibo }}</span>
+                    <el-tag type="success" style="margin-right: 10px;" >已绑定</el-tag>
                     <el-button type="danger" :plain="true" class="ml-10" size="small" @click.native="unbindThird('2')">
                         解绑
                     </el-button>
@@ -95,14 +105,17 @@
                     coverId: '',
                     coverImgUrl: '',
                     time: '',
-                    address: '',
+                    regionId: '',
+                    cityId: '',
                     os: '',
                     imei: '',
                     phone: '',
                     qq: '',
                     wechat: '',
                     weibo: ''
-                }
+                },
+                regionList: [],
+                cityList: []
             }
         },
         computed: {
@@ -114,7 +127,8 @@
                     coverId: '',
                     coverImgUrl: '',
                     time: '',
-                    address: '',
+                    regionId: '',
+                    cityId: '',
                     os: '',
                     imei: '',
                     phone: '',
@@ -122,6 +136,7 @@
                     wechat: '',
                     weibo: ''
                 };
+                this.fetchRegion();
                 if (this.userData.id) {
                     axiosGet('userDetail', {uid: this.userData.id}).then((res) => {
                         let { error, status, data } = res;
@@ -134,13 +149,15 @@
                             }
                         } else {
                             this.showLoading = false;
+                            this.fetchCity(data.regionId);
                             this.formData = {
                                 id: data.id,
                                 name: data.username,
                                 coverId: data.avatarUrl,
                                 coverImgUrl: data.fullUrl,
                                 time: util.timestampFormat(data.createTime),
-                                address: data.address,
+                                regionId: data.countryId + '',
+                                cityId: data.cityId + '',
                                 os: '',
                                 imei: '',
                                 phone: data.phone,
@@ -157,12 +174,47 @@
             change() {
                 this.visible = false;
             },
+            fetchRegion() { //获取省列表
+                axiosGet('regionList').then((res) => {
+                    let { error, status, data } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.regionList = data;
+                    }
+                });
+            },
+            fetchCity(id){ //根据省id获取城市列表
+                if (id) {
+                    axiosGet('cityList', {regionId: id}).then((res) => {
+                        let { error, status, data } = res;
+                        if (status !== 0) {
+                            if (status == 403) { //返回403时，重新登录
+                                sessionStorage.removeItem('user');
+                                this.$router.push('/login');
+                            } else {
+                                this.$message.error(error);
+                            }
+                        } else {
+                            this.formData.cityId = '0';
+                            this.cityList = data;
+                        }
+                    });
+                }
+            },
             formSubmit(){ //提交表单
                 this.formLoading = true;
                 let paras = new FormData();
                 paras.append("avatar", this.formData.coverId);
                 paras.append("uid", this.formData.id);
                 paras.append("username", this.formData.name);
+                paras.append("regionId", this.formData.regionId);
+                paras.append("cityId", this.formData.cityId);
                 axiosPost('userEdit', paras).then((res) => {
                     this.formLoading = false;
                     let { error, status } = res;

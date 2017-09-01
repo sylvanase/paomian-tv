@@ -33,14 +33,14 @@
 
         <!--新建/编辑标签-->
         <el-dialog :title="formTitle" v-model="formVisible">
-            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
+            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" style="margin-bottom: -20px;">
                 <el-form-item label="标签名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
     </section>

@@ -46,13 +46,13 @@
                         <el-option label="片段" value="1"></el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="分类名称" prop="name">
+                <el-form-item label="分类名称" prop="name" style="margin-bottom: -20px;">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
     </section>

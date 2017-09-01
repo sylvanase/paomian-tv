@@ -72,6 +72,10 @@ export default new Router({
                     path: '/robot',
                     component: resolve => require(['../components/page/user/robotList.vue'], resolve),
                     name: '马甲号列表'
+                }, {
+                    path: '/care',
+                    component: resolve => require(['../components/page/user/userCareList.vue'], resolve),
+                    name: '运营关注用户'
                 }
             ]
         }, {

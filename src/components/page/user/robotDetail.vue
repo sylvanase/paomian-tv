@@ -16,8 +16,18 @@
             <el-form-item label="昵称" prop="name">
                 <el-input v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
             </el-form-item>
-            <el-form-item label="地址" prop="address">
-                <el-input v-model.trim="formData.address" auto-complete="off"></el-input>
+            <el-form-item label="地址">
+                <el-select v-model="formData.regionId" @change="fetchCity" style="width: 200px;margin-right: 10px;"
+                           filterable placeholder="请选择地区">
+                    <el-option label="无" value="0"></el-option>
+                    <el-option v-for="item in regionList" :key="item.regionId" :label="item.regionName"
+                               :value="item.regionId+''"></el-option>
+                </el-select>
+                <el-select v-model="formData.cityId" style="width: 200px;" filterable placeholder="请选择城市">
+                    <el-option label="无" value="0"></el-option>
+                    <el-option v-for="item in cityList" :key="item.cityId" :label="item.cityName"
+                               :value="item.cityId+''"></el-option>
+                </el-select>
             </el-form-item>
             <el-form-item label="手机号" prop="phone">
                 <el-input style="width: 200px;" v-model.trim="formData.phone" auto-complete="off"></el-input>
@@ -31,10 +41,10 @@
             <el-form-item label="出生日期">
                 <el-col :span="11">
                     <el-date-picker type="date" placeholder="选择日期" v-model="formData.date"
-                                    style="width: 100%;"></el-date-picker>
+                                    style="width: 100%;" @change="formatBirth"></el-date-picker>
                 </el-col>
             </el-form-item>
-            <el-form-item label="个性签名" style="margin-bottom: 0;">
+            <el-form-item label="个性签名" prop="signature" style="margin-bottom: -20px;">
                 <el-input type="textarea" v-model="formData.signature"></el-input>
             </el-form-item>
         </el-form>
@@ -61,8 +71,12 @@
                         {required: true, message: '请输入昵称', trigger: 'blur'},
                         {min: 1, max: 15, message: '长度在 1 到 15 个字符', trigger: 'blur'}
                     ],
-                    phone:[
+                    phone: [
+                        {required: true, message: '请输入手机号', trigger: 'blur'},
                         {min: 11, max: 11, message: '手机号必须为11位', trigger: 'blur'}
+                    ],
+                    signature:[
+                        {min: 0, max: 60, message: '签名不得超过60个字符', trigger: 'blur'}
                     ]
                 },
                 avatarLoading: false,
@@ -72,12 +86,16 @@
                     name: '',
                     coverId: '',
                     coverImgUrl: '',
-                    address: '',
+                    regionId: '',
+                    cityId: '',
                     phone: '',
                     sex: '0',
                     signature: '',
-                    date: ''
-                }
+                    date: '',
+                    count: 0
+                },
+                regionList: [],
+                cityList: []
             }
         },
         computed: {
@@ -88,12 +106,15 @@
                     name: '',
                     coverId: '',
                     coverImgUrl: '',
-                    address: '',
+                    regionId: '',
+                    cityId: '',
                     phone: '',
                     sex: '0',
                     signature: '',
-                    date: ''
+                    date: '',
+                    count: 0
                 };
+                this.fetchRegion();
                 if (this.userData.id) {
                     axiosGet('userDetail', {uid: this.userData.id}).then((res) => {
                         let { error, status, data } = res;
@@ -111,21 +132,61 @@
                                 name: data.username,
                                 coverId: data.avatarUrl,
                                 coverImgUrl: data.fullUrl,
-                                address: data.address,
+                                regionId: data.countryId + '',
+                                cityId: data.cityId + '',
                                 phone: data.phone,
-                                sex: data.sex,
+                                sex: data.sex + '',
                                 signature: data.signature,
-                                date: data.birthday
+                                date: data.birthday,
+                                count: 0
                             }
                         }
                     });
 
+                } else {
+                    this.showLoading = false;
                 }
             }
         },
         methods: {
             change() {
                 this.visible = false;
+            },
+            fetchRegion() { //获取省列表
+                axiosGet('regionList').then((res) => {
+                    let { error, status, data } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.regionList = data;
+                    }
+                });
+            },
+            fetchCity(id){ //根据省id获取城市列表
+                this.formData.count = this.formData.count + 1;
+                if (id) {
+                    axiosGet('cityList', {regionId: id}).then((res) => {
+                        let { error, status, data } = res;
+                        if (status !== 0) {
+                            if (status == 403) { //返回403时，重新登录
+                                sessionStorage.removeItem('user');
+                                this.$router.push('/login');
+                            } else {
+                                this.$message.error(error);
+                            }
+                        } else {
+                            this.cityList = data;
+                            if(this.formData.count > 1){
+                                this.formData.cityId = '0';
+                            }
+                        }
+                    });
+                }
             },
             formSubmit(){ //提交表单
                 this.$refs.formData.validate((valid) => {
@@ -138,7 +199,9 @@
                         paras.append("phone", this.formData.phone);
                         paras.append("sex", this.formData.sex);
                         paras.append("signature", this.formData.signature);
-                        paras.append("address", this.formData.address);
+                        paras.append("regionId", this.formData.regionId);
+                        paras.append("cityId", this.formData.cityId);
+                        paras.append("birthday", this.formData.date);
                         axiosPost('robotEdit', paras).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
@@ -157,7 +220,6 @@
                         });
                     }
                 });
-
             },
             /*
              * 封面选择相关操作
@@ -216,6 +278,9 @@
                 this.avatarDisabled = false;
                 this.avatarLoading = false;
                 this.formData.coverId = res.url;
+            },
+            formatBirth(val){ //格式化日期控件值
+                this.formData.date = val;
             }
         },
         watch: {

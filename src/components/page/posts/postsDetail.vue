@@ -2,7 +2,7 @@
     <el-dialog title="帖子详情" :value="value" v-model="visible">
         <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" v-loading="showLoading">
             <el-form-item label="作者id">
-                <el-input v-model.trim="formData.uid" style="width: 200px;" auto-complete="off"></el-input>
+                <el-input :disabled="isEdit" type="number" v-model.trim="formData.uid" style="width: 200px;" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="帖子描述">
                 <el-input type="textarea" v-model="formData.des"></el-input>
@@ -11,28 +11,29 @@
                 <el-switch on-text="显示" off-text="隐藏" v-model="formData.del"></el-switch>
             </el-form-item>
             <el-form-item label="精华">
-                <el-switch on-text="精华" off-text="非精" v-model="formData.essence"></el-switch>
+                <el-switch on-text="精华" off-text="取消" v-model="formData.essence"></el-switch>
             </el-form-item>
             <el-form-item label="显示时间">
                 <el-col :span="11">
-                    <el-date-picker type="datetime" placeholder="选择日期" v-model="formData.start"
+                    <el-date-picker  :disabled="isEdit" type="datetime" placeholder="选择日期" v-model="formData.start"
                                     style="width: 100%;" @change="setStart"></el-date-picker>
                 </el-col>
             </el-form-item>
-            <el-form-item label="视频资源">
+            <el-form-item label="视频资源" :disabled="isEdit">
                 <template>
-                    <el-select style="width: 50%;" v-model="formData.videoId" filterable remote
-                               loading-text="搜索中" placeholder="输入关键词搜索视频" :remote-method="handleSource"
+                    <el-select :disabled="isEdit" style="width: 50%;" v-model="formData.videoId" filterable remote
+                               loading-text="搜索中" placeholder="输入id搜索视频" :remote-method="handleSource"
                                :loading="searchSource.loading">
                         <el-option v-for="item in searchSource.list" :key="item.id" :label="item.name"
                                    :value="item.id">
                         </el-option>
                     </el-select>
+                    <div>(搜索范围：内容管理-资源库。若视频尚未添加，请先至资源库进行上传操作)</div>
                 </template>
             </el-form-item>
-            <el-form-item label="所属话题" style="margin-bottom: 0;">
+            <el-form-item label="所属话题" style="margin-bottom: -20px;">
                 <template>
-                    <el-select style="width: 50%;" v-model="formData.topicId" filterable remote
+                    <el-select :disabled="isEdit" style="width: 50%;" v-model="formData.topicId" filterable remote
                                loading-text="搜索中" placeholder="输入关键词搜索话题" :remote-method="handleTopic"
                                :loading="searchTopic.loading">
                         <el-option v-for="item in searchTopic.list" :key="item.id" :label="item.name"
@@ -73,6 +74,7 @@
                     essence: '',
                     topicId: ''
                 },
+                isEdit: false, //默认为非编辑状态
                 searchSource: { //搜索资源
                     loading: false,
                     list: []
@@ -85,6 +87,9 @@
         },
         computed: {
             detail(){ //返回详情
+                if(!this.value){ //不显示的时候不请求详细
+                    return;
+                }
                 this.showLoading = true;
                 this.formData = {
                     id: '',
@@ -97,7 +102,7 @@
                     topicId: ''
                 };
                 if (this.postsData.id) {
-                    axiosGet('userDetail', {uid: this.userData.id}).then((res) => {
+                    axiosGet('postsDetail', {id: this.postsData.id}).then((res) => {
                         let { error, status, data } = res;
                         if (status !== 0) {
                             if (status == 403) { //返回403时，重新登录
@@ -108,13 +113,14 @@
                             }
                         } else {
                             this.showLoading = false;
+                            this.isEdit = true;
                             this.formData = {
                                 id: data.id,
                                 uid: data.uid,
                                 des: data.videoText,
-                                videoId: data.videoId,
+                                videoId: data.videoInfoPo.vpId,
                                 start: util.timestampFormat(data.createTime),
-                                del: Boolean(data.isdel),
+                                del: !Boolean(data.isdel),
                                 essence: Boolean(data.isEssence),
                                 topicId: data.topicId
                             }
@@ -122,6 +128,7 @@
                     });
                 } else {
                     this.showLoading = false;
+                    this.isEdit = false;
                 }
             }
         },
@@ -138,7 +145,7 @@
                 paras.append("videoResourceId", this.formData.videoId);
                 paras.append("topicId", this.formData.topicId);
                 paras.append("createTime", this.formData.start);
-                paras.append("del", Number(this.formData.del));
+                paras.append("del", Number(!this.formData.del));
                 paras.append("essence", Number(this.formData.essence));
                 axiosPost('postsEdit', paras).then((res) => {
                     this.formLoading = false;

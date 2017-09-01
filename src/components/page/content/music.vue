@@ -167,8 +167,8 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
     </section>

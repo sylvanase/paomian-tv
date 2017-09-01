@@ -8,7 +8,7 @@
                 <el-input type="textarea" v-model="formData.description"></el-input>
             </el-form-item>
             <el-form-item label="显示">
-                <el-switch on-text="显示" off-text="隐藏" v-model="formData.del"></el-switch>
+                <el-switch on-text="显示" off-text="隐藏" v-model="formData.del" @change="timeStatus"></el-switch>
             </el-form-item>
             <el-form-item label="背景海报" prop="coverId">
                 <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
@@ -24,21 +24,21 @@
             </el-form-item>
             <el-form-item label="显示时间">
                 <el-col :span="11">
-                    <el-date-picker type="datetime" placeholder="开始日期" v-model="formData.start"
+                    <el-date-picker :disabled="timeVisible" type="datetime" placeholder="选择时间" v-model="formData.start"
                                     style="width: 100%;" @change="setStart"></el-date-picker>
                 </el-col>
-                <el-col class="line" :span="2" style="text-align: center;">-</el-col>
+                <!--<el-col class="line" :span="2" style="text-align: center;">-</el-col>
                 <el-col :span="11">
                     <el-date-picker type="datetime" placeholder="结束日期" v-model="formData.end"
                                     style="width: 100%;" @change="setEnd"></el-date-picker>
-                </el-col>
+                </el-col>-->
             </el-form-item>
             <el-form-item label="样片" style="margin-bottom: 0;">
                 <template>
                     <el-select style="width: 50%;" v-model="formData.videoId" filterable remote
-                               loading-text="搜索中" placeholder="输入关键词搜索视频" :remote-method="handleSource"
+                               loading-text="搜索中" placeholder="输入id或关键字搜索帖子" :remote-method="handleSource"
                                :loading="searchSource.loading">
-                        <el-option v-for="item in searchSource.list" :key="item.id" :label="item.name"
+                        <el-option v-for="item in searchSource.list" :key="item.id" :label="item.videoText"
                                    :value="item.id">
                         </el-option>
                     </el-select>
@@ -83,6 +83,7 @@
                     end: '',
                     del: ''
                 },
+                timeVisible: true,
                 searchSource: { //搜索资源
                     loading: false,
                     list: []
@@ -109,11 +110,12 @@
                         description: this.topicData.description,
                         coverId: this.topicData.coverId,
                         coverImgUrl: this.topicData.coverUrl,
-                        videoId: this.topicData.videoId,
+                        videoId: this.topicData.videoId + '',
                         start: util.timestampFormat(this.topicData.startTime),
                         end: util.timestampFormat(this.topicData.endTime),
-                        del: Boolean(this.topicData.isDel)
-                    }
+                        del: !Boolean(this.topicData.isDel)
+                    };
+                    this.timeVisible = !Boolean(this.topicData.isDel);
                 }
             }
         },
@@ -130,8 +132,8 @@
                 paras.append("coverId", this.formData.coverId);
                 paras.append("videoId", this.formData.videoId);
                 paras.append("startTime", this.formData.start);
-                paras.append("endTime", this.formData.end);
-                paras.append("isDel", Number(this.formData.del));
+                //paras.append("endTime", this.formData.end);
+                paras.append("isDel", Number(!this.formData.del));
                 axiosPost('topicEdit', paras).then((res) => {
                     this.formLoading = false;
                     let { error, status } = res;
@@ -207,7 +209,7 @@
                 this.avatarLoading = false;
                 this.formData.coverId = res.id;
             },
-            handleSource(query){ //搜索视频资源
+            handleSource(query){ //搜索帖子列表
                 this.searchSource.loading = true;
                 let para = {
                     offset: 0,
@@ -220,7 +222,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('video_resource', para).then((res) => {
+                axiosGet('postsList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchSource.loading = false;
                     this.searchSource.list = data.content;
@@ -229,9 +231,13 @@
             setStart(val){
                 this.formData.start = val;
             },
+            timeStatus(val){ //更改时间是否可选状态
+                this.timeVisible = !val;
+            }
+            /*,
             setEnd(val){
                 this.formData.end = val;
-            }
+            }*/
         },
         watch: {
             detail(val){ //监测详情变化

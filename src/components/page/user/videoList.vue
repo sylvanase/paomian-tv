@@ -3,33 +3,46 @@
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
             <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
+            <el-table-column prop="coverUrl" label="视频封面" width="136">
+                <template scope="scope">
+                    <img v-if="scope.row.coverUrl !== ''" style="width: 100%;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <img v-else style="width: 100%;" src="../../../../static/img/TV.png" alt="视频封面"/>
+                </template>
+            </el-table-column>
             <el-table-column prop="videoText" min-width="150" label="视频简介"></el-table-column>
-            <el-table-column prop="createTime" label="发布时间" min-width="120"></el-table-column>
-            <!--<el-table-column prop="sex" label="观看" width="100">
+            <el-table-column prop="createTime" label="发布时间" min-width="175"></el-table-column>
+            <el-table-column label="观看" width="120">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.playCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewUserCount : '0'}}人
                 </template>
-            </el-table-column>-->
-            <!--<el-table-column prop="age" label="评论">
+            </el-table-column>
+            <el-table-column label="喜欢" width="120">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0'}}人
                 </template>
-            </el-table-column>-->
-            <!--<el-table-column prop="age" label="弹幕"></el-table-column>-->
-            <!--<el-table-column prop="address" label="喜欢" min-width="200"></el-table-column>-->
-
-            <el-table-column label="操作" width="300" fixed="right">
+            </el-table-column>
+            <el-table-column label="弹幕" width="120">
                 <template scope="scope">
-                    <el-button type="info" size="small" @click="highlight(scope.row)">加精</el-button>
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageUserCount : '0'}}人
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="270" fixed="right">
+                <template scope="scope">
+                    <el-button :type="scope.row.isEssence === 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                        {{ scope.row.isEssence === 1 ? '取精' : '加精' }}
+                    </el-button>
+                    <el-button size="small" type="success" @click="handleLike(scope.row)">10个赞</el-button>
                     <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
-                    <!--<el-button type="info" size="small" @click="highlight(scope.row)">弹幕</el-button>-->
-                    <!--<el-button type="info" size="small" @click="highlight(scope.row)">加10个喜欢</el-button>-->
-                    <!--<el-button type="danger" size="small" @click="highlight(scope.row)">隐藏</el-button>-->
+                    <el-button type="info" size="small" @click="postsBarrage(scope.row)">弹幕</el-button>
+                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                               @click="postsDel(scope.row)">
+                        {{ scope.row.isDel === 0 ? '删除' : '恢复' }}
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
         <!--分页-->
-        <el-col :span="24" class="mt-10">
+        <el-col :span="24" class="mt-10" style="margin-bottom: 20px;">
             <el-pagination style="float:right;" @current-change="handleCurrentChange"
                            :page-size="10" :current-page="page"
                            layout="total, prev, pager, next, jumper" :total="total">
@@ -40,7 +53,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     export default {
         name: 'vVideo',
         props: ['value', 'userId'],
@@ -55,6 +68,9 @@
         },
         computed: {
             detail(){
+                if(!this.value){ //不显示的时候不请求详细
+                    return;
+                }
                 this.tableLoading = true;
                 this.tableList = [];
                 if (this.userId) {
@@ -97,13 +113,72 @@
                 this.page = val;
                 this.fetchList();
             },
-            highlight(row){ //加精
-                this.$message.error('功能尚未开发');
+            handleLike(row){ //点赞
+                let para = new FormData();
+                para.append("vpId", row.id);
+                para.append("num", 10);
+                axiosPost('postsLike', para).then((res) => {
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        }else{
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.$message.success('成功点赞10个！');
+                    }
+                });
+            },
+            handleEssence(row){
+                this.tableLoading = true;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("status", Number(!row.isEssence));
+                axiosPost('postsEssence', paras).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.$message.success('操作成功');
+                        this.fetchList();
+                    }
+                });
+            },
+            postsBarrage(row){ //查看弹幕
+                this.$emit('preview', row);
+            },
+            postsDel: function (row) { //软删除帖子
+                this.tableLoading = true;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("status", Number(!row.isDel));
+                axiosPost('postsStatus', paras).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.$message.success('操作成功');
+                        this.fetchList();
+                    }
+                });
             }
         },
         watch: {
             detail(val){ //监测详情变化
-                console.log(val);
             },
             value(val) {
                 this.visible = val;

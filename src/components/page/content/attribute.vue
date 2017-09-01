@@ -67,7 +67,7 @@
                 <el-form-item label="属性名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
-                <el-form-item label="属性图标" prop="iconId" required>
+                <el-form-item label="属性图标" prop="iconId" required style="margin-bottom: -20px;">
                     <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
                                action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false"
                                :before-upload="beforeAvatarUpload">
@@ -82,8 +82,8 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
     </section>

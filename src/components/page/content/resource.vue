@@ -51,7 +51,7 @@
                 <el-form-item label="资源名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
-                <el-form-item label="视频文件" prop="videoObj" required>
+                <el-form-item label="视频文件" prop="videoObj" required style="margin-bottom: -20px;">
                     <input type="file" name="file" id="videoFile" @change="changeFile"/>
                     <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUploadKs">上传到服务器
                     </el-button>
@@ -59,8 +59,8 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
 

@@ -96,13 +96,13 @@
                 </el-form-item>
 
                 <!--素材模板-->
-                <el-form-item v-for="(item, index) in scriptData.materialJson" :label="'素材模板 ' + index"
+                <el-form-item v-for="(item, index) in scriptData.materialJson" :label="'素材模板'"
                               :prop="'materialJson.' + index+ '.data.second'"
                               :rules="[{ type: 'number', message: '时长必须为数字'}]">
                     <template v-if="item.type == 0">
                         <el-card class="box-card">
                             <div class="clearfix">
-                                <span style="line-height: 36px;">用户视频（id：{{ index }}）</span>
+                                <span style="line-height: 36px;">用户视频（id：{{ index+1 }}）</span>
                                 <el-button style="float: right;" type="danger" size="small"
                                            @click.prevent="removeMaterial(item)">删除
                                 </el-button>
@@ -136,7 +136,7 @@
                     <template v-else-if="item.type == 1">
                         <el-card class="box-card">
                             <div class="clearfix">
-                                <span style="line-height: 36px;">转场（id：{{ index }}）</span>
+                                <span style="line-height: 36px;">转场（id：{{ index+1 }}）</span>
                                 <el-button style="float: right;" type="danger" size="small"
                                            @click.prevent="removeMaterial(item)">删除
                                 </el-button>
@@ -153,7 +153,7 @@
                     <template v-else-if="item.type == 2">
                         <el-card class="box-card">
                             <div class="clearfix">
-                                <span style="line-height: 36px;">素材片段（id：{{ index }}）</span>
+                                <span style="line-height: 36px;">素材片段（id：{{ index+1 }}）</span>
                                 <el-button style="float: right;" type="danger" size="small"
                                            @click.prevent="removeMaterial(item)">删除
                                 </el-button>
@@ -185,7 +185,7 @@
                     <template v-else-if="item.type == 3">
                         <el-card class="box-card">
                             <div class="clearfix">
-                                <span style="line-height: 36px;">重复片段（id：{{ index }}）</span>
+                                <span style="line-height: 36px;">重复片段（id：{{ index+1 }}）</span>
                                 <el-button style="float: right;" type="danger" size="small"
                                            @click.prevent="removeMaterial(item)">删除
                                 </el-button>
@@ -193,9 +193,9 @@
                             <div>
                                 <template>
                                     <label>片段id：</label>
-                                    <el-input-number v-model="item.data.repeatId" :min="0"></el-input-number>
+                                    <el-input-number v-model="item.data.repeatId" :min="1"></el-input-number>
                                 </template>
-                                <div slot="tip" class="el-upload__tip">请选择需要重复的素材id，注意不可选择自身或重复片段类型的id</div>
+                                <div slot="tip" class="el-upload__tip">请注意：只能填写用户片段的id，不能填写其他id</div>
                             </div>
                         </el-card>
                     </template>
@@ -288,13 +288,13 @@
                         </div>
                     </el-card>
                 </el-form-item>
-                <el-form-item label="字幕">
+                <el-form-item label="字幕" style="margin-bottom: -20px;">
                     <el-button type="info" size="small" @click.native="addSubtitle">添加</el-button>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="scriptVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="scriptSubmit" :loading="scriptLoading">提交</el-button>
+                <el-button size="small" @click.native="scriptVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="scriptSubmit" :loading="scriptLoading">提交</el-button>
             </div>
         </el-dialog>
 
@@ -365,8 +365,8 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button @click.native="formVisible = false">取消</el-button>
-                <el-button type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
+                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
     </section>
@@ -849,11 +849,11 @@
                             }
                             if (materialArr[k].type == 2) { //将素材片段选项value与label拼凑
                                 materialArr[k].data.muteOrNot = Boolean(materialArr[k].data.muteOrNot);
-                                materialArr[k].data.materialId = materialArr[k].data.materialId + ',' + materialArr[k].data.materialName;
                                 this.searchMaterial.list.push({
                                     id: materialArr[k].data.materialId,
                                     name: materialArr[k].data.materialName
                                 });
+                                materialArr[k].data.materialId = materialArr[k].data.materialId + ',' + materialArr[k].data.materialName;
                             }
                         }
                         data.subtitleDtoList = data.subtitleDtoList.map(function (item) {
@@ -1028,7 +1028,7 @@
                     type: this.scriptData.materialType,
                     data: {
                         speed: '0',
-                        repeatId: 0,
+                        repeatId: 1,
                         second: 0,
                         filterId: 0,
                         muteOrNot: false,

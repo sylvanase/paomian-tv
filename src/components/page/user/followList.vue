@@ -10,56 +10,60 @@
                 </template>
             </el-table-column>
             <el-table-column prop="username" min-width="150" label="昵称"></el-table-column>
-            <el-table-column prop="createTime" label="被关注时间" min-width="120"></el-table-column>
             <el-table-column prop="sex" label="性别" width="100">
                 <template scope="scope">
                     {{ scope.row.sex === 0 ? '男' : '女' }}
                 </template>
             </el-table-column>
-            <!--<el-table-column prop="age" label="好友关系">
+            <el-table-column prop="age" label="年龄"></el-table-column>
+            <el-table-column prop="createTime" label="关注时间" min-width="120"></el-table-column>
+            <el-table-column label="好友关系"  width="100">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
-                </template>
-            </el-table-column>-->
-            <!--<el-table-column prop="age" label="年龄"></el-table-column>-->
-            <!--<el-table-column prop="fans" label="粉丝">
-                <template scope="scope">
-                    <el-button v-if="scope.row.fans != 0" size="small" @click="showFan(scope.row)">{{ scope.row.fans
-                        }}
-                    </el-button>
-                    <span v-else>0</span>
+                    {{ scope.row.friendsCare === 0 ? '单项关注' : '互相关注' }}
                 </template>
             </el-table-column>
-            <el-table-column prop="fans" label="关注">
-                <template scope="scope">
-                    <el-button v-if="scope.row.fans != 0" size="small" @click="showFollow(scope.row)">{{ scope.row.fans
-                        }}
-                    </el-button>
-                    <span v-else>0</span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="fans" label="帖子">
-                <template scope="scope">
-                    <el-button v-if="scope.row.fans != 0" size="small" @click="showVideo(scope.row)">{{ scope.row.fans
-                        }}
-                    </el-button>
-                    <span v-else>0</span>
-                </template>
-            </el-table-column>-->
+            <el-table-column prop="fansCount" label="粉丝"></el-table-column>
+            <el-table-column prop="carsCount" label="关注"></el-table-column>
+            <el-table-column prop="postCount" label="帖子"></el-table-column>
             <el-table-column prop="address" label="地址" min-width="200"></el-table-column>
             <el-table-column prop="phone" label="手机" min-width="150"></el-table-column>
-            <!--<el-table-column prop="QQ" label="QQ"></el-table-column>
-            <el-table-column prop="wechat" label="微信"></el-table-column>
-            <el-table-column prop="weibo" label="微博"></el-table-column>-->
-            <el-table-column label="操作" width="300" fixed="right">
+            <el-table-column label="QQ" width="90">
                 <template scope="scope">
-                    <el-button type="danger" size="small" @click="handleFollow(scope.row)">移除</el-button>
-                    <el-button type="warning" size="small" @click="pullBlacklist(scope.row)">黑名单</el-button>
+                    <el-tag :type="scope.row.qqBind ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.qqBind ? '已绑定' : '未绑定' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column label="微信" width="90">
+                <template scope="scope">
+                    <el-tag :type="scope.row.wxBind ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.wxBind ? '已绑定' : '未绑定' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column label="微博" width="90">
+                <template scope="scope">
+                    <el-tag :type="scope.row.wbBind ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.wbBind ? '已绑定' : '未绑定' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="200" fixed="right">
+                <template scope="scope">
+                    <el-button size="small" @click="userDetail(scope.row)">查看</el-button>
+                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
+                               @click="userDel(scope.row)">
+                        {{ scope.row.userStatus === 0 ? '删除' : '恢复' }}
+                    </el-button>
+                    <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
+                               @click="careUser(scope.row)">
+                        {{ scope.row.userCare === 1 ? '取关' : '关注' }}
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
         <!--分页-->
-        <el-col :span="24" class="mt-10">
+        <el-col :span="24" class="mt-10" style="margin-bottom: 20px;">
             <el-pagination style="float:right;" @current-change="handleCurrentChange"
                            :page-size="10" :current-page="page"
                            layout="total, prev, pager, next, jumper" :total="total">
@@ -70,7 +74,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     export default {
         name: 'vFollow',
         props: ['value', 'userId'],
@@ -85,6 +89,9 @@
         },
         computed: {
             detail(){
+                if(!this.value){ //不显示的时候不请求详细
+                    return;
+                }
                 this.tableLoading = true;
                 this.tableList = [];
                 if (this.userId) {
@@ -127,13 +134,63 @@
                 this.page = val;
                 this.fetchList();
             },
-            handleFollow(row){ //解除用户对目标用户的关注
-                let para = {
-                    uid: this.userId,
-                    careId: row.id
-                };
-                axiosDel('userFollowDel', para).then((res) => {
-                    let { error, status,data } = res;
+            //软删除用户
+            userDel: function (row) {
+                if (row.userStatus == 1) { //原来是删除状态，现执行恢复操作
+                    this.tableLoading = true;
+                    let paras = new FormData();
+                    paras.append("uid", row.id);
+                    paras.append("status", 0);
+                    axiosPost('userStatus', paras).then((res) => {
+                        this.tableLoading = false;
+                        let { error, status } = res;
+                        if (status !== 0) {
+                            if (status == 403) { //返回403时，重新登录
+                                sessionStorage.removeItem('user');
+                                this.$router.push('/login');
+                            } else {
+                                this.$message.error(error);
+                            }
+                        } else {
+                            this.$message.success('恢复成功');
+                            this.fetchList();
+                        }
+                    });
+                } else { //删除用户
+                    this.$confirm('确认删除该用户吗?', '提示', {
+                        type: 'warning'
+                    }).then(() => {
+                        this.tableLoading = true;
+                        let paras = new FormData();
+                        paras.append("uid", row.id);
+                        paras.append("status", 1);
+                        axiosPost('userStatus', paras).then((res) => {
+                            this.tableLoading = false;
+                            let { error, status } = res;
+                            if (status !== 0) {
+                                if (status == 403) { //返回403时，重新登录
+                                    sessionStorage.removeItem('user');
+                                    this.$router.push('/login');
+                                } else {
+                                    this.$message.error(error);
+                                }
+                            } else {
+                                this.$message.success('删除成功');
+                                this.fetchList();
+                            }
+                        });
+                    });
+                }
+            },
+            //运营关注用户
+            careUser: function (row) {
+                this.tableLoading = true;
+                let paras = new FormData();
+                paras.append("uid", row.id);
+                paras.append("status", Number(!row.userCare));
+                axiosPost('userCare', paras).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
                             sessionStorage.removeItem('user');
@@ -142,17 +199,17 @@
                             this.$message.error(error);
                         }
                     } else {
+                        this.$message.success('操作成功');
                         this.fetchList();
                     }
                 });
             },
-            pullBlacklist(row){ //拉黑
-                this.$message.error('功能尚未开发');
+            userDetail(row){ //查看用户详情
+                this.$emit('preview', row);
             }
         },
         watch: {
             detail(val){ //监测详情变化
-                console.log(val);
             },
             value(val) {
                 this.visible = val;

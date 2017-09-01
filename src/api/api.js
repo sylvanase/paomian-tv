@@ -13,6 +13,7 @@ let api = { //接口地址
     userDetail: '/user/detail', //用户详情
     userEdit: '/user/edit', //用户编辑
     userStatus: '/user/status/update', //用户删除
+    userCare: '/user/user_care_edit', //运营关注用户
     userUnbind: '/user/bind/delete', //用户解绑第三方
     userPhoneUpdate: '/user/mobile/update', //用户更换手机号
     userFansList: '/user/fans/list', //用户粉丝列表
@@ -21,14 +22,23 @@ let api = { //接口地址
     userFollowDel: '/user/cares/delete', //用户关注移除
     userVideoList: '/user/video_post/list', //用户发帖列表
     userLikeList: '/user/video_post/like_list', //用户喜欢列表
+    userCareOperate: '/user/user_care_list', //运营关注用户
+
+    regionList: '/user/region_list', //地区列表
+    cityList: '/user/city_list', //城市列表
 
     robotList: '/user/robot_list', //机器人列表
     robotDel: '/user/robot_delete', //删除机器人
     robotEdit: '/user/robot_edit', //编辑机器人
 
-    videoList: '/video/video_post/list', //全部帖子列表
-    videoDetail: '/video/video_post/detail', //帖子详情
-    videoEdit: '/video/video_post/edit', //帖子编辑
+    postsList: '/video/video_post/list', //全部帖子列表
+    postsDetail: '/video/video_post/detail', //帖子详情
+    postsEdit: '/video/video_post/edit', //帖子编辑
+    postsLike: '/video/video_post/add_like', //帖子点赞
+    postsBarrageAdd: '/video/video_post/add_barrage', //帖子增加弹幕
+    postsEssence: '/video/update_essence', //帖子加精
+    postsStatus: '/video/update_status', //帖子隐藏、恢复
+    postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表
 
     topicList: '/topic/list', //话题列表
     topicDel: '/topic/update_status', //删除话题
@@ -41,6 +51,8 @@ let api = { //接口地址
     illegalList: '/video/illegal_report_list', //举报帖子
 
     barrageList: '/video/video_robot_barrage_list', //弹幕库
+    barrageEdit: '/video/video_robot_barrage/edit', //弹幕修改
+    barrageTag: '/video/video_robot_barrage/tag_list', //弹幕标签
 
 
 
