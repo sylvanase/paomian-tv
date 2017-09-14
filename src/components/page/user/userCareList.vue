@@ -6,7 +6,7 @@
             <el-table-column prop="username" min-width="150" label="昵称"></el-table-column>
             <el-table-column prop="sex" label="性别" width="80">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.sex == 0 ? '男' : '女' }}
                 </template>
             </el-table-column>
             <el-table-column prop="age" label="年龄" width="66"></el-table-column>

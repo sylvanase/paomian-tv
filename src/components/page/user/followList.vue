@@ -12,14 +12,14 @@
             <el-table-column prop="username" min-width="150" label="昵称"></el-table-column>
             <el-table-column prop="sex" label="性别" width="100">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.sex == 0 ? '男' : '女' }}
                 </template>
             </el-table-column>
             <el-table-column prop="age" label="年龄"></el-table-column>
             <el-table-column prop="createTime" label="关注时间" min-width="120"></el-table-column>
             <el-table-column label="好友关系"  width="100">
                 <template scope="scope">
-                    {{ scope.row.friendsCare === 0 ? '单项关注' : '互相关注' }}
+                    {{ scope.row.friendsCare == 0 ? '单项关注' : '互相关注' }}
                 </template>
             </el-table-column>
             <el-table-column prop="fansCount" label="粉丝"></el-table-column>
@@ -53,11 +53,11 @@
                     <el-button size="small" @click="userDetail(scope.row)">查看</el-button>
                     <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
                                @click="userDel(scope.row)">
-                        {{ scope.row.userStatus === 0 ? '删除' : '恢复' }}
+                        {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
                     </el-button>
                     <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
                                @click="careUser(scope.row)">
-                        {{ scope.row.userCare === 1 ? '取关' : '关注' }}
+                        {{ scope.row.userCare == 1 ? '取关' : '关注' }}
                     </el-button>
                 </template>
             </el-table-column>

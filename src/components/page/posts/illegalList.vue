@@ -2,7 +2,7 @@
     <section>
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="createTime" label="日期" width="180"></el-table-column>
+            <el-table-column prop="createTime" label="日期" width="175"></el-table-column>
             <el-table-column prop="vpId" label="帖子id" width="180"></el-table-column>
             <el-table-column label="内容" width="100">
                 <template scope="scope">
@@ -14,7 +14,10 @@
             <el-table-column prop="username" label="举报人" min-width="150"></el-table-column>
             <el-table-column label="操作">
                 <template scope="scope">
-                    <el-button type="danger" size="small" @click="postDel(scope.row)">隐藏帖子</el-button>
+                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                               @click="postsDel(scope.row)">
+                        {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                    </el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -97,28 +100,26 @@
             videoClose(){
                 this.videoHtml = '';
             },
-            postDel(row){ //删除帖子
-                this.$message.warning('功能尚未提供');
-                return;
+            postsDel(row){ //删除帖子
                 this.tableLoading = true;
                 let paras = new FormData();
-                paras.append("id", row.id);
-                paras.append("status", 1);
-                /*axiosPost('topicDel', paras).then((res) => {
-                 this.tableLoading = false;
-                 let { error, status } = res;
-                 if (status !== 0) {
-                 if (status == 403) { //返回403时，重新登录
-                 sessionStorage.removeItem('user');
-                 this.$router.push('/login');
-                 } else {
-                 this.$message.error(error);
-                 }
-                 } else {
-                 this.$message.success('删除成功');
-                 this.fetchList();
-                 }
-                 });*/
+                paras.append("vpId", row.vpId);
+                paras.append("status", Number(!row.isDel));
+                axiosPost('illegalStatus', paras).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.$message.success('操作成功');
+                        this.fetchList();
+                    }
+                });
             }
         },
         mounted() {

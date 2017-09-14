@@ -82,7 +82,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { avatarUploadApi, axiosGet, axiosPost, axiosDel} from '../../../api/api';
+    import { axiosGet, axiosPost, axiosDel} from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'userData'],
@@ -267,7 +267,7 @@
                 }
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                avatarUploadApi(para).then((res) => {
+                axiosPost('avatarUpload',para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;

@@ -28,9 +28,10 @@
                     </el-button>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column label="操作" width="200">
                 <template scope="scope">
                     <el-button type="info" size="small" @click="playVideo(scope.$index, scope.row)">播放</el-button>
+                    <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
                 </template>
@@ -45,7 +46,7 @@
             </el-pagination>
         </el-col>
 
-        <!--新建-->
+        <!--新建/编辑-->
         <el-dialog :title="formTitle" v-model="formVisible">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="资源名称" prop="name">
@@ -56,6 +57,7 @@
                     <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUploadKs">上传到服务器
                     </el-button>
                     <el-progress style="width: 70%;" :percentage="fileUpload.percentage"></el-progress>
+                    <div>(编辑状态若未选择新视频上传，视为使用原视频文件)</div>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -75,7 +77,7 @@
     </section>
 </template>
 <script type="es6">
-    import { tableListApi, tableDelApi, tableEditApi, signatureApi, uploadCallbackApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
@@ -92,7 +94,7 @@
                 formTitle: '',
                 formVisible: false,//新增界面是否显示
                 formLoading: false,
-                formSelect: false,
+                //formSelect: false,
                 formRules: {
                     name: [
                         {required: true, message: '请输入资源名称', trigger: 'blur'},
@@ -134,7 +136,7 @@
                 }
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentSourceList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -173,27 +175,47 @@
                     }
                 });
             },
-            showForm (){ //显示表单 资源库只有新增操作
+            showForm (index, row){ //显示表单 资源库只有新增操作
                 this.formVisible = true;
-                this.formTitle = '新增视频资源';
-                this.formData = {
-                    name: '',
-                    videoObj: ''
-                };
-                this.formSelect = false;
+                if (index == -1) { //索引为-1时，新增操作
+                    this.formTitle = '新增视频资源';
+                    this.formData = {
+                        id: '',
+                        name: '',
+                        videoObj: ''
+                    };
+                } else {
+                    this.formTitle = '编辑视频资源';
+                    this.formData = {
+                        id: row.id,
+                        name: row.name,
+                        videoObj: row.objectKey
+                    };
+                }
+                let clearFile = document.getElementById('videoFile');
+                if (clearFile) {
+                    clearFile.outerHTML = clearFile.outerHTML;
+                }
+                this.fileUpload.percentage = 0;
             },
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        if (this.formData.videoObj == '') {
+                        //不为编辑时必须选择文件
+                        if (this.formData.videoObj == '' && this.formData.id == '') {
                             this.$message.warning('请选择视频文件');
                             return;
                         }
                         this.formLoading = true;
-                        let paras = new FormData();
+                        let paras = new FormData(),
+                            api = 'videoUpload';
                         paras.append("objectKey", this.formData.videoObj);
                         paras.append("name", this.formData.name);
-                        uploadCallbackApi('video', paras).then((res) => {
+                        if (this.formData.id !== '') { //id不为空，提交参数增加id，且更改接口地址
+                            paras.append("id", this.formData.id);
+                            api = 'contentSourceEdit';
+                        }
+                        axiosPost(api, paras).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -210,6 +232,7 @@
                                 this.fetchList();
                             }
                         });
+
                     }
                 });
             },
@@ -220,7 +243,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentSourceDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -280,13 +303,7 @@
                     });
                     return;
                 }
-                if (_self.formData.videoObj) {
-                    _self.$message({
-                        message: '文件已上传过，请不要重复提交',
-                        type: 'error'
-                    });
-                    return;
-                }
+
                 const isMp4 = file.type === 'video/mp4';
                 if (!isMp4) {
                     this.$message.error('只可以上传mp4格式');
@@ -297,7 +314,7 @@
                     fileName: file.name
                 };
                 //服务器端获取上传所需签名
-                signatureApi('video', para).then((res) => {
+                axiosGet('videoSign', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录

@@ -28,25 +28,26 @@
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
             <el-table-column prop="id" label="id" width="180" fixed></el-table-column>
-            <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
-            <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column>
-            <el-table-column label="内容">
+            <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
-                    <el-button size="small" @click="playVideo(scope.row)">播放</el-button>
+                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
+            <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
+            <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
             <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180"></el-table-column>
             <el-table-column label="精华" width="80">
                 <template scope="scope">
-                    <el-tag :type="scope.row.isEssence === 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.isEssence === 1 ? '是' : '否' }}
+                    <el-tag :type="scope.row.isEssence == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.isEssence == 1 ? '是' : '否' }}
                     </el-tag>
                 </template>
             </el-table-column>
             <el-table-column label="来源">
                 <template scope="scope">
-                    {{ scope.row.publishType === 1 ? '后台' : '客户端' }}
+                    {{ scope.row.publishType == 1 ? '后台' : '客户端' }}
                 </template>
             </el-table-column>
             <el-table-column prop="videoInfoPo.viewCount" label="观看量"></el-table-column>
@@ -55,28 +56,31 @@
             <el-table-column prop="videoInfoPo.likeCount" label="喜欢"></el-table-column>
             <el-table-column label="显示">
                 <template scope="scope">
-                    <el-tag :type="scope.row.isDel === 0 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.isDel === 0 ? '是' : '否' }}
+                    <el-tag :type="scope.row.isDel == 0 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.isDel == 0 ? '是' : '否' }}
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="420" fixed="right">
+            <el-table-column label="操作" width="250" fixed="right">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success" @click="showLike(scope.row)">点个赞</el-button>
-                    <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info" @click="showBarrage(scope.row)">加弹幕</el-button>
-                    <el-button :type="scope.row.isEssence === 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
-                        {{ scope.row.isEssence === 1 ? '取精' : '加精' }}
-                    </el-button>
-                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
-                               @click="postsDel(scope.row)">
-                        {{ scope.row.isDel === 0 ? '删除' : '恢复' }}
-                    </el-button>
-                    <el-button size="small" @click="showPostsBarrage(scope.row)">帖子弹幕</el-button>
+                    <div>
+                        <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success" @click="handleLike(scope.row)">100个赞</el-button>
+                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info" @click="showBarrage(scope.row)">加弹幕</el-button>
+                    </div>
+                    <div class="mt-10">
+                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                            {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
+                        </el-button>
+                        <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                                   @click="postsDel(scope.row)">
+                            {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                        </el-button>
+                        <el-button size="small" @click="showPostsBarrage(scope.row)">帖子弹幕</el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
-
         <!--分页-->
         <el-col :span="24" class="mt-10">
             <el-pagination style="float:right;" @current-change="handleCurrentChange"
@@ -91,19 +95,6 @@
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
             <div style="text-align: center;" v-html="videoHtml"></div>
-        </el-dialog>
-
-        <!--为帖子点赞-->
-        <el-dialog :title="likeData.title" v-model="showLikeForm">
-            <el-form :model="likeData" label-width="80px" ref="likeData" style="margin-bottom: -20px;">
-                <el-form-item label="点赞数" prop="count">
-                    <el-input type="number" v-model.trim="likeData.count" auto-complete="off"></el-input>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="showLikeForm = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="handleLike">提交</el-button>
-            </div>
         </el-dialog>
 
         <!--为帖子加弹幕-->
@@ -147,13 +138,7 @@
                 postsId: '', //帖子id
                 isShowVideo: false, //显示、隐藏话题视频列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: '',
-                showLikeForm: false,
-                likeData: {
-                    id: '',
-                    title: '',
-                    count: 0
-                }
+                videoHtml: ''
             }
         },
         methods: {
@@ -220,15 +205,10 @@
             videoClose(){
                 this.videoHtml = '';
             },
-            showLike(row){ //为视频点赞
-                this.showLikeForm = true;
-                this.likeData.title = '为视频：' + row.id + ' 疯狂打call！';
-                this.likeData.id = row.id;
-            },
-            handleLike(){
+            handleLike(row){
                 let para = new FormData();
-                para.append("vpId", this.likeData.id);
-                para.append("num", this.likeData.count);
+                para.append("vpId", row.id);
+                para.append("num", 100);
                 axiosPost('postsLike', para).then((res) => {
                     let { error, status } = res;
                     if (status !== 0) {

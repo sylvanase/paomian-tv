@@ -48,12 +48,11 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { tableListApi, tableDelApi, tableEditApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
 
     export default {
         data() {
             return {
-                api: 'tag',
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 tableLoading: false, //表格的loading符号
@@ -89,7 +88,7 @@
                 };
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentTagList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -128,7 +127,7 @@
                         let para = new FormData();
                         para.append("id", this.formData.id);
                         para.append("name", this.formData.name);
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentTagEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -155,7 +154,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentTagDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {

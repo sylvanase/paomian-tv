@@ -64,7 +64,7 @@
             <el-table-column prop="createTime" label="注册时间" min-width="120"></el-table-column>
             <el-table-column prop="sex" label="性别" width="80">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.sex == 0 ? '男' : '女' }}
                 </template>
             </el-table-column>
             <el-table-column prop="age" label="年龄"></el-table-column>
@@ -129,17 +129,17 @@
             </el-table-column>
             <el-table-column label="设备" width="100">
                 <template scope="scope">
-                    {{ scope.row.registerDevice === 0 ? 'android' : 'ios' }}
+                    {{ scope.row.registerDevice == 0 ? 'android' : 'ios' }}
                 </template>
             </el-table-column>
             <!--<el-table-column prop="level" label="类型"></el-table-column>-->
             <el-table-column prop="userStatus" label="用户状态" width="130">
                 <template scope="scope">
                     <el-tag :type="scope.row.userStatus == 0 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.userStatus === 0 ? '正常' : '已删除' }}
+                            close-transition>{{ scope.row.userStatus == 0 ? '正常' : '已删除' }}
                     </el-tag>
                     <el-tag :type="scope.row.userCare == 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.userCare === 1 ? '已关注' : '未关注' }}
+                            close-transition>{{ scope.row.userCare == 1 ? '已关注' : '未关注' }}
                     </el-tag>
                 </template>
             </el-table-column>
@@ -148,11 +148,11 @@
                     <el-button size="small" @click="showForm(scope.row)">查看</el-button>
                     <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
                                @click="userDel(scope.row)">
-                        {{ scope.row.userStatus === 0 ? '删除' : '恢复' }}
+                        {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
                     </el-button>
                     <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
                                @click="careUser(scope.row)">
-                        {{ scope.row.userCare === 1 ? '取关' : '关注' }}
+                        {{ scope.row.userCare == 1 ? '取关' : '关注' }}
                     </el-button>
                 </template>
             </el-table-column>
@@ -291,6 +291,11 @@
 
         </el-dialog>
 
+        <!--播放弹窗-->
+        <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
+            <div style="text-align: center;" v-html="videoHtml"></div>
+        </el-dialog>
+
         <!--用户详情-->
         <!--<v-detail :userData="userData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>-->
 
@@ -301,17 +306,17 @@
         <v-follow :userId="userId" v-model="isShowFollow" v-on:preview="showForm"></v-follow>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:preview="showBarrage"></v-video>
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"></v-video>
 
         <!--用户喜欢-->
-        <v-like :userId="userId" v-model="isShowLike" v-on:preview="showBarrage"></v-like>
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
 
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
-    import { avatarUploadApi, axiosGet, axiosPost, axiosDel} from '../../../api/api';
+    import { axiosGet, axiosPost, axiosDel} from '../../../api/api';
     //import vDetail from './userDetail.vue'
     import vFan from './fansList.vue'
     import vFollow from './followList.vue'
@@ -373,6 +378,8 @@
                 isShowVideo: false, //显示、隐藏帖子列表
                 isShowLike: false, //显示、隐藏喜欢列表
                 isShowBarrage: false, //显示、隐藏弹幕列表
+                videoVisible: false,  //播放视频界面 显示、隐藏
+                videoHtml: '',
                 barrage: {
                     vpId: '', //视频id
                     tagList:[],
@@ -505,6 +512,14 @@
             showLike (row){ //显示用户喜欢的帖子列表
                 this.isShowLike = true;
                 this.userId = row.id;
+            },
+            playVideo(row){ //播放视频
+                this.videoVisible = true;
+                this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
+                    + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
+            },
+            videoClose(){
+                this.videoHtml = '';
             },
             showBarrage (row){ //显示弹幕列表
                 this.isShowBarrage = true;
@@ -694,7 +709,7 @@
                 }
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                avatarUploadApi(para).then((res) => {
+                axiosPost('avatarUpload',para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;

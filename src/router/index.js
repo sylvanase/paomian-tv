@@ -8,9 +8,9 @@ Vue.use(Router)
 export default new Router({
     routes: [
         /*{
-            path: '/',
-            redirect: '/login'
-        }, */{
+         path: '/',
+         redirect: '/login'
+         }, */{
             path: '/404', //404页
             component: resolve => require(['../components/page/404.vue'], resolve),
             name: '',
@@ -102,9 +102,21 @@ export default new Router({
                 }
             ]
         }, {
+            path: '/',
+            component: Home,
+            name: '',
+            leaf: true,//只有一个节点
+            children: [
+                {
+                    path: '/android',
+                    component: resolve => require(['../components/page/androidPackage.vue'], resolve),
+                    name: '安卓包管理'
+                }
+            ]
+        }, {
             path: '*',
             hidden: true,
-            redirect: { path: '/404' }
+            redirect: {path: '/404'}
         }
     ]
 })

@@ -39,7 +39,7 @@
 
         <!--表格-->
         <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column type="expand">
+            <!--<el-table-column type="expand">
                 <template scope="props">
                     <el-form label-position="left" class="table-expand">
                         <el-form-item label="片段属性：">
@@ -53,12 +53,26 @@
                         </el-form-item>
                     </el-form>
                 </template>
+            </el-table-column>-->
+            <el-table-column prop="id" label="id"></el-table-column>
+            <el-table-column prop="name" label="片段名称" width="220"></el-table-column>
+            <el-table-column prop="showTypeName" label="片段类型" width="100"></el-table-column>
+            <el-table-column label="片段属性">
+                <template scope="props">
+                    {{ props.row.attributeNames.join(' , ') }}
+                </template>
             </el-table-column>
-            <el-table-column prop="id" label="id" width="100"></el-table-column>
-            <el-table-column prop="name" label="片段名称"></el-table-column>
-            <el-table-column prop="showTypeName" label="片段类型" width="150">
+            <el-table-column label="片段分类">
+                <template scope="props">
+                    {{ props.row.categoryNames.join(' , ') }}
+                </template>
             </el-table-column>
-            <el-table-column label="操作" width="250">
+            <el-table-column label="相关电影">
+                <template scope="props">
+                    {{ props.row.movieNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="210">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
@@ -195,13 +209,12 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { tableListApi, tableDelApi, tableEditApi, tableDetailApi, imgUploadApi, signatureApi, uploadCallbackApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
         data() {
             return {
-                api: 'material',
                 filters: { //搜索筛选条件
                     type: '0',
                     attr: '', //属性
@@ -297,7 +310,7 @@
                 }
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentMaterialList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -332,7 +345,7 @@
                     size: 99999
                 };
                 this.tableLoading = true;
-                tableListApi('attribute', para).then((res) => {
+                axiosGet('contentAttrList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -354,7 +367,7 @@
                     size: 99999
                 };
                 this.tableLoading = true;
-                tableListApi('category', para).then((res) => {
+                axiosGet('contentCatList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -402,7 +415,7 @@
                 } else {
                     this.formTitle = '编辑片段';
                     let para = {id: row.id};
-                    tableDetailApi(this.api, para).then((res) => {
+                    axiosGet('contentMaterialDetail', para).then((res) => {
                         let { error, status,data } = res;
                         this.formData = Object.assign({}, data);
                         if (data.keyword != '') {
@@ -507,7 +520,7 @@
                         para.append("categoryIds", this.formData.categoryIds.join(','));
                         para.append("tagIds", this.formData.tagIds.join(','));
                         para.append("kw", this.formData.keyword.join(' '));
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentMaterialEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -534,7 +547,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentMaterialDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -561,21 +574,18 @@
                 }
                 this.videoVisible = true;
                 let _url = '';
-                if (row.showType == 0 || row.showType == 1) {
-                    _url = row.horiVideoUrl;
-                } else {
+                if (row.showType == 0 || row.showType == 2) { //横竖屏的播放竖屏资源
                     _url = row.vertVideoUrl;
+                } else {
+                    _url = row.horiVideoUrl;
                 }
-                this.videoHtml = '<video style="max-width: 100%;max-height:350px;" poster="' + row.coverImgUrl + '" controls="controls" autoplay="autoplay">'
+                this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + _url + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
             videoClose(){
                 this.videoHtml = '';
             },
-            /*
-             * 搜索相关电影操作
-             * */
-            handleMovie(query){
+            handleMovie(query){ //搜索相关电影操作
                 this.searchMovie.loading = true;
                 let para = {
                     offset: 0,
@@ -588,16 +598,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('movie', para).then((res) => {
+                axiosGet('contentMovieList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchMovie.loading = false;
                     this.searchMovie.list = data.content;
                 });
             },
-            /*
-             * 搜索属性
-             * */
-            handleAttr(query){
+            handleAttr(query){ //搜索属性
                 this.searchAttr.loading = true;
                 let para = {
                     offset: 0,
@@ -611,16 +618,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('attribute', para).then((res) => {
+                axiosGet('contentAttrList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchAttr.loading = false;
                     this.searchAttr.list = data.content;
                 });
             },
-            /*
-             * 搜索分类
-             * */
-            handleCat(query){
+            handleCat(query){ //搜索分类
                 this.searchCat.loading = true;
                 let para = {
                     offset: 0,
@@ -634,16 +638,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('category', para).then((res) => {
+                axiosGet('contentCatList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchCat.loading = false;
                     this.searchCat.list = data.content;
                 });
             },
-            /*
-             * 搜索视频资源
-             * */
-            handleSource(query){
+            handleSource(query){ //搜索视频资源
                 this.searchSource.loading = true;
                 let para = {
                     offset: 0,
@@ -657,16 +658,13 @@
                     para.id = query;
                 }
                 this.searchSource.list = []; //先清空列表
-                tableListApi('video_resource', para).then((res) => {
+                axiosGet('contentSourceList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchSource.loading = false;
                     this.searchSource.list = data.content;
                 });
             },
-            /*
-             * 搜索标签
-             * */
-            handleTag(query){
+            handleTag(query){ //搜索标签
                 this.searchTag.loading = true;
                 let para = {
                     offset: 0,
@@ -679,64 +677,12 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('tag', para).then((res) => {
+                axiosGet('contentTagList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchTag.loading = false;
                     this.searchTag.list = data.content;
                 });
             },
-            /*
-             * 封面选择相关操作
-             * */
-            /*avatarChange(file){ //更改图片时,重置预览文件路径
-             this.formData.coverImgUrl = file.url;
-             },
-             resetCoverImg(){ //删除封面
-             this.formData.coverImgUrl = '';
-             this.formData.coverId = '';
-             },
-             beforeAvatarUpload(file) { //上传前校验
-             const isJPG = file.type === 'image/jpeg';
-             const isLt2M = file.size / 1024 / 1024 <= 10;
-
-             if (!isJPG) {
-             this.$message.error('封面文件必须是图片类型!');
-             }
-             if (!isLt2M) {
-             this.$message.error('上传图片大小不能超过 10MB!');
-             }
-             return isJPG && isLt2M;
-             },
-             submitUpload() { //上传图片
-             let file = this.formData.coverImgUrl;
-             if (!file) { //file为空，提示并返回
-             this.$message.error('请选择文件');
-             return;
-             }
-             var imgFile = document.getElementsByName('file')[0].files[0];
-             let para = new FormData();
-             para.append("imageFile", imgFile);
-             imgUploadApi(para).then((res) => {
-             this.avatarDisabled = true;
-             this.avatarLoading = true;
-             let { error, status, data } = res;
-             if (status !== 0) {
-             this.$message({
-             message: error,
-             type: 'error'
-             });
-             } else {
-             //上传图片成功回调
-             this.handleAvatarSuccess(data);
-             }
-             });
-             },
-             handleAvatarSuccess(res) { //上传成功后操作
-             this.$message.success('上传图片成功');
-             this.avatarDisabled = false;
-             this.avatarLoading = false;
-             this.formData.coverId = res.id;
-             },*/
             handleType(){ //更改片段类型，重置横竖屏内容
                 if (this.formData.showType == '0') { //横竖屏
                     this.horDisable = false;

@@ -55,12 +55,11 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { tableListApi, tableDelApi, tableEditApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
 
     export default {
         data() {
             return {
-                api: 'movie',
                 filters: {
                     kw: '',
                     id: ''
@@ -105,7 +104,7 @@
                 }
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentMovieList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -144,7 +143,7 @@
                         let para = new FormData();
                         para.append("id", this.formData.id);
                         para.append("name", this.formData.name);
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentMovieEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -171,7 +170,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentMovieDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {

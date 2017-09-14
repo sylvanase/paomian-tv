@@ -43,8 +43,8 @@
             <el-table-column prop="actionUserCount" label="互动人数" min-width="100"></el-table-column>
             <el-table-column prop="status" label="置顶" width="80">
                 <template scope="scope">
-                    <el-tag :type="scope.row.top === 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.top === 1 ? '是' : '否' }}
+                    <el-tag :type="scope.row.top == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.top == 1 ? '是' : '否' }}
                     </el-tag>
                 </template>
             </el-table-column>
@@ -54,11 +54,11 @@
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                @click="topicDel(scope.row)">
-                        {{ scope.row.isDel === 0 ? '删除' : '恢复' }}
+                        {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
                     </el-button>
-                    <el-button :type="scope.row.top === 1 ? 'danger' : 'success'" size="small"
+                    <el-button :type="scope.row.top == 1 ? 'danger' : 'success'" size="small"
                                @click="topicTop(scope.row)">
-                        {{ scope.row.top === 1 ? '取消置顶' : '置顶' }}
+                        {{ scope.row.top == 1 ? '取消置顶' : '置顶' }}
                     </el-button>
                 </template>
             </el-table-column>

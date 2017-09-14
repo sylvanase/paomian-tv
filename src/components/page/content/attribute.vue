@@ -29,8 +29,8 @@
             <el-table-column prop="countNum" label="数量"></el-table-column>
             <el-table-column prop="status" label="状态" width="80">
                 <template scope="scope">
-                    <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.status === 1 ? '在线' : '离线' }}
+                    <el-tag :type="scope.row.status == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.status == 1 ? '在线' : '离线' }}
                     </el-tag>
                 </template>
             </el-table-column>
@@ -39,9 +39,9 @@
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
-                    <el-button :type="scope.row.status === 1 ? 'danger' : 'success'" size="small"
+                    <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
                                @click="handleTableLine(scope.$index, scope.row)">
-                        {{ scope.row.status === 1 ? '下线' : '上线' }}
+                        {{ scope.row.status == 1 ? '下线' : '上线' }}
                     </el-button>
                 </template>
             </el-table-column>
@@ -90,12 +90,11 @@
 </template>
 
 <script type="es6">
-    import { tableListApi, tableDelApi, tableEditApi, tableStatusApi, imgUploadApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
 
     export default {
         data() {
             return {
-                api: 'attribute',
                 filters: { //列表筛选条件
                     type: '0',
                     status: ''
@@ -144,7 +143,7 @@
                 };
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentAttrList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -194,7 +193,7 @@
                         para.append("name", this.formData.name);
                         para.append("type", this.formData.type);
                         para.append("iconId", this.formData.iconId);
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentAttrEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -221,7 +220,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id, type: row.attributeTypeEnum};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentAttrDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -243,7 +242,7 @@
                 para.append("id", row.id);
                 para.append("status", Number(!row.status));
                 para.append("type", row.attributeTypeEnum);
-                tableStatusApi(this.api, para).then((res) => {
+                axiosPost('contentAttrStatus', para).then((res) => {
                     this.tableLoading = false;
                     let { error, status } = res;
                     if (status !== 0) {
@@ -290,7 +289,7 @@
                 var imgFile = document.getElementsByName('file')[0].files[0];
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                imgUploadApi(para).then((res) => {
+                axiosPost('imgUpload',para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;

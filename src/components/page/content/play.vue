@@ -58,8 +58,8 @@
             <el-table-column prop="name" label="剧本名称"></el-table-column>
             <el-table-column prop="status" label="状态" width="80">
                 <template scope="scope">
-                    <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.status === 1 ? '在线' : '离线' }}
+                    <el-tag :type="scope.row.status == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.status == 1 ? '在线' : '离线' }}
                     </el-tag>
                 </template>
             </el-table-column>
@@ -68,9 +68,9 @@
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
-                    <el-button :type="scope.row.status === 1 ? 'danger' : 'success'" size="small"
+                    <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
                                @click="handleTableLine(scope.$index, scope.row)">
-                        {{ scope.row.status === 1 ? '下线' : '上线' }}
+                        {{ scope.row.status == 1 ? '下线' : '上线' }}
                     </el-button>
                     <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
                 </template>
@@ -217,7 +217,7 @@
                             <el-button type="danger" size="small" @click.prevent="clearMusicId">删除</el-button>
                             <span>（可从本地上传音乐或者从音乐库中选择音乐）</span>
                         </div>
-                        <input type="file" name="file" id="musicFile" @change="changeFile"/>
+                        <input type="file"  id="musicFile" @change="changeFile"/>
                         <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUploadKs">上传到服务器
                         </el-button>
                         <el-progress size="small" style="width: 70%;" :percentage="fileUpload.percentage"></el-progress>
@@ -294,7 +294,8 @@
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button size="small" @click.native="scriptVisible = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="scriptSubmit" :loading="scriptLoading">提交</el-button>
+                <el-button size="small" type="primary" @click.native="scriptSubmit" :loading="scriptLoading">提交
+                </el-button>
             </div>
         </el-dialog>
 
@@ -374,13 +375,12 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { tableListApi, tableDelApi, tableStatusApi, tableEditApi, tableDetailApi, imgUploadApi, scriptDelApi, scriptDetailApi,scriptEditApi, signatureApi, uploadCallbackApi } from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost } from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
         data() {
             return {
-                api: 'play',
                 filters: { //搜索筛选条件
                     type: '0',
                     status: '1',
@@ -495,7 +495,7 @@
                 }
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentPlayList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -543,7 +543,7 @@
                 } else {
                     this.formTitle = '编辑剧本';
                     let para = {id: row.id};
-                    tableDetailApi(this.api, para).then((res) => {
+                    axiosGet('contentPlayDetail', para).then((res) => {
                         let { error, status,data } = res;
                         this.formData = Object.assign({}, data);
                         if (data.keyword != '') {
@@ -595,7 +595,7 @@
                         para.append("movieIds", this.formData.movieIds.join(','));
                         para.append("tagIds", this.formData.tagIds.join(','));
                         para.append("kw", this.formData.keyword.join(' '));
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentPlayEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -623,7 +623,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentPlayDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -644,7 +644,7 @@
                 let para = new FormData();
                 para.append("id", row.id);
                 para.append("status", Number(!row.status));
-                tableStatusApi(this.api, para).then((res) => {
+                axiosPost('contentPlayStatus', para).then((res) => {
                     this.tableLoading = false;
                     let { error, status } = res;
                     if (status !== 0) {
@@ -673,7 +673,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('movie', para).then((res) => {
+                axiosGet('contentMovieList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchMovie.loading = false;
                     this.searchMovie.list = data.content;
@@ -692,7 +692,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('video_resource', para).then((res) => {
+                axiosGet('contentSourceList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchSource.loading = false;
                     this.searchSource.list = data.content;
@@ -711,7 +711,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('tag', para).then((res) => {
+                axiosGet('contentTagList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchTag.loading = false;
                     this.searchTag.list = data.content;
@@ -731,7 +731,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('music', para).then((res) => {
+                axiosGet('contentMusicList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchMusic.loading = false;
                     this.searchMusic.list = data.content;
@@ -771,7 +771,7 @@
                 }
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                imgUploadApi(para).then((res) => {
+                axiosPost('imgUpload', para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;
@@ -836,7 +836,7 @@
                     this.scriptSelect = true;
                     this.searchMusic.id = '';
                     let para = {id: id};
-                    scriptDetailApi(para).then((res) => {
+                    axiosGet('contentPlayScriptDetail', para).then((res) => {
                         let { error, status,data } = res;
                         var materialArr = data.typeContent; //处理接口素材数据
                         for (var k = 0, length = materialArr.length; k < length; k++) {
@@ -889,7 +889,7 @@
                         playId: row.id,
                         showType: item.showType
                     };
-                    scriptDelApi(para).then((res) => {
+                    axiosPost('contentPlayScriptDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -923,7 +923,7 @@
                         materialArr.push({
                             type: materialObj[k].type,
                             data: {
-                                autoId: k+1,
+                                autoId: k + 1,
                                 speed: materialObj[k].data.speed,
                                 second: materialObj[k].data.second,
                                 filterId: materialObj[k].data.filterId,
@@ -934,7 +934,7 @@
                         materialArr.push({
                             type: materialObj[k].type,
                             data: {
-                                autoId: k+1,
+                                autoId: k + 1,
                                 turnTypeId: materialObj[k].data.turnTypeId
                             }
                         });
@@ -943,7 +943,7 @@
                         materialArr.push({
                             type: materialObj[k].type,
                             data: {
-                                autoId: k+1,
+                                autoId: k + 1,
                                 filterId: materialObj[k].data.filterId,
                                 muteOrNot: Number(materialObj[k].data.muteOrNot),
                                 materialId: str.split(',')[0],
@@ -954,7 +954,7 @@
                         materialArr.push({
                             type: materialObj[k].type,
                             data: {
-                                autoId: k+1,
+                                autoId: k + 1,
                                 repeatId: materialObj[k].data.repeatId
                             }
                         });
@@ -962,7 +962,7 @@
                 }
                 para.append("materialJson", JSON.stringify(materialArr));
                 para.append("subtitleJson", JSON.stringify(this.scriptData.subtitleJson));
-                scriptEditApi(para).then((res) => {
+                axiosPost('contentPlayScriptEdit', para).then((res) => {
                     this.scriptLoading = false;
                     let { error, status } = res;
                     if (status !== 0) {
@@ -1011,7 +1011,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('material', para).then((res) => {
+                axiosGet('contentMaterialList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchMaterial.loading = false;
                     this.searchMaterial.list = data.content;
@@ -1063,7 +1063,7 @@
                     fileName: file.name
                 };
                 //服务器端获取上传所需签名
-                signatureApi('music', para).then((res) => {
+                axiosGet('musicSign', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -1093,7 +1093,7 @@
                                 let paras = new FormData();
                                 paras.append("objectKey", data.formParam.key);
                                 paras.append("name", file.name);
-                                uploadCallbackApi('music', paras).then((res) => {
+                                axiosPost('musicUpload', paras).then((res) => {
                                     let { error, status,data } = res;
                                     if (status !== 0) {
                                         if (status == 403) { //返回403时，重新登录

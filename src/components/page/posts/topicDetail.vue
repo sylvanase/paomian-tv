@@ -5,7 +5,8 @@
                 <el-input v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="话题简介">
-                <el-input type="textarea" v-model="formData.description"></el-input>
+                <el-input type="textarea" @change="wordCount" maxlength="60" v-model="formData.description"></el-input>
+                <div style="text-align: right;">{{ wordNum }}</div>
             </el-form-item>
             <el-form-item label="显示">
                 <el-switch on-text="显示" off-text="隐藏" v-model="formData.del" @change="timeStatus"></el-switch>
@@ -54,7 +55,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { imgUploadApi, axiosGet, axiosPost,tableListApi} from '../../../api/api';
+    import { axiosGet, axiosPost} from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'topicData'],
@@ -83,6 +84,7 @@
                     end: '',
                     del: ''
                 },
+                wordNum: '0/60', //监测统计字数
                 timeVisible: true,
                 searchSource: { //搜索资源
                     loading: false,
@@ -116,7 +118,9 @@
                         del: !Boolean(this.topicData.isDel)
                     };
                     this.timeVisible = !Boolean(this.topicData.isDel);
+                    this.wordCount(this.topicData.description);
                 }
+
             }
         },
         methods: {
@@ -186,7 +190,7 @@
                 }
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                imgUploadApi(para).then((res) => {
+                axiosPost('imgUpload',para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;
@@ -217,27 +221,32 @@
                     id: '',
                     kw: ''
                 };
-                if (isNaN(query)) { //输入不为数字，值传入kw
-                    para.kw = query;
-                } else {
-                    para.id = query;
+                if (query) {
+                    if (isNaN(query)) { //输入不为数字，值传入kw
+                        para.kw = query;
+                    } else {
+                        para.id = query;
+                    }
+                    axiosGet('topicPosts', para).then((res) => {
+                        let { error, status,data } = res;
+                        this.searchSource.loading = false;
+                        this.searchSource.list = data.content;
+                    });
                 }
-                axiosGet('postsList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchSource.loading = false;
-                    this.searchSource.list = data.content;
-                });
             },
             setStart(val){
                 this.formData.start = val;
             },
             timeStatus(val){ //更改时间是否可选状态
                 this.timeVisible = !val;
+            },
+            wordCount(val){ //监测简介字数
+                this.wordNum = val.length + '/60';
             }
             /*,
-            setEnd(val){
-                this.formData.end = val;
-            }*/
+             setEnd(val){
+             this.formData.end = val;
+             }*/
         },
         watch: {
             detail(val){ //监测详情变化
@@ -255,6 +264,7 @@
             }
         }
     }
+
 
 </script>
 

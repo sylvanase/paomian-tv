@@ -2,18 +2,18 @@
     <el-dialog title="用户发帖列表" :value="value" size="large" v-model="visible">
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
-            <el-table-column prop="coverUrl" label="视频封面" width="136">
+            <el-table-column prop="id" label="id" width="180" fixed></el-table-column>
+            <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
-                    <img v-if="scope.row.coverUrl !== ''" style="width: 100%;" :src="scope.row.coverUrl" alt="视频封面"/>
-                    <img v-else style="width: 100%;" src="../../../../static/img/TV.png" alt="视频封面"/>
+                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="videoText" min-width="150" label="视频简介"></el-table-column>
-            <el-table-column prop="createTime" label="发布时间" min-width="175"></el-table-column>
+            <el-table-column prop="videoText" width="200" label="视频简介"></el-table-column>
+            <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
             <el-table-column label="观看" width="120">
                 <template scope="scope">
-                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.playCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewUserCount : '0'}}人
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewUserCount : '0'}}人
                 </template>
             </el-table-column>
             <el-table-column label="喜欢" width="120">
@@ -26,18 +26,22 @@
                     {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageUserCount : '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="270" fixed="right">
+            <el-table-column label="操作" width="180" fixed="right">
                 <template scope="scope">
-                    <el-button :type="scope.row.isEssence === 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
-                        {{ scope.row.isEssence === 1 ? '取精' : '加精' }}
-                    </el-button>
-                    <el-button size="small" type="success" @click="handleLike(scope.row)">10个赞</el-button>
-                    <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
-                    <el-button type="info" size="small" @click="postsBarrage(scope.row)">弹幕</el-button>
-                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
-                               @click="postsDel(scope.row)">
-                        {{ scope.row.isDel === 0 ? '删除' : '恢复' }}
-                    </el-button>
+                    <div>
+                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                            {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
+                        </el-button>
+                        <el-button size="small" type="success" @click="handleLike(scope.row)">100个赞</el-button>
+                    </div>
+                    <div class="mt-10">
+                        <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
+                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">弹幕</el-button>
+                        <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                                   @click="postsDel(scope.row)">
+                            {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -116,7 +120,7 @@
             handleLike(row){ //点赞
                 let para = new FormData();
                 para.append("vpId", row.id);
-                para.append("num", 10);
+                para.append("num", 100);
                 axiosPost('postsLike', para).then((res) => {
                     let { error, status } = res;
                     if (status !== 0) {
@@ -175,6 +179,9 @@
                         this.fetchList();
                     }
                 });
+            },
+            playVideo(row){ //播放视频
+                this.$emit('audio', row);
             }
         },
         watch: {

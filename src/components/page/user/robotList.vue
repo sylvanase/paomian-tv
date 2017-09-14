@@ -23,15 +23,15 @@
             <el-table-column prop="phone" label="手机" min-width="150"></el-table-column>
             <el-table-column prop="sex" label="性别" width="80">
                 <template scope="scope">
-                    {{ scope.row.sex === 0 ? '男' : '女' }}
+                    {{ scope.row.sex == 0 ? '男' : '女' }}
                 </template>
             </el-table-column>
             <el-table-column prop="age" label="年龄"></el-table-column>
             <el-table-column label="操作" width="150">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button :type="scope.row.isDel === 0 ? 'danger' : 'warning'" size="small" @click="userDel(scope.row)">
-                        {{ scope.row.isDel === 0 ? '删除' : '恢复' }}
+                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small" @click="userDel(scope.row)">
+                        {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
                     </el-button>
                 </template>
             </el-table-column>

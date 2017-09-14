@@ -31,6 +31,18 @@
                     <div>(搜索范围：内容管理-资源库。若视频尚未添加，请先至资源库进行上传操作)</div>
                 </template>
             </el-form-item>
+            <el-form-item label="包含剧本">
+                <template>
+                    <el-select :disabled="isEdit" style="width: 50%;" v-model="formData.playId" filterable remote
+                               loading-text="搜索中" placeholder="输入id或名称搜索剧本" :remote-method="handlePlay"
+                               :loading="searchPlay.loading">
+                        <el-option v-for="item in searchPlay.list" :key="item.id" :label="item.name"
+                                   :value="item.id">
+                        </el-option>
+                    </el-select>
+                    <div>(请认真核对再输入否则会出现BUG)</div>
+                </template>
+            </el-form-item>
             <el-form-item label="所属话题" style="margin-bottom: -20px;">
                 <template>
                     <el-select :disabled="isEdit" style="width: 50%;" v-model="formData.topicId" filterable remote
@@ -52,7 +64,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { imgUploadApi, axiosGet, axiosPost,tableListApi} from '../../../api/api';
+    import { axiosGet, axiosPost} from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'postsData'],
@@ -72,10 +84,15 @@
                     start: '',
                     del: '',
                     essence: '',
-                    topicId: ''
+                    topicId: '',
+                    playId: ''
                 },
                 isEdit: false, //默认为非编辑状态
                 searchSource: { //搜索资源
+                    loading: false,
+                    list: []
+                },
+                searchPlay: { //搜索剧本
                     loading: false,
                     list: []
                 },
@@ -99,7 +116,8 @@
                     start: '',
                     del: '',
                     essence: '',
-                    topicId: ''
+                    topicId: '',
+                    playId: ''
                 };
                 if (this.postsData.id) {
                     axiosGet('postsDetail', {id: this.postsData.id}).then((res) => {
@@ -118,11 +136,12 @@
                                 id: data.id,
                                 uid: data.uid,
                                 des: data.videoText,
-                                videoId: data.videoInfoPo.vpId,
+                                videoId: data.videoInfoPo == null ? data.id : data.videoInfoPo.vpId,
                                 start: util.timestampFormat(data.createTime),
                                 del: !Boolean(data.isdel),
                                 essence: Boolean(data.isEssence),
-                                topicId: data.topicId
+                                topicId: data.topicId,
+                                playId: data.playId
                             }
                         }
                     });
@@ -144,6 +163,7 @@
                 paras.append("videoText", this.formData.des);
                 paras.append("videoResourceId", this.formData.videoId);
                 paras.append("topicId", this.formData.topicId);
+                paras.append("playId", this.formData.playId);
                 paras.append("createTime", this.formData.start);
                 paras.append("del", Number(!this.formData.del));
                 paras.append("essence", Number(this.formData.essence));
@@ -164,6 +184,34 @@
                     }
                 });
             },
+            handlePlay(query){ //搜索剧本
+                this.searchPlay.loading = true;
+                let para = {
+                    offset: 0,
+                    size: 30,
+                    id: '',
+                    kw: ''
+                };
+                if (isNaN(query)) { //输入不为数字，值传入kw
+                    para.kw = query;
+                } else {
+                    para.id = query;
+                }
+                axiosGet('contentPlayList', para).then((res) => {
+                    let { error, status,data } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.searchPlay.loading = false;
+                        this.searchPlay.list = data.content;
+                    }
+                });
+            },
             handleSource(query){ //搜索视频资源
                 this.searchSource.loading = true;
                 let para = {
@@ -177,7 +225,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('video_resource', para).then((res) => {
+                axiosGet('contentSourceList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -192,7 +240,7 @@
                     }
                 });
             },
-            handleTopic(query){ //搜索视频资源
+            handleTopic(query){ //搜索话题
                 this.searchTopic.loading = true;
                 let para = {
                     offset: 0,

@@ -9,6 +9,48 @@ let header = {
 axios.defaults.headers.get['Content-Type'] = 'application/json';
 
 let api = { //接口地址
+    contentSourceList: '/content/video_resource/list', //内容资源列表
+    contentSourceDel: '/content/video_resource/delete', //内容资源列表删除
+    contentSourceEdit: '/ks3/video_upload_edit', //内容资源编辑
+
+    contentPlayList: '/content/play/list', //内容剧本列表
+    contentPlayDel: '/content/play/delete',
+    contentPlayEdit: '/content/play/edit',
+    contentPlayDetail: '/content/play/detail',
+    contentPlayStatus: '/content/play/online_off', //剧本上下线
+
+    contentPlayScriptDetail: '/content/play/script_detail', //剧本素材详情
+    contentPlayScriptEdit: '/content/play/script_edit', //剧本素材编辑
+    contentPlayScriptDel: '/content/play/script_delete', //剧本素材删除
+
+
+    contentTagList: '/content/tag/list', //内容标签列表
+    contentTagDel: '/content/tag/delete',
+    contentTagEdit: '/content/tag/edit',
+
+    contentCatList: '/content/category/list', //内容分类列表
+    contentCatDel: '/content/category/delete',
+    contentCatEdit: '/content/category/edit',
+
+    contentAttrList: '/content/attribute/list', //内容属性
+    contentAttrDel: '/content/attribute/delete',
+    contentAttrEdit: '/content/attribute/edit',
+    contentAttrStatus: '/content/attribute/online_off', //属性上下线
+
+    contentMovieList: '/content/movie/list', //内容电影列表
+    contentMovieDel: '/content/movie/delete',
+    contentMovieEdit: '/content/movie/edit',
+
+    contentMusicList: '/content/music/list', //内容音乐列表
+    contentMusicDel: '/content/music/delete',
+    contentMusicEdit: '/content/music/edit',
+    contentMusicDetail: '/content/music/detail',
+
+    contentMaterialList: '/content/material/list', //内容素材列表
+    contentMaterialDel: '/content/material/delete',
+    contentMaterialEdit: '/content/material/edit',
+    contentMaterialDetail: '/content/material/detail',
+
     userList: '/user/list', //用户列表
     userDetail: '/user/detail', //用户详情
     userEdit: '/user/edit', //用户编辑
@@ -47,12 +89,26 @@ let api = { //接口地址
     topicTop: '/topic/top_status', //话题置顶、取消置顶
     topConfigDetail: '/topic/top_all', //话题置顶配置详细
     topConfigHandel: '/topic/top_config', //话题置顶配置更改
+    topicPosts: '/video/video_post/for_topic_list', //话题详情中查询帖子
 
     illegalList: '/video/illegal_report_list', //举报帖子
+    illegalStatus: '/video/update_illegal_report_status', //隐藏举报帖子
 
     barrageList: '/video/video_robot_barrage_list', //弹幕库
     barrageEdit: '/video/video_robot_barrage/edit', //弹幕修改
     barrageTag: '/video/video_robot_barrage/tag_list', //弹幕标签
+
+    androidApkList: '/sys/version/apk_list', //安卓包列表
+    apkStatus: '/sys/version/apk_update_status', //安卓包状态控制
+    apkAdd: '/sys/version/apk_add', //安卓包上传
+
+
+    avatarUpload: '/ks3/user_image_upload', //头像文件上传
+    imgUpload: '/ks3/video_image_upload', //图片文件上传
+    musicSign: '/ks3/signature/music', //音乐文件获取签名
+    videoSign: '/ks3/signature/video', //视频文件获取签名
+    videoUpload: 'ks3/video_upload', //视频文件上传
+    musicUpload: 'ks3/music_upload', //音乐文件上传
 
 
 
@@ -81,103 +137,3 @@ export const loginOut = (type, params) => {
     return axios.get(`${base}/logout/ajax`).then(res => res.data);
 };
 
-
-/*
- * 获取工具内容模块数据接口
- * type:接口类型 params:请求参数
- * */
-
-export const tableListApi = (type, params) => {
-    return axios.get(`${base}/content/` + type + `/list`, {params: params}).then(res => res.data);
-};
-
-
-/*
- * 删除工具内容模块数据接口
- * */
-
-export const tableDelApi = (type, params) => {
-    return axios.delete(`${base}/content/` + type + `/delete`, {params: params}).then(res => res.data);
-};
-
-/*
- * 编辑工具内容模块数据接口
- * */
-
-export const tableEditApi = (type, params) => {
-    return axios.post(`${base}/content/` + type + `/edit`, params, header).then(res => res.data);
-};
-
-
-/*
- * 获取工具内容模块详情接口
- * */
-
-export const tableDetailApi = (type, params) => {
-    return axios.get(`${base}/content/` + type + `/detail`, {params: params}).then(res => res.data);
-};
-
-/*
- * 剧本素材删除接口
- * */
-
-export const scriptDelApi = (params) => {
-    return axios.delete(`${base}/content/play/script_delete`, {params: params}).then(res => res.data);
-};
-
-/*
- * 剧本素材详情接口
- * */
-
-export const scriptDetailApi = (params) => {
-    return axios.get(`${base}/content/play/script_detail`, {params: params}).then(res => res.data);
-};
-
-/*
- * 剧本素材编辑接口
- * */
-
-export const scriptEditApi = (params) => {
-    return axios.post(`${base}/content/play/script_edit`, params, header).then(res => res.data);
-};
-
-
-/*
- * 更改工具内容模块上下线状态接口
- * */
-
-export const tableStatusApi = (type, params) => {
-    return axios.post(`${base}/content/` + type + `/online_off`, params, header).then(res => res.data);
-};
-
-/*
- * 上传视频图片至服务器 params：imageFile
- * */
-
-export const imgUploadApi = (params) => {
-    return axios.post(`${base}/ks3/video_image_upload`, params, header).then(res => res.data);
-};
-
-/*
- * 获取金山签名  type：video/music params：fileName
- * */
-
-export const signatureApi = (type, params) => {
-    return axios.get(`${base}/ks3/signature/` + type, {params: params}).then(res => res.data);
-};
-
-/*
- * 上传金山成功后回调 type：video/music params：视频（name, objectKey）  音乐（objectKey）
- * */
-
-export const uploadCallbackApi = (type, params) => {
-    return axios.post(`${base}/ks3/` + type + `_upload`, params, header).then(res => res.data);
-};
-
-/*
- * 上传用户头像至服务器 params：imageFile
- * */
-
-export const avatarUploadApi = (params) => {
-    return axios.post(`${base}/ks3/user_image_upload`, params, header).then(res => res.data);
-};

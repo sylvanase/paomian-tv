@@ -39,7 +39,7 @@
 
         <!--表格-->
         <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column type="expand">
+            <!--<el-table-column type="expand">
                 <template scope="props">
                     <el-form label-position="left" class="table-expand">
                         <el-form-item label="音乐属性：">
@@ -53,12 +53,27 @@
                         </el-form-item>
                     </el-form>
                 </template>
-            </el-table-column>
+            </el-table-column>-->
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="音乐名称"></el-table-column>
             <el-table-column prop="duration" label="时长" width="150">
             </el-table-column>
-            <el-table-column label="操作" width="350">
+            <el-table-column label="属性">
+                <template scope="props">
+                    {{ props.row.attributeNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="分类">
+                <template scope="props">
+                    {{ props.row.categoryNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="相关电影">
+                <template scope="props">
+                    {{ props.row.movieNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
@@ -176,13 +191,12 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { tableListApi, tableDelApi, tableEditApi, tableDetailApi, imgUploadApi, signatureApi, uploadCallbackApi} from '../../../api/api';
+    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
         data() {
             return {
-                api: 'music',
                 filters: { //搜索筛选条件
                     type: '0',
                     attr: '', //属性
@@ -275,7 +289,7 @@
                 }
                 para.offset = (this.page - 1) * para.size;
                 this.tableLoading = true;
-                tableListApi(this.api, para).then((res) => {
+                axiosGet('contentMusicList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -313,7 +327,7 @@
                     size: 99999
                 };
                 this.tableLoading = true;
-                tableListApi('attribute', para).then((res) => {
+                axiosGet('contentAttrList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -335,7 +349,7 @@
                     size: 99999
                 };
                 this.tableLoading = true;
-                tableListApi('category', para).then((res) => {
+                axiosGet('contentCatList', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -378,7 +392,7 @@
                 } else {
                     this.formTitle = '编辑音乐';
                     let para = {id: row.id};
-                    tableDetailApi(this.api, para).then((res) => {
+                    axiosGet('contentMusicDetail', para).then((res) => {
                         let { error, status,data } = res;
                         this.formData.coverImgUrl = '';
                         this.formData = Object.assign({}, data);
@@ -459,7 +473,7 @@
                         para.append("categoryIds", this.formData.categoryIds.join(','));
                         para.append("tagIds", this.formData.tagIds.join(','));
                         para.append("kw", this.formData.keyword.join(' '));
-                        tableEditApi(this.api, para).then((res) => {
+                        axiosPost('contentMusicEdit', para).then((res) => {
                             this.formLoading = false;
                             let { error, status } = res;
                             if (status !== 0) {
@@ -487,7 +501,7 @@
                 }).then(() => {
                     this.tableLoading = true;
                     let para = {id: row.id};
-                    tableDelApi(this.api, para).then((res) => {
+                    axiosDel('contentMusicDel', para).then((res) => {
                         this.tableLoading = false;
                         let { error, status } = res;
                         if (status !== 0) {
@@ -504,9 +518,7 @@
                     });
                 })
             },
-            /*
-             * 搜索相关电影操作
-             * */
+            //搜索相关电影操作
             handleMovie(query){
                 this.searchMovie.loading = true;
                 let para = {
@@ -520,15 +532,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('movie', para).then((res) => {
+                axiosGet('contentMovieList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchMovie.loading = false;
                     this.searchMovie.list = data.content;
                 });
             },
-            /*
-             * 搜索属性
-             * */
+            //搜索属性
             handleAttr(query){
                 this.searchAttr.loading = true;
                 let para = {
@@ -543,15 +553,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('attribute', para).then((res) => {
+                axiosGet('contentAttrList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchAttr.loading = false;
                     this.searchAttr.list = data.content;
                 });
             },
-            /*
-             * 搜索分类
-             * */
+            //搜索分类
             handleCat(query){
                 this.searchCat.loading = true;
                 let para = {
@@ -566,15 +574,13 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('category', para).then((res) => {
+                axiosGet('contentCatList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchCat.loading = false;
                     this.searchCat.list = data.content;
                 });
             },
-            /*
-             * 搜索标签
-             * */
+            //搜索标签
             handleTag(query){
                 this.searchTag.loading = true;
                 let para = {
@@ -588,7 +594,7 @@
                 } else {
                     para.id = query;
                 }
-                tableListApi('tag', para).then((res) => {
+                axiosGet('contentTagList', para).then((res) => {
                     let { error, status,data } = res;
                     this.searchTag.loading = false;
                     this.searchTag.list = data.content;
@@ -629,7 +635,7 @@
                 }
                 let para = new FormData();
                 para.append("imageFile", imgFile);
-                imgUploadApi(para).then((res) => {
+                axiosPost('imgUpload',para).then((res) => {
                     this.avatarDisabled = true;
                     this.avatarLoading = true;
                     let { error, status, data } = res;
@@ -701,7 +707,7 @@
                     fileName: file.name
                 };
                 //服务器端获取上传所需签名
-                signatureApi('music', para).then((res) => {
+                axiosGet('musicSign', para).then((res) => {
                     let { error, status,data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
@@ -733,7 +739,7 @@
                                 let paras = new FormData();
                                 paras.append("objectKey", data.formParam.key);
                                 paras.append("name", file.name);
-                                uploadCallbackApi('music', paras).then((res) => {
+                                axiosPost('musicUpload', paras).then((res) => {
                                     let { error, status,data } = res;
                                     if (status !== 0) {
                                         if (status == 403) { //返回403时，重新登录
