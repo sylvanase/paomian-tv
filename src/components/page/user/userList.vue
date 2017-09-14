@@ -145,7 +145,7 @@
             </el-table-column>
             <el-table-column label="操作" width="210" fixed="right">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.row)">查看</el-button>
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
                                @click="userDel(scope.row)">
                         {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}

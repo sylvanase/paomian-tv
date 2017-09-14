@@ -131,7 +131,7 @@
                             this.$message.error(error);
                         }
                     } else {
-                        this.$message.success('成功点赞10个！');
+                        this.$message.success('点赞成功');
                     }
                 });
             },

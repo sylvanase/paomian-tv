@@ -20,7 +20,10 @@ var filterDate = [  //滤镜数据
     {id: 18, name: '东京爱情-酸辣味'},
     {id: 19, name: '碧海蓝天-海鲜味'},
     {id: 26, name: '七月-蒜香味'},
-    {id: 27, name: '漫画风-火鸡味'}
+    {id: 27, name: '漫画风-火鸡味'},
+    {id: 28, name: '芦笋味'},
+    {id: 29, name: '卤香味'},
+    {id: 30, name: '田园味'}
 ];
 
 export default {
