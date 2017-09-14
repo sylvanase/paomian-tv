@@ -20,19 +20,46 @@ npm run build --report
 
 ## 目录结构介绍 ##
 
-	|-- build                            // webpack配置文件
-	|-- config                           // 项目打包路径
-	|-- src                              // 源码目录
-	|   |-- components                   // 组件
-	|       |-- common                   // 公共组件
-	|           |-- Header.vue           // 公共头部
-	|           |-- Home.vue           	 // 公共路由入口
-	|           |-- Sidebar.vue          // 公共左边栏
-	|		|-- page                   	 // 主要路由页面
-	|           |-- login.vue            // 登录页
-	|           |-- 404.vue              // 404错误页
-	|           |-- content              // 内容管理
-	|               |-- movie.vue        // 电影列表
+	|-- build                                      // webpack配置文件
+	|-- config                                     // 项目打包路径
+	|-- src                                        // 源码目录
+	|   |-- components                             // 组件
+	|       |-- common                             // 公共组件
+	|           |-- Header.vue                     // 公共头部
+	|           |-- Home.vue           	           // 公共路由入口
+	|           |-- Sidebar.vue                    // 公共左边栏
+	|		|-- page                   	           // 主要路由页面
+	|           |-- login.vue                      // 登录页
+	|           |-- 404.vue                        // 404错误页
+	|           |-- androidPackage.vue             // 安卓包管理
+	|           |-- content                        // 内容管理
+	|               |-- attribute.vue              // 属性
+	|               |-- category.vue               // 分类
+	|               |-- material.vue               // 素材
+	|               |-- movie.vue                  // 电影
+	|               |-- music.vue                  // 音乐
+	|               |-- play.vue                   // 剧本
+	|               |-- resource.vue               // 资源
+	|               |-- tag.vue                    // 标签
+	|           |-- posts                          // 帖子管理
+	|               |-- barrageList.vue            // 弹幕列表
+	|               |-- illegalList.vue            // 举报列表
+	|               |-- postsBarrage.vue           // 为帖子增加弹幕
+	|               |-- postsBarrageList.vue       // 帖子中的弹幕列表
+	|               |-- postsDetail.vue            // 帖子详情
+	|               |-- postsList.vue              // 全部帖子列表
+	|               |-- topicDetail.vue            // 话题详情
+	|               |-- topicList.vue              // 话题列表
+	|               |-- topicVideo.vue             // 话题帖子列表
+	|           |-- user                           // 用户管理
+	|               |-- fansList.value             // 用户粉丝列表
+	|               |-- followList.value           // 用户关注列表
+	|               |-- robotDetail.value          // 机器人详情
+	|               |-- robotList.value            // 机器人列表
+	|               |-- userCareList.value         // 运营关注的用户
+	|               |-- userDetail.value           // 用户详情
+	|               |-- userList.value             // 用户列表
+	|               |-- videoList.value            // 用户视频列表
 	|   |-- mock                         // 本地模拟数据文件
 	|   |-- router                       // 路由文件
 	|   |-- App.vue                      // 页面入口文件
