@@ -115,10 +115,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="material.vue" pinned="false" current-in-tab="true">
+      <file leaf-file-name="material.vue" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/components/page/content/material.vue">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.43567753">
+            <state vertical-scroll-proportion="-4.792453">
               <caret line="572" column="27" selection-start-line="572" selection-start-column="27" selection-end-line="572" selection-end-column="27" />
               <folding>
                 <marker date="1505361558000" expanded="true" signature="12050:33446" placeholder="{...}" />
@@ -259,6 +259,16 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.062893085">
+              <caret line="2" column="10" selection-start-line="2" selection-start-column="10" selection-end-line="2" selection-end-column="10" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="postsList.vue" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/components/page/posts/postsList.vue">
           <provider selected="true" editor-type-id="text-editor">
@@ -281,7 +291,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/src/main.js" />
         <option value="$USER_HOME$/Documents/泡面视频/泡面官网源文件/download/index.html" />
         <option value="$USER_HOME$/Documents/片场/片场官网源文件/index.html" />
         <option value="$USER_HOME$/Documents/泡面视频/泡面官网源文件/index.html" />
@@ -332,6 +341,7 @@
         <option value="$USER_HOME$/fotodev/paomiantv/paomiantv-web/src/main/webapp/static/css/sharepage/videoDetail.css" />
         <option value="$PROJECT_DIR$/src/components/page/androidPackage.vue" />
         <option value="$PROJECT_DIR$/src/components/page/content/material.vue" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -670,13 +680,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/fotodev/paomiantv/paomiantv-web/src/main/webapp/static/css/sharepage/userDetail.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="0" column="424" selection-start-line="0" selection-start-column="424" selection-end-line="0" selection-end-column="424" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/fotodev/paomiantv/paomiantv-web/src/main/webapp/static/css/sharepage/playDetail.css">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -1079,7 +1082,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/components/page/content/material.vue">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.43567753">
+        <state vertical-scroll-proportion="-4.792453">
           <caret line="572" column="27" selection-start-line="572" selection-start-column="27" selection-end-line="572" selection-end-column="27" />
           <folding>
             <marker date="1505361558000" expanded="true" signature="12050:33446" placeholder="{...}" />
@@ -1216,6 +1219,14 @@
             <marker date="1505361558000" expanded="true" signature="33155:33217" placeholder="{...}" />
             <marker date="1505361558000" expanded="true" signature="33342:33440" placeholder="{...}" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.062893085">
+          <caret line="2" column="10" selection-start-line="2" selection-start-column="10" selection-end-line="2" selection-end-column="10" />
+          <folding />
         </state>
       </provider>
     </entry>

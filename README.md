@@ -1,6 +1,6 @@
 # 泡面后台管理
 
-> y
+> 后台管理的源文件
 
 ## Build Setup
 
@@ -11,7 +11,7 @@ npm install
 # 启动本地服务 如需更改端口，修改config/index.js下dev的port，默认为8090  localhost:8090
 npm run dev
 
-# build for production with minification
+# 构建生产环境压缩文件至dist文件夹
 npm run build
 
 # build for production and view the bundle analyzer report
