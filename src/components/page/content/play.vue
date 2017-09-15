@@ -233,7 +233,7 @@
                     </template>
                 </el-form-item>
                 <!--字幕模板-->
-                <el-form-item v-for="(item, index) in scriptData.subtitleJson" :label="'字幕' + index"
+                <el-form-item v-for="(item, index) in scriptData.subtitleJson" :label="'字幕' + (index + 1)"
                               :prop="'subtitleJson.' + index">
                     <el-card class="box-card">
                         <div class="clearfix">
@@ -249,7 +249,7 @@
                             <template>
                                 <label>帧数：</label>
                                 <el-input-number size="small" style="width:100px;" v-model="item.startFrame" :min="0"
-                                                 :max="29"></el-input-number>
+                                                 :max="24"></el-input-number>
                             </template>
                         </div>
                         <div class="mb-10">
@@ -260,7 +260,7 @@
                             <template>
                                 <label>帧数：</label>
                                 <el-input-number size="small" style="width:100px;" v-model="item.endFrame" :min="0"
-                                                 :max="29"></el-input-number>
+                                                 :max="24"></el-input-number>
                             </template>
                         </div>
                         <div class="mb-10">
