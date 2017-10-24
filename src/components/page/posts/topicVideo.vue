@@ -12,6 +12,43 @@
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
             <el-table-column prop="videoText" min-width="150" label="视频标题"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
+            <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180">
+                <template scope="scope">
+                    {{ scope.row.lastBarrageTime ? scope.row.lastBarrageTime : '无' }}
+                </template>
+            </el-table-column>
+            <el-table-column label="观看量">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.viewCount }}
+                </template>
+            </el-table-column>
+            <el-table-column label="观看人数" min-width="100">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.viewUserCount }}
+                </template>
+            </el-table-column>
+            <el-table-column label="弹幕数">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.barrageCount }}
+                </template>
+            </el-table-column>
+            <el-table-column label="喜欢">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.likeCount }}
+                </template>
+            </el-table-column>
+            <el-table-column label="来源">
+                <template scope="scope">
+                    {{ scope.row.publishType == 1 ? '后台' : '客户端' }}
+                </template>
+            </el-table-column>
+            <el-table-column label="显示">
+                <template scope="scope">
+                    <el-tag :type="scope.row.isDel == 0 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.isDel == 0 ? '是' : '否' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
             <el-table-column label="精华" width="80">
                 <template scope="scope">
                     <el-tag :type="scope.row.isEssence == 1 ? 'success' : 'danger'"
@@ -98,6 +135,9 @@
                         this.total = data.totalElements;
                         this.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
+                            if(item.lastBarrageTime){
+                                item.lastBarrageTime = util.timestampFormat(item.lastBarrageTime);
+                            }
                             return item;
                         });
                         this.tableLoading = false;
@@ -119,7 +159,7 @@
                 para.append("vpId", row.id);
                 para.append("num", 100);
                 axiosPost('postsLike', para).then((res) => {
-                    let { error, status } = res;
+                    let { error, status, data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
                             sessionStorage.removeItem('user');
@@ -128,7 +168,7 @@
                             this.$message.error(error);
                         }
                     } else {
-                        this.$message.success('点赞成功');
+                        this.$message.success(data);
                     }
                 });
             },

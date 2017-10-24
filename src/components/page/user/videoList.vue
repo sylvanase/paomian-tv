@@ -36,7 +36,7 @@
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
-                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">弹幕</el-button>
+                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">加弹幕</el-button>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                    @click="postsDel(scope.row)">
                             {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
@@ -122,7 +122,7 @@
                 para.append("vpId", row.id);
                 para.append("num", 100);
                 axiosPost('postsLike', para).then((res) => {
-                    let { error, status } = res;
+                    let { error, status, data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
                             sessionStorage.removeItem('user');
@@ -131,7 +131,7 @@
                             this.$message.error(error);
                         }
                     } else {
-                        this.$message.success('点赞成功');
+                        this.$message.success(data);
                     }
                 });
             },

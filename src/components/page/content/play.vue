@@ -66,6 +66,7 @@
             <el-table-column label="操作" width="350">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
+                    <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
                     <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
@@ -90,6 +91,7 @@
                 <el-form-item label="片段类型" prop="showType" required>
                     <el-select size="small" v-model="scriptData.showType" :disabled="scriptSelect" placeholder="请选择"
                                style="width: 200px;">
+                        <el-option label="横竖屏" value="0"></el-option>
                         <el-option label="横屏" value="1"></el-option>
                         <el-option label="竖屏" value="2"></el-option>
                     </el-select>
@@ -305,6 +307,9 @@
                 <el-form-item label="剧本名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
+                <el-form-item label="蒙太奇">
+                    <el-switch on-text="是" off-text="否" v-model="formData.montageOrNot"></el-switch>
+                </el-form-item>
                 <el-form-item label="相关电影" prop="movieIds">
                     <template>
                         <el-select style="width: 50%;" v-model="formData.movieIds" multiple filterable remote
@@ -364,11 +369,17 @@
                         </el-select>
                     </template>
                 </el-form-item>
+
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button size="small" @click.native="formVisible = false">取消</el-button>
                 <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
+        </el-dialog>
+
+        <!--播放弹窗-->
+        <el-dialog title="剧本预览" v-model="videoVisible" @close="videoClose()">
+            <div style="text-align: center;" v-html="videoHtml"></div>
         </el-dialog>
     </section>
 </template>
@@ -417,7 +428,8 @@
                     movieNames: [],
                     tagIds: [], //标签id及名称
                     tagNames: [],
-                    keyword: []
+                    keyword: [],
+                    montageOrNot: ''
                 },
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
@@ -471,7 +483,9 @@
                     loading: false,
                     id: '',
                     list: []
-                }
+                },
+                videoVisible: false,  //播放视频界面 显示、隐藏
+                videoHtml: ''
             }
         },
         methods: {
@@ -519,6 +533,14 @@
                     }
                 });
             },
+            playVideo(row){ //播放视频
+                this.videoVisible = true;
+                this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
+                    + '<source src="' + row.previewUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
+            },
+            videoClose(){
+                this.videoHtml = '';
+            },
             showForm (index, row){ //显示表单
                 this.formVisible = true;
                 if (index == -1) { //索引为-1时，新增操作
@@ -535,7 +557,8 @@
                         movieNames: [],
                         tagIds: [], //标签id及名称
                         tagNames: [],
-                        keyword: []
+                        keyword: [],
+                        montageOrNot: ''
                     };
                     this.searchMovie.list = [];
                     this.searchSource.list = [];
@@ -546,6 +569,8 @@
                     axiosGet('contentPlayDetail', para).then((res) => {
                         let { error, status,data } = res;
                         this.formData = Object.assign({}, data);
+                        this.formData.montageOrNot = Boolean(data.montageOrNot);
+                        //this.formData.montage = true;
                         if (data.keyword != '') {
                             this.formData.keyword = data.keyword.split(' ');
                         } else {
@@ -594,6 +619,7 @@
                         para.append("previewId", this.formData.previewId);
                         para.append("movieIds", this.formData.movieIds.join(','));
                         para.append("tagIds", this.formData.tagIds.join(','));
+                        para.append("montageOrNot", Number(this.formData.montageOrNot));
                         para.append("kw", this.formData.keyword.join(' '));
                         axiosPost('contentPlayEdit', para).then((res) => {
                             this.formLoading = false;

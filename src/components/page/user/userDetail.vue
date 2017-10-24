@@ -35,6 +35,14 @@
                                :value="item.cityId"></el-option>
                 </el-select>
             </el-form-item>
+            <template v-if="formData.imei.length > 0" v-for="item in formData.imei">
+                <el-form-item label="设备类型" >
+                    <span>{{ item.name }}</span>
+                </el-form-item>
+                <el-form-item label="设备号IMEI" >
+                    <span>{{ item.uuid }}</span>
+                </el-form-item>
+            </template>
             <el-form-item label="手机号" prop="phone">
                 <el-input style="width: 200px;" v-model.trim="formData.phone" auto-complete="off"></el-input>
                 <el-button class="ml-10" size="small" @click.native="phoneUpdate">更换</el-button>
@@ -108,7 +116,7 @@
                     regionId: '',
                     cityId: '',
                     os: '',
-                    imei: '',
+                    imei: [],
                     phone: '',
                     qq: '',
                     wechat: '',
@@ -130,7 +138,7 @@
                     regionId: '',
                     cityId: '',
                     os: '',
-                    imei: '',
+                    imei: [],
                     phone: '',
                     qq: '',
                     wechat: '',
@@ -159,7 +167,7 @@
                                 regionId: data.countryId + '',
                                 cityId: data.cityId + '',
                                 os: '',
-                                imei: '',
+                                imei: data.userDevicePoList,
                                 phone: data.phone,
                                 qq: data.qqBind,
                                 wechat: data.wxBind,

@@ -34,7 +34,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="250">
+            <el-table-column label="操作" width="380">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
@@ -43,6 +43,17 @@
                                @click="handleTableLine(scope.$index, scope.row)">
                         {{ scope.row.status == 1 ? '下线' : '上线' }}
                     </el-button>
+                    <template v-if="scope.row.status == 1">
+                        <el-button type="success" size="small" @click="handleTableShift(scope.row,'up')">
+                            上移
+                        </el-button>
+                        <el-button type="danger" size="small" @click="handleTableShift(scope.row,'down')">
+                            下移
+                        </el-button>
+                        <el-button type="warning" size="small" @click="handleTableShift(scope.row,'top')">
+                            置顶
+                        </el-button>
+                    </template>
                 </template>
             </el-table-column>
         </el-table>
@@ -243,6 +254,28 @@
                 para.append("status", Number(!row.status));
                 para.append("type", row.attributeTypeEnum);
                 axiosPost('contentAttrStatus', para).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
+                        } else {
+                            this.$message.error(error);
+                        }
+                    } else {
+                        this.$message.success('操作成功');
+                        this.fetchList();
+                    }
+                });
+            },
+            handleTableShift(row, operate){
+                let para = new FormData();
+                para.append("id", row.id);
+                para.append("operate", operate);
+                para.append("type", row.attributeTypeEnum);
+                para.append("currRank", row.priority);
+                axiosPost('contentAttrShift', para).then((res) => {
                     this.tableLoading = false;
                     let { error, status } = res;
                     if (status !== 0) {

@@ -76,6 +76,10 @@ export default new Router({
                     path: '/care',
                     component: resolve => require(['../components/page/user/userCareList.vue'], resolve),
                     name: '运营关注用户'
+                }, {
+                    path: '/master',
+                    component: resolve => require(['../components/page/user/masterList.vue'], resolve),
+                    name: '小号权限管理'
                 }
             ]
         }, {

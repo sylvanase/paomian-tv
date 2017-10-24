@@ -11,7 +11,7 @@
 
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="id" label="id" min-width="100"></el-table-column>
+            <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
                     <img v-if="scope.row.avatarUrl" class="user-avatar" :src="scope.row.avatarUrl" alt="用户头像"/>
@@ -27,11 +27,39 @@
                 </template>
             </el-table-column>
             <el-table-column prop="age" label="年龄"></el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column prop="fansCount" label="粉丝" sortable width="120">
+                <template scope="scope">
+                    {{ scope.row.fansCount ? scope.row.fansCount : '0' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="carsCount" label="关注">
+                <template scope="scope">
+                    {{ scope.row.carsCount ? scope.row.carsCount : '0' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="postCount" label="帖子" sortable width="120">
+                <template scope="scope">
+                    <el-button v-if="scope.row.postCount" size="small" @click="showVideo(scope.row)">{{
+                        scope.row.postCount
+                        }}
+                    </el-button>
+                    <span v-else>0</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="likeCount" label="喜欢">
+                <template scope="scope">
+                    <el-button v-if="scope.row.likeCount" size="small" @click="showLike(scope.row)">{{
+                        scope.row.likeCount
+                        }}
+                    </el-button>
+                    <span v-else>0</span>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" fixed="right">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small" @click="userDel(scope.row)">
-                        {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small" @click="userDel(scope.row)">
+                        {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
                     </el-button>
                 </template>
             </el-table-column>
@@ -48,6 +76,16 @@
         <!--编辑马甲号-->
         <v-detail :userData="userData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
+        <!--用户发帖-->
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"></v-video>
+
+        <!--用户喜欢-->
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
+
+        <!--播放弹窗-->
+        <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
+            <div style="text-align: center;" v-html="videoHtml"></div>
+        </el-dialog>
     </section>
 </template>
 
@@ -55,10 +93,14 @@
     import util from '../../../api/util'
     import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
     import vDetail from './robotDetail.vue'
+    import vVideo from './videoList.vue'
+    import vLike from './likeList.vue'
 
     export default {
         components: {
-            vDetail
+            vDetail,
+            vVideo,
+            vLike
         },
         data() {
             return {
@@ -68,7 +110,11 @@
                 tableList: [], //表格数据
                 isShowForm: false,
                 userData: {},
-                userId: '' //用户id
+                userId: '', //用户id
+                isShowVideo: false, //显示、隐藏帖子列表
+                isShowLike: false, //显示、隐藏喜欢列表
+                videoVisible: false,  //播放视频界面 显示、隐藏
+                videoHtml: ''
             }
         },
         methods: {
@@ -108,10 +154,11 @@
             },
             userDel: function (row) {
                 this.tableLoading = true;
-                let paras = new FormData();
-                paras.append("uid", row.id);
-                paras.append("status", Number(!row.isDel));
-                axiosPost('robotDel', paras).then((res) => {
+                let paras = {
+                    uid: row.id,
+                    status: Number(!row.userStatus)
+                };
+                axiosDel('robotDel', paras).then((res) => {
                     this.tableLoading = false;
                     let { error, status } = res;
                     if (status !== 0) {
@@ -126,6 +173,22 @@
                         this.fetchList();
                     }
                 });
+            },
+            showVideo (row){ //显示用户帖子列表
+                this.isShowVideo = true;
+                this.userId = row.id;
+            },
+            showLike (row){ //显示用户喜欢的帖子列表
+                this.isShowLike = true;
+                this.userId = row.id;
+            },
+            playVideo(row){ //播放视频
+                this.videoVisible = true;
+                this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
+                    + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
+            },
+            videoClose(){
+                this.videoHtml = '';
             }
         },
         mounted() {

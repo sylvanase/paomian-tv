@@ -36,6 +36,7 @@ let api = { //接口地址
     contentAttrDel: '/content/attribute/delete',
     contentAttrEdit: '/content/attribute/edit',
     contentAttrStatus: '/content/attribute/online_off', //属性上下线
+    contentAttrShift: '/content/attribute/up_down_top', //属性上移、下移、置顶
 
     contentMovieList: '/content/movie/list', //内容电影列表
     contentMovieDel: '/content/movie/delete',
@@ -65,6 +66,14 @@ let api = { //接口地址
     userVideoList: '/user/video_post/list', //用户发帖列表
     userLikeList: '/user/video_post/like_list', //用户喜欢列表
     userCareOperate: '/user/user_care_list', //运营关注用户
+    userMasterList: '/user/master/list', //主账号列表
+    userMasterAdd: '/user/master/add', //设置主账号权限
+    userMasterVideo: '/user/master/video/list', //主账号下小号视频列表
+    userMasterBarrage: '/user/master/video/barrage/list', //主账号下小号发送弹幕列表
+    userMasterLike: '/user/master/video/like/list', //主账号下小号点赞列表
+
+
+
 
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表

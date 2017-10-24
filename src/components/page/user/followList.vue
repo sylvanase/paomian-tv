@@ -51,9 +51,8 @@
             <el-table-column label="操作" width="200" fixed="right">
                 <template scope="scope">
                     <el-button size="small" @click="userDetail(scope.row)">查看</el-button>
-                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
-                               @click="userDel(scope.row)">
-                        {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
+                    <el-button type="danger" size="small" @click="userDel(scope.row)">
+                        删除
                     </el-button>
                     <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
                                @click="careUser(scope.row)">
@@ -134,53 +133,28 @@
                 this.page = val;
                 this.fetchList();
             },
-            //软删除用户
+            //解除用户关注关系
             userDel: function (row) {
-                if (row.userStatus == 1) { //原来是删除状态，现执行恢复操作
-                    this.tableLoading = true;
-                    let paras = new FormData();
-                    paras.append("uid", row.id);
-                    paras.append("status", 0);
-                    axiosPost('userStatus', paras).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
+                this.tableLoading = true;
+                let paras = {
+                    uid: this.userId,
+                    careId: row.id
+                };
+                axiosDel('userFollowDel', paras).then((res) => {
+                    this.tableLoading = false;
+                    let { error, status } = res;
+                    if (status !== 0) {
+                        if (status == 403) { //返回403时，重新登录
+                            sessionStorage.removeItem('user');
+                            this.$router.push('/login');
                         } else {
-                            this.$message.success('恢复成功');
-                            this.fetchList();
+                            this.$message.error(error);
                         }
-                    });
-                } else { //删除用户
-                    this.$confirm('确认删除该用户吗?', '提示', {
-                        type: 'warning'
-                    }).then(() => {
-                        this.tableLoading = true;
-                        let paras = new FormData();
-                        paras.append("uid", row.id);
-                        paras.append("status", 1);
-                        axiosPost('userStatus', paras).then((res) => {
-                            this.tableLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('删除成功');
-                                this.fetchList();
-                            }
-                        });
-                    });
-                }
+                    } else {
+                        this.$message.success('删除成功');
+                        this.fetchList();
+                    }
+                });
             },
             //运营关注用户
             careUser: function (row) {

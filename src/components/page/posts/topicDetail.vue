@@ -105,6 +105,7 @@
                     end: '',
                     del: ''
                 };
+                this.wordNum = '0/60'; //重置字数统计
                 if (this.topicData.id) {
                     this.formData = {
                         id: this.topicData.id,
@@ -125,6 +126,18 @@
         },
         methods: {
             change() {
+                /*this.formData = {
+                    id: '',
+                    name: '',
+                    description: '',
+                    coverId: '',
+                    coverImgUrl: '',
+                    videoId: '',
+                    start: '',
+                    end: '',
+                    del: ''
+                };*/
+                this.wordNum = '0/60'; //重置字数统计
                 this.visible = false;
             },
             formSubmit(){ //提交表单
@@ -252,6 +265,20 @@
             detail(val){ //监测详情变化
             },
             value(val) {
+                if(val == false){ //关闭时重置页面
+                    this.formData = {
+                        id: '',
+                        name: '',
+                        description: '',
+                        coverId: '',
+                        coverImgUrl: '',
+                        videoId: '',
+                        start: '',
+                        end: '',
+                        del: ''
+                    };
+                    this.wordNum = '0/60'; //重置字数统计
+                }
                 this.visible = val;
             },
             visible(val) {

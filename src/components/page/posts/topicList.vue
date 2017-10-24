@@ -7,10 +7,10 @@
                     <el-input v-model="filters.kw" placeholder="ID/关键字"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-date-picker type="date" placeholder="开始时间" v-model="filters.start"
+                    <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
                                     style="width: 200px;" @change="setStart"></el-date-picker>
                     <span> - </span>
-                    <el-date-picker type="date" placeholder="结束时间" v-model="filters.end"
+                    <el-date-picker type="datetime" placeholder="结束时间" v-model="filters.end"
                                     style="width: 200px;" @change="setEnd"></el-date-picker>
                 </el-form-item>
                 <el-form-item>

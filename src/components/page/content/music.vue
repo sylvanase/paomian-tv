@@ -39,24 +39,9 @@
 
         <!--表格-->
         <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
-            <!--<el-table-column type="expand">
-                <template scope="props">
-                    <el-form label-position="left" class="table-expand">
-                        <el-form-item label="音乐属性：">
-                            <span>{{ props.row.attributeNames.join(' , ') }}</span>
-                        </el-form-item>
-                        <el-form-item label="音乐分类：">
-                            <span>{{ props.row.categoryNames.join(' , ') }}</span>
-                        </el-form-item>
-                        <el-form-item label="相关电影：">
-                            <span>{{ props.row.movieNames.join(' , ') }}</span>
-                        </el-form-item>
-                    </el-form>
-                </template>
-            </el-table-column>-->
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="音乐名称"></el-table-column>
-            <el-table-column prop="duration" label="时长" width="150">
+            <el-table-column prop="duration" label="时长" width="130">
             </el-table-column>
             <el-table-column label="属性">
                 <template scope="props">
@@ -73,8 +58,9 @@
                     {{ props.row.movieNames.join(' , ') }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column label="操作" width="200">
                 <template scope="scope">
+                    <el-button size="small" type="info" @click="playMusic(scope.row)">预览</el-button>
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
@@ -89,6 +75,11 @@
                            layout="total, prev, pager, next, jumper" :total="total">
             </el-pagination>
         </el-col>
+
+        <!--播放弹窗-->
+        <el-dialog :title="musicTitle" v-model="musicVisible" @close="musicClose()">
+            <div style="text-align: center;" v-html="musicHtml"></div>
+        </el-dialog>
 
         <!--新建/编辑-->
         <el-dialog :title="formTitle" v-model="formVisible" :close-on-click-modal="false">
@@ -263,7 +254,10 @@
                 fileUpload: {
                     percentage: 0,
                     name: ''
-                }
+                },
+                musicTitle:'音乐播放',
+                musicVisible: false,  //播放音乐界面 显示、隐藏
+                musicHtml: ''
             }
         },
         methods: {
@@ -306,11 +300,11 @@
                                 min = parseInt(item.duration / 60),
                                 h;
                             if (0 < min < 60) {
-                                html = min + ' 分 ' + s + ' 秒 ';
+                                html = min + ' 分 ' + s + ' 秒';
                             } else if (min >= 60) {
                                 h = parseInt(min / 60);
                                 min = min % 60;
-                                html = h + ' 小时 ' + min + ' 分 ' + s + ' 秒 ';
+                                html = h + ' 小时 ' + min + ' 分 ' + s + ' 秒';
                             }
                             item.duration = html;
                             return item;
@@ -362,6 +356,14 @@
                         this.catSelect = data.content;
                     }
                 });
+            },
+            playMusic(row){ //播放音乐
+                this.musicVisible = true;
+                this.musicTitle = row.name;
+                this.musicHtml = '<audio controls="controls" src="'+ row.musicUrl +'" autoplay="autoplay" preload="auto"></audio>';
+            },
+            musicClose(){
+                this.musicHtml = '';
             },
             showForm (index, row){ //显示表单
                 this.formVisible = true;

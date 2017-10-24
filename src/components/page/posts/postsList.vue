@@ -10,11 +10,25 @@
                     <el-input type="number" v-model="filters.uid" placeholder="用户ID"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-date-picker type="date" placeholder="开始时间" v-model="filters.start"
+                    <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
                                     style="width: 200px;" @change="setStart"></el-date-picker>
                     <span> - </span>
-                    <el-date-picker type="date" placeholder="结束时间" v-model="filters.end"
+                    <el-date-picker type="datetime" placeholder="结束时间" v-model="filters.end"
                                     style="width: 200px;" @change="setEnd"></el-date-picker>
+                </el-form-item>
+                <el-form-item>
+                    <el-select v-model="filters.isDel" @change="fetchList"  style="width: 110px;">
+                        <el-option label="全部状态" value=""></el-option>
+                        <el-option label="显示" value="0"></el-option>
+                        <el-option label="隐藏" value="1"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-select v-model="filters.isEssence" @change="fetchList"  style="width: 110px;">
+                        <el-option label="全部状态" value=""></el-option>
+                        <el-option label="非精" value="0"></el-option>
+                        <el-option label="精华" value="1"></el-option>
+                    </el-select>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="fetchList">查询</el-button>
@@ -125,7 +139,9 @@
                     kw: '',
                     uid: '',
                     start: '',
-                    end: ''
+                    end: '',
+                    isDel: '',
+                    isEssence: ''
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
@@ -153,6 +169,8 @@
                     uid: this.filters.uid,
                     startTime: this.filters.start,
                     endTime: this.filters.end,
+                    isDel: this.filters.isDel,
+                    isEssence: this.filters.isEssence,
                     kw: '',
                     id: ''
                 };
@@ -210,7 +228,7 @@
                 para.append("vpId", row.id);
                 para.append("num", 100);
                 axiosPost('postsLike', para).then((res) => {
-                    let { error, status } = res;
+                    let { error, status, data } = res;
                     if (status !== 0) {
                         if (status == 403) { //返回403时，重新登录
                             sessionStorage.removeItem('user');
@@ -219,7 +237,7 @@
                             this.$message.error(error);
                         }
                     } else {
-                        this.$message.success('点赞成功');
+                        this.$message.success(data);
                     }
                 });
             },

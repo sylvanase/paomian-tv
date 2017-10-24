@@ -47,7 +47,7 @@
         </el-col>
 
         <!--新建/编辑-->
-        <el-dialog :title="formTitle" v-model="formVisible">
+        <el-dialog :title="formTitle" v-model="formVisible" @close="closeForm()">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="资源名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
@@ -83,7 +83,6 @@
     export default {
         data() {
             return {
-                api: 'video_resource',
                 filters: { //列表筛选条件
                     kw: ''
                 },
@@ -103,6 +102,7 @@
                 },
                 //新增界面数据
                 formData: {
+                    id: '',
                     name: '',
                     videoObj: ''
                 },
@@ -179,11 +179,6 @@
                 this.formVisible = true;
                 if (index == -1) { //索引为-1时，新增操作
                     this.formTitle = '新增视频资源';
-                    this.formData = {
-                        id: '',
-                        name: '',
-                        videoObj: ''
-                    };
                 } else {
                     this.formTitle = '编辑视频资源';
                     this.formData = {
@@ -192,11 +187,21 @@
                         videoObj: row.objectKey
                     };
                 }
+
+            },
+            closeForm(){ //关闭表格页时，重置所有表格的参数
+                this.formData = {
+                    id: '',
+                    name: '',
+                    videoObj: ''
+                };
                 let clearFile = document.getElementById('videoFile');
                 if (clearFile) {
-                    clearFile.outerHTML = clearFile.outerHTML;
+                    //clearFile.outerHTML = clearFile.outerHTML;
+                    clearFile.value = '';
                 }
                 this.fileUpload.percentage = 0;
+                this.$refs['formData'].resetFields();
             },
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
@@ -289,12 +294,19 @@
                 this.coverHtml = '';
             },
             changeFile(){ //更改视频文件，名称、上传进度、videoObj 重置
-                let file = document.getElementsByName('file')[0].files[0];
+                let file = document.getElementById('videoFile').files[0];
                 this.fileUpload.percentage = 0;
                 this.formData.videoObj = '';
+                let reg = /\.\w+$/;
+                if (file) {
+                    let str = file.name;
+                    this.formData.name = str.replace(reg, '');
+                } else {
+                    this.formData.name = '';
+                }
             },
             submitUploadKs(){ //文件上传至金山
-                let file = document.getElementsByName('file')[0].files[0];
+                let file = document.getElementById('videoFile').files[0];
                 let _self = this;
                 if (!file) { //未选择文件
                     _self.$message({
