@@ -59,7 +59,8 @@
 </template>
 
 <script type="es6">
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import util from '../../../api/util'
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
 
     export default {
         data() {
@@ -96,28 +97,24 @@
             },
             //获取列表
             fetchList() {
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    type: this.filters.type
+                    type: _self.filters.type
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentCatList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content;
-                        this.tableLoading = false;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('contentCatList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             showForm (index, row){ //显示表单
                 this.formVisible = true;
@@ -140,56 +137,43 @@
                 }
             },
             formSubmit(){ //提交表格
-                this.$refs.formData.validate((valid) => {
+                let _self = this;
+                _self.$refs.formData.validate((valid) => {
                     if (valid) {
-                        this.formLoading = true;
-                        let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
-                        para.append("type", this.formData.type);
-                        axiosPost('contentCatEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        let paras = new FormData();
+                        paras.append("id", _self.formData.id);
+                        paras.append("name", _self.formData.name);
+                        paras.append("type", _self.formData.type);
+                        _self.formLoading = true;
+                        httpPost('contentCatEdit', paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
                     }
                 });
             },
             //删除表格数据
             handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id, type: row.categoryTypeEnum};
-                    axiosDel('contentCatDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
-                });
+                let _self = this;
+                let paras = {id: row.id, type: row.categoryTypeEnum};
+                _self.tableLoading = true;
+                httpDel('contentCatDel', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         mounted() {

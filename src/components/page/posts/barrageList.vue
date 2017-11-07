@@ -56,7 +56,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
 
     export default {
         components: {
@@ -88,27 +88,24 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('barrageList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content;
-                        this.tableLoading = false;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.barrageList = true;
+                httpGet('barrageList', paras, _self, function (res) {
+                    _self.barrageList = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
+
             },
             showForm (row){ //显示表单
                 this.formVisible = true;
@@ -120,27 +117,23 @@
                 this.formData = Object.assign({}, row);
             },
             formSubmit(){ //提交表格
-                this.formLoading = true;
-                let para = new FormData();
-                para.append("id", this.formData.id);
-                para.append("text", this.formData.text);
-                axiosPost('barrageEdit', para).then((res) => {
-                    this.formLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.$refs['formData'].resetFields();
-                        this.formVisible = false;
-                        this.fetchList();
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", _self.formData.id);
+                paras.append("text", _self.formData.text);
+                _self.formLoading = true;
+                httpPost('barrageEdit', paras, _self, function (res) {
+                    _self.formLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('提交成功');
+                        _self.$refs['formData'].resetFields();
+                        _self.formVisible = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         mounted() {

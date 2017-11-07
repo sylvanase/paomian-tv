@@ -168,44 +168,42 @@ a{text-decoration: none}
     margin-top: -7px;
 }
 
-/*Upload*/
-/*.pure-button{
-    width:150px;
-    height:40px;
-    line-height: 40px;
-    text-align: center;
-    color: #fff;
-    border-radius: 3px;
-}
-.g-core-image-corp-container .info-aside{
-    height:45px;
-}
-.el-upload--text {
-    background-color: #fff;
+/* 封面文件选择部分 */
+.avatar-uploader .el-upload {
     border: 1px dashed #d9d9d9;
     border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background-color: #fff;
     box-sizing: border-box;
     width: 360px;
     height: 180px;
     text-align: center;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
+    display: table-cell;
+    vertical-align: middle;
 }
-.el-upload--text .el-icon-upload {
-    font-size: 67px;
-    color: #97a8be;
-    margin: 40px 0 16px;
-    line-height: 50px;
+
+.avatar-uploader .el-upload:hover {
+    border-color: #20a0ff;
 }
-.el-upload--text {
-    color: #97a8be;
-    font-size: 14px;
+
+.avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 178px;
+    height: 178px;
+    line-height: 178px;
     text-align: center;
 }
-.el-upload--text em {
-    font-style: normal;
-}*/
+
+.avatar {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+    margin: 0 auto;
+}
+
 /*VueEditor*/
 .ql-container{
     min-height: 400px;

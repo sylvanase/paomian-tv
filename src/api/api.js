@@ -1,14 +1,36 @@
 import axios from 'axios';
+import qs from 'qs';
+import { Message } from 'element-ui';
+import { Notification } from 'element-ui'
 
 let base = '';
 let header = {
     'content-type': 'application/json'
 };
 
-
+// axios请求基础配置
 axios.defaults.headers.get['Content-Type'] = 'application/json';
+// axios.defaults.timeout = 60000;
+axios.defaults.baseURL = '';
+axios.interceptors.request.use(config => { // 请求拦截器
+    return config
+}, error => {
+    return Promise.reject(error)
+})
+
+axios.interceptors.response.use(response => { // 响应拦截器
+    return response
+}, error => {
+    // 返回接口返回的错误信息
+    return Promise.resolve(error.response)
+})
 
 let api = { //接口地址
+    login: '/login/ajax', // 登录
+    logout: '/logout/ajax', // 登出
+    logCode: '/sys/send_email', // 验证码获取
+
+
     contentSourceList: '/content/video_resource/list', //内容资源列表
     contentSourceDel: '/content/video_resource/delete', //内容资源列表删除
     contentSourceEdit: '/ks3/video_upload_edit', //内容资源编辑
@@ -73,8 +95,6 @@ let api = { //接口地址
     userMasterLike: '/user/master/video/like/list', //主账号下小号点赞列表
 
 
-
-
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表
 
@@ -111,6 +131,16 @@ let api = { //接口地址
     apkStatus: '/sys/version/apk_update_status', //安卓包状态控制
     apkAdd: '/sys/version/apk_add', //安卓包上传
 
+    launchBannerList: '/ad/launch/list', // 开机页list
+    launchBannerAdd: '/ad/launch/add', // 新增开机页banner
+    launchBannerUpdate: '/ad/launch/update', // 新增开机页banner
+    topicBannerList: '/ad/banner/list', // 话题页list
+    topicBannerAdd: '/ad/banner/add', // 新增话题页banner
+    topicBannerUpdate: '/ad/banner/update', // 新增话题页banner
+    squareBannerList: '/ad/square/list', // 广场页list
+    squareBannerAdd: '/ad/square/add', // 新增广场页banner
+    squareBannerUpdate: '/ad/square/update', // 新增广场页banner
+
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传
@@ -120,29 +150,173 @@ let api = { //接口地址
     musicUpload: 'ks3/music_upload', //音乐文件上传
 
 
-
 };
 
-export const axiosGet = (type, params) => { //get请求
-    return axios.get(`${base}` + api[type], {params: params}).then(res => res.data);
-};
+function specialCodeHandle(vm, res, callback) { // 服务器端特殊的返回code统一处理
+    if (res.data.status == 403) { //403表示登录过期，需要重新登录
+        console.log('session过期，跳转到登录页');
+        sessionStorage.removeItem('user');
+        vm.$router.push('/login');
+        return false;
+    }
+    if (callback) {
+        callback(res);
+        return;
+    }
+    if (vm.logining) {
+        vm.logining = false
+    }
+    if (vm.tableLoading) {
+        vm.tableLoading = false
+    }
+    if (vm.formLoading) {
+        vm.formLoading = false
+    }
+    if (vm.showLoading) {
+        vm.showLoading = false
+    }
+    if (res.data.error.length > 20) {
+        Notification.error({
+            title: '接口请求报错',
+            message: res.data.error,
+            duration: 0,
+            offset: 150
+        });
+    } else {
+        vm.$message.error(res.data.error); //不是特殊的code，显示返回的错误信息
+    }
+}
 
-export const axiosPost = (type, params) => { //post请求
-    return axios.post(`${base}` + api[type], params, header).then(res => res.data);
-};
-
-export const axiosDel = (type, params) => { //del请求
-    return axios.delete(`${base}` + api[type], {params: params}).then(res => res.data);
-};
+function httpErrorHandle(vm, res) { // 处理http的错误状态
+    if (vm.logining) {
+        vm.logining = false
+    }
+    if (vm.tableLoading) {
+        vm.tableLoading = false
+    }
+    if (vm.formLoading) {
+        vm.formLoading = false
+    }
+    if (vm.showLoading) {
+        vm.showLoading = false
+    }
+    Notification.error({
+        title: 'HTTP请求错误',
+        message: res.data,
+        duration: 0,
+        offset: 150
+    });
+}
 
 /*
- * 登录、登出
- * */
-export const requestLogin = params => {
-    return axios.post(`${base}/login/ajax`, params, header).then(res => res.data);
+* type：根据type获取接口地址
+* params：请求时的参数
+* vm： vue实例
+* callback：请求成功回调
+* errorBack：请求失败时回调，如果没有定义，则进行默认操作
+*
+* */
+
+
+export const httpGet = (type, params, vm, callback, errorBack) => { //封装的axios的get方法
+    return axios({
+        method: 'get',
+        url: api[type],
+        params: params, // get 请求时带的参数
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(
+        (res) => {
+            if (!res) { // 一直未返回res，进行提示
+                Notification.error({
+                    title: '错误',
+                    message: '已经超过一分钟服务端没有任何返回',
+                    duration: 0,
+                    offset: 150
+                });
+                console.error(res)
+                return false
+            }
+            if (res.status >= 200 && res.status < 300) { // http状态码在200到300间正常调用callback
+                let resCode = res.data.status // 检测code码，对特殊定义的code进行处理
+                if (resCode == 0) { //code值为0，操作成功
+                    callback(res.data)
+                } else {
+                    specialCodeHandle(vm, res, errorBack) //处理特殊含义code值
+                }
+            } else {
+                httpErrorHandle(vm, res) //处理http错误
+            }
+        }
+    )
 };
 
-export const loginOut = (type, params) => {
-    return axios.get(`${base}/logout/ajax`).then(res => res.data);
+export const httpPost = (type, params, vm, callback, errorBack) => { //封装的axios的POST方法
+    return axios({
+        method: 'post',
+        url: api[type],
+        data: params, // post 请求时带的参数
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(
+        (res) => {
+            if (!res) { // 一直未返回res，进行提示
+                Notification.error({
+                    title: '错误',
+                    message: '已经超过一分钟服务端没有任何返回',
+                    duration: 0,
+                    offset: 150
+                });
+                console.error(res)
+                return false
+            }
+            if (res.status >= 200 && res.status < 300) { // http状态码在200到300间正常调用callback
+                let resCode = res.data.status; // 检测code码，对特殊定义的code进行处理
+                if (resCode == 0) { //code值为0，操作成功
+                    callback(res.data)
+                } else {
+                    specialCodeHandle(vm, res, errorBack);
+                }
+            } else {
+                httpErrorHandle(vm, res) //处理http错误
+            }
+        }
+    )
+};
+
+export const httpDel = (type, params, vm, callback, errorBack) => { //封装的axios的get方法
+    return axios({
+        method: 'delete',
+        url: api[type],
+        params: params, // get 请求时带的参数
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(
+        (res) => {
+            if (!res) { // 一直未返回res，进行提示
+                Notification.error({
+                    title: '错误',
+                    message: '已经超过一分钟服务端没有任何返回',
+                    duration: 0,
+                    offset: 150
+                });
+                console.error(res)
+                return false
+            }
+            if (res.status >= 200 && res.status < 300) { // http状态码在200到300间正常调用callback
+                let resCode = res.data.status // 检测code码，对特殊定义的code进行处理
+                if (resCode == 0) { //code值为0，操作成功
+                    callback(res.data)
+                } else {
+                    specialCodeHandle(vm, res, errorBack);
+                }
+            } else {
+                httpErrorHandle(vm, res) //处理http错误
+            }
+        }
+    )
 };
 

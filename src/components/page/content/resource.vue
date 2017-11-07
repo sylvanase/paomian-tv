@@ -77,7 +77,8 @@
     </section>
 </template>
 <script type="es6">
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import util from '../../../api/util'
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
@@ -123,57 +124,36 @@
             },
             //获取列表
             fetchList() {
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: ''
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    paras.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentSourceList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) {
-                            var size = item.size / 1024;//计算kb
-                            if (size >= 1024) {
-                                size = size / 1024; //计算M
-                                size = size.toFixed(2) + " M";
-                            } else {
-                                size = size.toFixed(2) + ' kb';
-                            }
-                            item.size = size;
-
-                            var html, //计算时长
-                                s = (item.duration % 60).toFixed(1),
-                                min = parseInt(item.duration / 60),
-                                h;
-                            if (0 < min < 60) {
-                                html = min + ' 分 ' + s + ' 秒 ';
-                            } else if (min >= 60) {
-                                h = parseInt(min / 60);
-                                min = min % 60;
-                                html = h + ' 小时 ' + min + ' 分 ' + s + ' 秒 ';
-                            }
-                            item.duration = html;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('contentSourceList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) {
+                            item.size = util.fileSizeFormat(item.size);
+                            item.duration = util.fileDuration(item.duration);
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
+
+
             },
             showForm (index, row){ //显示表单 资源库只有新增操作
                 this.formVisible = true;
@@ -206,64 +186,46 @@
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        //不为编辑时必须选择文件
-                        if (this.formData.videoObj == '' && this.formData.id == '') {
-                            this.$message.warning('请选择视频文件');
+                        let _self = this;
+                        if (_self.formData.videoObj == '' && _self.formData.id == '') {
+                            _self.$message.warning('请选择视频文件');
                             return;
                         }
-                        this.formLoading = true;
                         let paras = new FormData(),
                             api = 'videoUpload';
-                        paras.append("objectKey", this.formData.videoObj);
-                        paras.append("name", this.formData.name);
-                        if (this.formData.id !== '') { //id不为空，提交参数增加id，且更改接口地址
-                            paras.append("id", this.formData.id);
+                        paras.append("objectKey", _self.formData.videoObj);
+                        paras.append("name", _self.formData.name);
+                        if (_self.formData.id !== '') { //id不为空，提交参数增加id，且更改接口地址
+                            paras.append("id", _self.formData.id);
                             api = 'contentSourceEdit';
                         }
-                        axiosPost(api, paras).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields(); //重置表单并移除校验结果
-                                this.formVisible = false;
-                                this.fetchList();
+                        _self.formLoading = true;
+                        httpPost(api, paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields(); //重置表单并移除校验结果
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
-
+                        })
                     }
                 });
             },
-            //删除表格数据
-            handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id};
-                    axiosDel('contentSourceDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
-                });
+            handleTableDel: function (index, row) { //删除表格数据
+                let _self = this;
+                _self.tableLoading = true;
+                httpDel('contentSourceDel', {id: row.id}, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             playVideo(index, row){ //播放视频
                 this.videoVisible = true;
@@ -318,24 +280,16 @@
 
                 const isMp4 = file.type === 'video/mp4';
                 if (!isMp4) {
-                    this.$message.error('只可以上传mp4格式');
+                    _self.$message.error('只可以上传mp4格式');
                     return;
                 }
-                let para = {
+                let paras = {
                     contentType: file.type,
                     fileName: file.name
                 };
-                //服务器端获取上传所需签名
-                axiosGet('videoSign', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            _self.$router.push('/login');
-                        } else {
-                            _self.$message.error(error);
-                        }
-                    } else {
+                httpGet('videoSign', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
                         Ks3.Ks3.config.baseUrl = data.url;
                         Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
                         Ks3.Ks3.config.bucket = data.bucketName;
@@ -356,8 +310,10 @@
                                 _self.formData.videoObj = data.formParam.key;
                             }
                         });
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
                 function progressFunction(e) {
                     if (e.lengthComputable) {
                         let percent = parseInt((e.loaded / e.total) * 100);

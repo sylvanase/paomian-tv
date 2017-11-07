@@ -55,7 +55,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
 
     export default {
         data() {
@@ -91,37 +91,33 @@
             },
             //获取列表
             fetchList() {
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: ''
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    paras.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentMovieList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) {
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('contentMovieList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) {
                             item.createTime = util.timestampFormat(item.createTime);
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             showForm (index, row){ //显示表单
                 this.formVisible = true;
@@ -137,55 +133,41 @@
                 }
             },
             formSubmit(){ //提交表格
-                this.$refs.formData.validate((valid) => {
+                let _self = this;
+                _self.$refs.formData.validate((valid) => {
                     if (valid) {
-                        this.formLoading = true;
-                        let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
-                        axiosPost('contentMovieEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                }else{
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        _self.formLoading = true;
+                        let paras = new FormData();
+                        paras.append("id", this.formData.id);
+                        paras.append("name", this.formData.name);
+                        _self.formLoading = true;
+                        httpPost('contentMovieEdit', paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
                     }
                 });
             },
             //删除表格数据
             handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id};
-                    axiosDel('contentMovieDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            }else{
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
-                });
+                let _self = this;
+                _self.tableLoading = true;
+                httpDel('contentMovieDel', {id: row.id}, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         mounted() {

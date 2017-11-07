@@ -58,6 +58,11 @@
                     {{ props.row.movieNames.join(' , ') }}
                 </template>
             </el-table-column>
+            <el-table-column label="使用统计">
+                <template scope="scope">
+                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount : '0'}}人
+                </template>
+            </el-table-column>
             <el-table-column label="操作" width="200">
                 <template scope="scope">
                     <el-button size="small" type="info" @click="playMusic(scope.row)">预览</el-button>
@@ -82,21 +87,20 @@
         </el-dialog>
 
         <!--新建/编辑-->
-        <el-dialog :title="formTitle" v-model="formVisible" :close-on-click-modal="false">
+        <el-dialog :title="formTitle" v-model="formVisible" :close-on-click-modal="false" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="音乐名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
                 <el-form-item label="音乐封面" prop="coverId">
-                    <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                               action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false">
-                        <img v-if="formData.coverImgUrl" v-model="formData.coverId" :src="formData.coverImgUrl"
-                             class="avatar">
-                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                    </el-upload>
-                    <el-button :loading="avatarLoading" class="mb-10" type="primary" size="small" @click="submitUpload">
-                        上传
-                    </el-button>
+                    <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                        <div class="el-upload el-upload--text">
+                            <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
+                            <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
+                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
+                            <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                        </div>
+                    </div>
                     <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
                 </el-form-item>
                 <el-form-item label="音乐文件" prop="musicId" required>
@@ -182,7 +186,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
@@ -267,95 +271,70 @@
             },
             //获取列表
             fetchList() {
+                let _self = this;
                 let para = {
-                    type: this.filters.type,
-                    attrId: this.filters.attr,
-                    catId: this.filters.category,
+                    type: _self.filters.type,
+                    attrId: _self.filters.attr,
+                    catId: _self.filters.category,
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: ''
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    para.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    para.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentMusicList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) {
-                            var html, //计算时长
-                                s = (item.duration % 60).toFixed(1),
-                                min = parseInt(item.duration / 60),
-                                h;
-                            if (0 < min < 60) {
-                                html = min + ' 分 ' + s + ' 秒';
-                            } else if (min >= 60) {
-                                h = parseInt(min / 60);
-                                min = min % 60;
-                                html = h + ' 小时 ' + min + ' 分 ' + s + ' 秒';
-                            }
-                            item.duration = html;
+                para.offset = (_self.page - 1) * para.size;
+                _self.tableLoading = true;
+                httpGet('contentMusicList', para, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) {
+                            item.duration = util.fileDuration(item.duration);
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             attrList(){
+                let _self = this;
                 let para = {
                     type: '0',
                     status: '',
                     offset: 0,
                     size: 99999
                 };
-                this.tableLoading = true;
-                axiosGet('contentAttrList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.attrSelect = data.content;
+                httpGet('contentAttrList', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.attrSelect = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             catList(){
+                let _self = this;
                 let para = {
                     type: '0',
                     status: '',
                     offset: 0,
                     size: 99999
                 };
-                this.tableLoading = true;
-                axiosGet('contentCatList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.catSelect = data.content;
+                httpGet('contentCatList', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.catSelect = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             playMusic(row){ //播放音乐
                 this.musicVisible = true;
@@ -366,163 +345,159 @@
                 this.musicHtml = '';
             },
             showForm (index, row){ //显示表单
-                this.formVisible = true;
+                let _self = this;
+                _self.formVisible = true;
                 if (index == -1) { //索引为-1时，新增操作
-                    this.formTitle = '新增音乐';
-                    this.formData = {
-                        id: '',
-                        name: '',
-                        coverImgUrl: '', //封面url
-                        coverId: '',
-                        musicId: '', //音乐id
-                        musicUrl: '',
-                        originalSource: '', //出处
-                        movieIds: [], //电影id及名称
-                        movieNames: [],
-                        attributeIds: [], //属性id及名称
-                        attributeNames: [],
-                        categoryIds: [], //分类id及名称
-                        categoryNames: [],
-                        tagIds: [], //标签id及名称
-                        tagNames: [],
-                        keyword: []
-                    };
-                    this.searchMovie.list = [];
-                    this.searchAttr.list = [];
-                    this.searchCat.list = [];
-                    this.searchTag.list = [];
+                    _self.formTitle = '新增音乐';
                 } else {
-                    this.formTitle = '编辑音乐';
-                    let para = {id: row.id};
-                    axiosGet('contentMusicDetail', para).then((res) => {
-                        let { error, status,data } = res;
-                        this.formData.coverImgUrl = '';
-                        this.formData = Object.assign({}, data);
-                        if (data.keyword != '') {
-                            this.formData.keyword = data.keyword.split(' ');
-                        } else {
-                            this.formData.keyword = [];
-                        }
-                        this.searchMovie.list = [];
-                        this.searchAttr.list = [];
-                        this.searchCat.list = [];
-                        this.searchTag.list = [];
-                        //生成下拉框已选项 电影、属性、分类
-                        if (this.formData.movieIds.length > 0) {
-                            let array = this.formData.movieIds;
-                            let arrayName = this.formData.movieNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchMovie.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                    _self.formTitle = '编辑音乐';
+                    httpGet('contentMusicDetail', {id: row.id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            _self.formData.coverImgUrl = '';
+                            _self.formData = Object.assign({}, data);
+                            if (data.keyword != '') {
+                                _self.formData.keyword = data.keyword.split(' ');
+                            } else {
+                                _self.formData.keyword = [];
                             }
-                        }
-                        if (this.formData.attributeIds.length > 0) {
-                            let array = this.formData.attributeIds;
-                            let arrayName = this.formData.attributeNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchAttr.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            _self.searchMovie.list = [];
+                            _self.searchAttr.list = [];
+                            _self.searchCat.list = [];
+                            _self.searchTag.list = [];
+                            //生成下拉框已选项 电影、属性、分类
+                            if (_self.formData.movieIds.length > 0) {
+                                let array = _self.formData.movieIds;
+                                let arrayName = _self.formData.movieNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchMovie.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
-                        }
-                        if (this.formData.categoryIds.length > 0) {
-                            let array = this.formData.categoryIds;
-                            let arrayName = this.formData.categoryNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchCat.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            if (_self.formData.attributeIds.length > 0) {
+                                let array = _self.formData.attributeIds;
+                                let arrayName = _self.formData.attributeNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchAttr.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
-                        }
-                        if (this.formData.tagIds.length > 0) {
-                            let array = this.formData.tagIds;
-                            let arrayName = this.formData.tagNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchTag.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            if (_self.formData.categoryIds.length > 0) {
+                                let array = _self.formData.categoryIds;
+                                let arrayName = _self.formData.categoryNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchCat.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
+                            if (_self.formData.tagIds.length > 0) {
+                                let array = _self.formData.tagIds;
+                                let arrayName = _self.formData.tagNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchTag.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
+                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 }
                 let clearFile = document.getElementById('musicFile');
                 if (clearFile) {
                     clearFile.outerHTML = clearFile.outerHTML;
                 }
-                this.fileUpload.percentage = 0;
+                _self.fileUpload.percentage = 0;
+            },
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    coverImgUrl: '', //封面url
+                    coverId: '',
+                    musicId: '', //音乐id
+                    musicUrl: '',
+                    originalSource: '', //出处
+                    movieIds: [], //电影id及名称
+                    movieNames: [],
+                    attributeIds: [], //属性id及名称
+                    attributeNames: [],
+                    categoryIds: [], //分类id及名称
+                    categoryNames: [],
+                    tagIds: [], //标签id及名称
+                    tagNames: [],
+                    keyword: []
+                };
+                _self.searchMovie.list = [];
+                _self.searchAttr.list = [];
+                _self.searchCat.list = [];
+                _self.searchTag.list = [];
+                document.getElementById('cover').value = '';
             },
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        if (this.formData.musicId == undefined || this.formData.musicId == '') {
-                            this.$message.warning('请选择音乐文件，并上传');
+                        let _self = this;
+                        if (_self.formData.musicId == undefined || _self.formData.musicId == '') {
+                            _self.$message.warning('请选择音乐文件，并上传');
                             return;
                         }
-                        this.formLoading = true;
+                        _self.formLoading = true;
                         let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
-                        para.append("coverId", this.formData.coverId);
-                        para.append("musicId", this.formData.musicId);
-                        para.append("originalSource", this.formData.originalSource);
-                        para.append("movieIds", this.formData.movieIds.join(','));
-                        para.append("attributeIds", this.formData.attributeIds.join(','));
-                        para.append("categoryIds", this.formData.categoryIds.join(','));
-                        para.append("tagIds", this.formData.tagIds.join(','));
-                        para.append("kw", this.formData.keyword.join(' '));
-                        axiosPost('contentMusicEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        para.append("id", _self.formData.id);
+                        para.append("name", _self.formData.name);
+                        para.append("coverId", _self.formData.coverId);
+                        para.append("musicId", _self.formData.musicId);
+                        para.append("originalSource", _self.formData.originalSource);
+                        para.append("movieIds", _self.formData.movieIds.join(','));
+                        para.append("attributeIds", _self.formData.attributeIds.join(','));
+                        para.append("categoryIds", _self.formData.categoryIds.join(','));
+                        para.append("tagIds", _self.formData.tagIds.join(','));
+                        para.append("kw", _self.formData.keyword.join(' '));
+                        httpPost('contentMusicEdit', para, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
 
                     }
                 });
             },
             //删除表格数据
             handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id};
-                    axiosDel('contentMusicDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
+                let _self = this;
+                _self.tableLoading = true;
+                httpDel('contentMusicDel', {id: row.id}, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
                 })
             },
             //搜索相关电影操作
             handleMovie(query){
-                this.searchMovie.loading = true;
+                let _self = this;
+                _self.searchMovie.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -534,15 +509,20 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentMovieList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchMovie.loading = false;
-                    this.searchMovie.list = data.content;
-                });
+                httpGet('contentMovieList', para, _self, function (res) {
+                    _self.searchMovie.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchMovie.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             //搜索属性
             handleAttr(query){
-                this.searchAttr.loading = true;
+                let _self = this;
+                _self.searchAttr.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -555,15 +535,20 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentAttrList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchAttr.loading = false;
-                    this.searchAttr.list = data.content;
-                });
+                httpGet('contentAttrList', para, _self, function (res) {
+                    _self.searchAttr.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchAttr.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             //搜索分类
             handleCat(query){
-                this.searchCat.loading = true;
+                let _self = this;
+                _self.searchCat.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -576,15 +561,20 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentCatList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchCat.loading = false;
-                    this.searchCat.list = data.content;
-                });
+                httpGet('contentCatList', para, _self, function (res) {
+                    _self.searchCat.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchCat.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             //搜索标签
             handleTag(query){
-                this.searchTag.loading = true;
+                let _self = this;
+                _self.searchTag.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -596,69 +586,50 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentTagList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchTag.loading = false;
-                    this.searchTag.list = data.content;
-                });
+                httpGet('contentTagList', para, _self, function (res) {
+                    _self.searchTag.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchTag.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
-            /*
-             * 封面选择相关操作
-             * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.coverImgUrl = file.url;
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
+            },
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('imgUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.coverId = data.id;
+                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
+                    }
+                }
             },
             resetCoverImg(){ //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
-            },
-            beforeAvatarUpload(file) { //上传前校验
-                const isType = file.type.substring(0, 5);
-                const isJPG = isType === 'image';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.warning('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.warning('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                let file = document.getElementsByName('file')[0].files;
-                if (file.length == 0) { //file为空，提示并返回
-                    this.$message.warning('请选择文件');
-                    return;
-                }
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                if (!this.beforeAvatarUpload(imgFile)) {
-                    return;
-                }
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('imgUpload',para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
-                    }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.coverId = res.id;
+                document.getElementById('cover').value = '';
             },
             /*
              * 关键字相关操作
@@ -703,22 +674,13 @@
                     this.$message.error('只可以上传mp3格式');
                     return;
                 }
-
                 let para = {
                     contentType: file.type,
                     fileName: file.name
                 };
-                //服务器端获取上传所需签名
-                axiosGet('musicSign', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            _self.$router.push('/login');
-                        } else {
-                            _self.$message.error(error);
-                        }
-                    } else {
+                httpGet('musicSign', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
                         Ks3.Ks3.config.baseUrl = data.url;
                         Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
                         Ks3.Ks3.config.bucket = data.bucketName;
@@ -741,24 +703,21 @@
                                 let paras = new FormData();
                                 paras.append("objectKey", data.formParam.key);
                                 paras.append("name", file.name);
-                                axiosPost('musicUpload', paras).then((res) => {
-                                    let { error, status,data } = res;
-                                    if (status !== 0) {
-                                        if (status == 403) { //返回403时，重新登录
-                                            sessionStorage.removeItem('user');
-                                            _self.$router.push('/login');
-                                        } else {
-                                            _self.$message.error(error);
-                                        }
-                                    } else {
+                                httpPost('musicUpload', paras, _self, function (res) {
+                                    try {
+                                        let { error, status,data } = res;
                                         _self.formData.musicId = data.id;
                                         _self.formData.musicUrl = url;
+                                    } catch (error) {
+                                        util.jsErrNotify(error);
                                     }
-                                });
+                                })
                             }
                         });
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
                 function progressFunction(e) {
                     if (e.lengthComputable) {
                         let percent = parseInt((e.loaded / e.total) * 100);
@@ -792,40 +751,4 @@
         width: 100%;
     }
 
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
-
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 </style>

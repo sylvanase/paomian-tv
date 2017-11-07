@@ -73,7 +73,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
     export default {
         name: 'vFollow',
         props: ['value', 'userId'],
@@ -103,31 +103,27 @@
                 this.visible = false;
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    uid: this.userId
+                    uid: _self.userId
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('userFollowList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('userFollowList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleCurrentChange(val) { //翻页
                 this.page = val;
@@ -135,48 +131,38 @@
             },
             //解除用户关注关系
             userDel: function (row) {
-                this.tableLoading = true;
+                let _self = this;
                 let paras = {
-                    uid: this.userId,
+                    uid: _self.userId,
                     careId: row.id
                 };
-                axiosDel('userFollowDel', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('删除成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpDel('userFollowDel', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             //运营关注用户
             careUser: function (row) {
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("uid", row.id);
                 paras.append("status", Number(!row.userCare));
-                axiosPost('userCare', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpGet('userCare', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             userDetail(row){ //查看用户详情
                 this.$emit('preview', row);

@@ -67,7 +67,7 @@
         </el-col>
 
         <!--新建/编辑-->
-        <el-dialog :title="formTitle" v-model="formVisible">
+        <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="类型" prop="type" required>
                     <el-select v-model="formData.type" :disabled="formSelect" placeholder="请选择类型">
@@ -79,16 +79,15 @@
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
                 <el-form-item label="属性图标" prop="iconId" required style="margin-bottom: -20px;">
-                    <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                               action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false"
-                               :before-upload="beforeAvatarUpload">
-                        <img v-if="formData.iconUrl" v-model="formData.iconId" :src="formData.iconUrl"
-                             class="avatar">
-                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                    </el-upload>
-                    <el-button :loading="avatarLoading" class="mb-10" type="primary" size="small" @click="submitUpload">
-                        上传
-                    </el-button>
+                    <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                        <div class="el-upload el-upload--text">
+                            <i v-show="avatarLoading" class="el-icon-loading avatar-uploader-icon"></i>
+                            <i v-show="!formData.iconUrl && !avatarLoading"
+                               class="el-icon-plus avatar-uploader-icon"></i>
+                            <img v-show="formData.iconUrl && !avatarLoading" :src="formData.iconUrl" class="avatar">
+                            <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                        </div>
+                    </div>
                     <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
                 </el-form-item>
             </el-form>
@@ -101,7 +100,8 @@
 </template>
 
 <script type="es6">
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import util from '../../../api/util'
+    import { httpGet, httpDel, httpPost } from '../../../api/api';
 
     export default {
         data() {
@@ -135,52 +135,75 @@
                     iconUrl: '',
                     iconId: ''
                 },
-                avatarLoading: false,
-                avatarDisabled: false
+                avatarLoading: false
             }
         },
         methods: {
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
+            },
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('imgUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.iconId = data.id;
+                                _self.formData.iconUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
+                    }
+                }
+            },
+            resetCoverImg(){ //删除封面
+                this.formData.iconUrl = '';
+                this.formData.iconId = '';
+                document.getElementById('cover').value = '';
+            },
             handleCurrentChange(val) { //翻页
                 this.page = val;
                 this.fetchList();
             },
             //获取列表
             fetchList() {
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    type: this.filters.type,
-                    status: this.filters.status
+                    type: _self.filters.type,
+                    status: _self.filters.status
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentAttrList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content;
-                        this.tableLoading = false;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('contentAttrList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             showForm (index, row){ //显示表单
                 this.formVisible = true;
                 if (index == -1) { //索引为-1时，新增操作
                     this.formTitle = '新增属性';
-                    this.formData = {
-                        id: '',
-                        name: '',
-                        type: '0',
-                        iconUrl: '',
-                        iconId: ''
-                    };
                     this.formSelect = false;
                 } else {
                     this.formTitle = '编辑属性';
@@ -198,29 +221,29 @@
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        this.formLoading = true;
-                        let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
-                        para.append("type", this.formData.type);
-                        para.append("iconId", this.formData.iconId);
-                        axiosPost('contentAttrEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        let _self = this;
+                        let paras = new FormData();
+                        paras.append("id", _self.formData.id);
+                        paras.append("name", _self.formData.name);
+                        paras.append("type", _self.formData.type);
+                        paras.append("iconId", _self.formData.iconId);
+                        _self.formLoading = true;
+                        if (_self.formData.iconId == '') {
+                            _self.$message.warning('请选择属性图标');
+                            return false;
+                        }
+                        httpPost('contentAttrEdit', paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
                     }
                 });
             },
@@ -229,121 +252,62 @@
                 this.$confirm('确认删除该记录吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id, type: row.attributeTypeEnum};
-                    axiosDel('contentAttrDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
+                    let _self = this;
+                    let paras = {id: row.id, type: row.attributeTypeEnum};
+                    _self.tableLoading = true;
+                    httpDel('contentAttrDel', paras, _self, function (res) {
+                        _self.tableLoading = false;
+                        try {
+                            let { error, status,data } = res;
+                            _self.$message.success('删除成功');
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 });
             },
             handleTableLine(index, row){
-                let para = new FormData();
-                para.append("id", row.id);
-                para.append("status", Number(!row.status));
-                para.append("type", row.attributeTypeEnum);
-                axiosPost('contentAttrStatus', para).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("status", Number(!row.status));
+                paras.append("type", row.attributeTypeEnum);
+                httpPost('contentAttrStatus', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleTableShift(row, operate){
-                let para = new FormData();
-                para.append("id", row.id);
-                para.append("operate", operate);
-                para.append("type", row.attributeTypeEnum);
-                para.append("currRank", row.priority);
-                axiosPost('contentAttrShift', para).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("operate", operate);
+                paras.append("type", row.attributeTypeEnum);
+                paras.append("currRank", row.priority);
+                httpPost('contentAttrShift', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
-            /*
-             * 封面选择相关操作
-             * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.iconUrl = file.url;
-            },
-            resetCoverImg(){ //删除封面
-                this.formData.iconUrl = '';
-                this.formData.iconId = '';
-            },
-            beforeAvatarUpload(file) { //上传前校验
-                const isJPG = file.type === 'image/jpeg';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.error('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.error('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                let file = this.formData.iconUrl;
-                if (!file) { //file为空，提示并返回
-                    this.$message.error('请选择文件');
-                    return;
-                }
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('imgUpload',para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
-                    }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.iconId = res.id;
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    type: '0',
+                    iconUrl: '',
+                    iconId: ''
+                };
+                document.getElementById('cover').value = '';
             }
         },
         mounted() {
@@ -354,41 +318,5 @@
 </script>
 
 <style>
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
-
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 
 </style>

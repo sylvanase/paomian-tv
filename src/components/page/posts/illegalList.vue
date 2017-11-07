@@ -38,7 +38,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
 
     export default {
         data() {
@@ -58,26 +58,22 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('illegalList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('illegalList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
-                            if (item.type == 0) {
+                            item.type = util.illegalType(item.type);
+                            /*if (item.type == 0) {
                                 item.type = '低俗内容';
                             } else if (item.type == 1) {
                                 item.type = '违法行为';
@@ -85,12 +81,13 @@
                                 item.type = '垃圾广告';
                             } else {
                                 item.type = '尚未定义';
-                            }
+                            }*/
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             playVideo(row){ //播放视频
                 this.videoVisible = true;
@@ -101,25 +98,21 @@
                 this.videoHtml = '';
             },
             postsDel(row){ //删除帖子
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", row.vpId);
                 paras.append("status", Number(!row.isDel));
-                axiosPost('illegalStatus', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpPost('illegalStatus', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         mounted() {

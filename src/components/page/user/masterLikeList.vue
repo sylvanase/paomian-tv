@@ -25,7 +25,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet} from '../../../api/api';
+    import { httpGet} from '../../../api/api';
     export default {
         name: 'vVideo',
         props: ['value', 'masterData'],
@@ -56,31 +56,27 @@
                 this.visible = false;
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    masterUid: this.masterData.uid
+                    masterUid: _self.masterData.uid
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('userMasterLike', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('userMasterLike', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleCurrentChange(val) { //翻页
                 this.page = val;

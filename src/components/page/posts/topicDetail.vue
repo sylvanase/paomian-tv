@@ -1,5 +1,5 @@
 <template>
-    <el-dialog title="话题详情" :value="value" v-model="visible">
+    <el-dialog title="话题详情" :value="value" v-model="visible" @close="resetFormData">
         <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" v-loading="showLoading">
             <el-form-item label="话题名称" prop="name">
                 <el-input v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
@@ -12,15 +12,14 @@
                 <el-switch on-text="显示" off-text="隐藏" v-model="formData.del" @change="timeStatus"></el-switch>
             </el-form-item>
             <el-form-item label="背景海报" prop="coverId">
-                <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                           action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false">
-                    <img v-if="formData.coverImgUrl" v-model="formData.coverId" :src="formData.coverImgUrl"
-                         class="avatar">
-                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                </el-upload>
-                <el-button :loading="avatarLoading" class="mb-10" type="primary" size="small" @click="submitUpload">
-                    上传
-                </el-button>
+                <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                    <div class="el-upload el-upload--text">
+                        <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
+                        <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
+                        <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
+                        <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                    </div>
+                </div>
                 <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
             </el-form-item>
             <el-form-item label="显示时间">
@@ -55,7 +54,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'topicData'],
@@ -64,14 +63,8 @@
                 visible: false, //默认隐藏
                 showLoading: false,
                 formLoading: false,
-                formRules: {
-                    /*name: [
-                     {required: true, message: '请输入用户昵称', trigger: 'blur'},
-                     {min: 1, max: 32, message: '长度在 1 到 32 个字符', trigger: 'blur'}
-                     ]*/
-                },
+                formRules: {},
                 avatarLoading: false,
-                avatarDisabled: false,
                 formData: {
                     id: '',
                     uid: '',
@@ -94,18 +87,6 @@
         },
         computed: {
             detail(){ //返回用户详情
-                this.formData = {
-                    id: '',
-                    name: '',
-                    description: '',
-                    coverId: '',
-                    coverImgUrl: '',
-                    videoId: '',
-                    start: '',
-                    end: '',
-                    del: ''
-                };
-                this.wordNum = '0/60'; //重置字数统计
                 if (this.topicData.id) {
                     this.formData = {
                         id: this.topicData.id,
@@ -125,110 +106,73 @@
             }
         },
         methods: {
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
+            },
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('imgUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.coverId = data.id;
+                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
+                    }
+                }
+            },
             change() {
-                /*this.formData = {
-                    id: '',
-                    name: '',
-                    description: '',
-                    coverId: '',
-                    coverImgUrl: '',
-                    videoId: '',
-                    start: '',
-                    end: '',
-                    del: ''
-                };*/
                 this.wordNum = '0/60'; //重置字数统计
                 this.visible = false;
             },
             formSubmit(){ //提交表单
-                this.formLoading = true;
+                let _self = this;
                 let paras = new FormData();
-                paras.append("id", this.formData.id);
-                paras.append("name", this.formData.name);
-                paras.append("description", this.formData.description);
-                paras.append("coverId", this.formData.coverId);
-                paras.append("videoId", this.formData.videoId);
-                paras.append("startTime", this.formData.start);
+                paras.append("id", _self.formData.id);
+                paras.append("name", _self.formData.name);
+                paras.append("description", _self.formData.description);
+                paras.append("coverId", _self.formData.coverId);
+                paras.append("videoId", _self.formData.videoId);
+                paras.append("startTime", _self.formData.start);
                 //paras.append("endTime", this.formData.end);
-                paras.append("isDel", Number(!this.formData.del));
-                axiosPost('topicEdit', paras).then((res) => {
-                    this.formLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.visible = false;
-                        this.$emit('refresh');
+                paras.append("isDel", Number(!_self.formData.del));
+                _self.formLoading = true;
+                httpPost('topicEdit', paras, _self, function (res) {
+                    _self.formLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('提交成功');
+                        _self.visible = false;
+                        _self.$emit('refresh');
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
-            },
-            /*
-             * 封面选择相关操作
-             * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.coverImgUrl = file.url;
+                })
             },
             resetCoverImg(){ //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
-            },
-            beforeAvatarUpload(file) { //上传前校验
-                const isType = file.type.substring(0, 5);
-                const isJPG = isType === 'image';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.warning('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.warning('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                let file = document.getElementsByName('file')[0].files;
-                if (file.length == 0) { //file为空，提示并返回
-                    this.$message.warning('请选择文件');
-                    return;
-                }
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                if (!this.beforeAvatarUpload(imgFile)) {
-                    return;
-                }
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('imgUpload',para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
-                    }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.coverId = res.id;
+                document.getElementById('cover').value = '';
             },
             handleSource(query){ //搜索帖子列表
                 this.searchSource.loading = true;
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 30,
                     id: '',
@@ -236,15 +180,19 @@
                 };
                 if (query) {
                     if (isNaN(query)) { //输入不为数字，值传入kw
-                        para.kw = query;
+                        paras.kw = query;
                     } else {
-                        para.id = query;
+                        paras.id = query;
                     }
-                    axiosGet('topicPosts', para).then((res) => {
-                        let { error, status,data } = res;
-                        this.searchSource.loading = false;
-                        this.searchSource.list = data.content;
-                    });
+                    httpGet('topicPosts', paras, _self, function (res) {
+                        _self.searchSource.loading = false;
+                        try {
+                            let { error, status,data } = res;
+                            _self.searchSource.list = data.content;
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
                 }
             },
             setStart(val){
@@ -255,17 +203,30 @@
             },
             wordCount(val){ //监测简介字数
                 this.wordNum = val.length + '/60';
+            },
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formLoading = false;
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    description: '',
+                    coverId: '',
+                    coverImgUrl: '',
+                    videoId: '',
+                    start: '',
+                    end: '',
+                    del: ''
+                };
+                _self.wordNum = '0/60'; //重置字数统计
+                document.getElementById('cover').value = '';
             }
-            /*,
-             setEnd(val){
-             this.formData.end = val;
-             }*/
         },
         watch: {
             detail(val){ //监测详情变化
             },
             value(val) {
-                if(val == false){ //关闭时重置页面
+                if (val == false) { //关闭时重置页面
                     this.formData = {
                         id: '',
                         name: '',
@@ -278,6 +239,8 @@
                         del: ''
                     };
                     this.wordNum = '0/60'; //重置字数统计
+                    this.avatarLoading = false;
+                    document.getElementById('cover').value = '';
                 }
                 this.visible = val;
             },
@@ -296,40 +259,4 @@
 </script>
 
 <style>
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
-
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 </style>

@@ -1,16 +1,15 @@
 <template>
-    <el-dialog title="马甲号编辑" :value="value" v-model="visible">
+    <el-dialog title="马甲号编辑" :value="value" v-model="visible" @close="resetFormData">
         <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" v-loading="showLoading">
             <el-form-item label="头像" prop="coverId">
-                <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                           action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false">
-                    <img v-if="formData.coverImgUrl" v-model="formData.coverId" :src="formData.coverImgUrl"
-                         class="avatar">
-                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                </el-upload>
-                <el-button :loading="avatarLoading" class="mb-10" type="primary" size="small" @click="submitUpload">
-                    上传
-                </el-button>
+                <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                    <div class="el-upload el-upload--text">
+                        <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
+                        <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
+                        <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
+                        <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                    </div>
+                </div>
                 <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
             </el-form-item>
             <el-form-item label="昵称" prop="name">
@@ -57,14 +56,14 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost } from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'userData'],
         data() {
             return {
                 visible: false, //默认隐藏
-                showLoading: true,
+                showLoading: false,
                 formLoading: false,
                 formRules: {
                     name: [
@@ -80,7 +79,6 @@
                     ]
                 },
                 avatarLoading: false,
-                avatarDisabled: false,
                 formData: {
                     id: '',
                     name: '',
@@ -100,8 +98,73 @@
         },
         computed: {
             detail(){ //返回马甲号详情
-                this.showLoading = true;
-                this.formData = {
+                let _self = this;
+                _self.fetchRegion();
+                if (_self.userData.id) {
+                    _self.showLoading = true;
+                    httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
+                        _self.showLoading = false;
+                        try {
+                            let { error, status,data } = res;
+                            _self.formData = {
+                                id: data.id,
+                                name: data.username,
+                                coverId: data.avatarUrl,
+                                coverImgUrl: data.fullUrl,
+                                regionId: data.countryId + '',
+                                cityId: data.cityId + '',
+                                phone: data.phone,
+                                sex: data.sex + '',
+                                signature: data.signature,
+                                date: data.birthday ? data.birthday : '',
+                                count: 0
+                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                }
+            }
+        },
+        methods: {
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
+            },
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('avatarUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.coverId = data.url;
+                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
+                    }
+                }
+            },
+            change() {
+                this.visible = false;
+            },
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formLoading = false;
+                _self.showLoading = false;
+                _self.formData = {
                     id: '',
                     name: '',
                     coverId: '',
@@ -114,170 +177,71 @@
                     date: '',
                     count: 0
                 };
-                this.fetchRegion();
-                if (this.userData.id) {
-                    axiosGet('userDetail', {uid: this.userData.id}).then((res) => {
-                        let { error, status, data } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.showLoading = false;
-                            this.formData = {
-                                id: data.id,
-                                name: data.username,
-                                coverId: data.avatarUrl,
-                                coverImgUrl: data.fullUrl,
-                                regionId: data.countryId + '',
-                                cityId: data.cityId + '',
-                                phone: data.phone,
-                                sex: data.sex + '',
-                                signature: data.signature,
-                                date: data.birthday,
-                                count: 0
-                            }
-                        }
-                    });
-
-                } else {
-                    this.showLoading = false;
-                }
-            }
-        },
-        methods: {
-            change() {
-                this.visible = false;
+                document.getElementById('cover').value = '';
             },
             fetchRegion() { //获取省列表
-                axiosGet('regionList').then((res) => {
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.regionList = data;
+                let _self = this;
+                httpGet('regionList', '', _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.regionList = data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             fetchCity(id){ //根据省id获取城市列表
-                this.formData.count = this.formData.count + 1;
+                let _self = this;
+                _self.formData.count = _self.formData.count + 1;
                 if (id) {
-                    axiosGet('cityList', {regionId: id}).then((res) => {
-                        let { error, status, data } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
+                    httpGet('cityList', {regionId: id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            _self.cityList = data;
+                            if(_self.formData.count > 1){
+                                _self.formData.cityId = '0';
                             }
-                        } else {
-                            this.cityList = data;
-                            if(this.formData.count > 1){
-                                this.formData.cityId = '0';
-                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 }
             },
             formSubmit(){ //提交表单
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        this.formLoading = true;
+                        let _self = this;
+                        _self.formLoading = true;
                         let paras = new FormData();
-                        paras.append("avatar", this.formData.coverId);
-                        paras.append("uid", this.formData.id);
-                        paras.append("username", this.formData.name);
-                        paras.append("phone", this.formData.phone);
-                        paras.append("sex", this.formData.sex);
-                        paras.append("signature", this.formData.signature);
-                        paras.append("regionId", this.formData.regionId);
-                        paras.append("cityId", this.formData.cityId);
-                        paras.append("birthday", this.formData.date);
-                        axiosPost('robotEdit', paras).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.visible = false;
-                                this.$emit('refresh');
+                        paras.append("avatar", _self.formData.coverId);
+                        paras.append("uid", _self.formData.id);
+                        paras.append("username", _self.formData.name);
+                        paras.append("phone", _self.formData.phone);
+                        paras.append("sex", _self.formData.sex);
+                        paras.append("signature", _self.formData.signature);
+                        paras.append("regionId", _self.formData.regionId);
+                        paras.append("cityId", _self.formData.cityId);
+                        paras.append("birthday", _self.formData.date ? _self.formData.date:'');
+                        httpPost('robotEdit', paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.$message.success('提交成功');
+                                _self.visible = false;
+                                _self.$emit('refresh');
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
+
+
                     }
                 });
-            },
-            /*
-             * 封面选择相关操作
-             * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.coverImgUrl = file.url;
             },
             resetCoverImg(){ //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
-            },
-            beforeAvatarUpload(file) { //上传前校验
-                const isType = file.type.substring(0, 5);
-                const isJPG = isType === 'image';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.warning('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.warning('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                let file = document.getElementsByName('file')[0].files;
-                if (file.length == 0) { //file为空，提示并返回
-                    this.$message.warning('请选择文件');
-                    return;
-                }
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                if (!this.beforeAvatarUpload(imgFile)) {
-                    return;
-                }
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('avatarUpload',para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
-                    }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.coverId = res.url;
+                document.getElementById('cover').value = '';
             },
             formatBirth(val){ //格式化日期控件值
                 this.formData.date = val;
@@ -304,40 +268,5 @@
 </script>
 
 <style>
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
 
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 </style>

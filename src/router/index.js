@@ -108,6 +108,17 @@ export default new Router({
         }, {
             path: '/',
             component: Home,
+            name: '营销管理',
+            children: [
+                {
+                    path: '/banner',
+                    component: resolve => require(['../components/page/marketing/bannerList.vue'], resolve),
+                    name: 'banner设置'
+                }
+            ]
+        }, {
+            path: '/',
+            component: Home,
             name: '',
             leaf: true,//只有一个节点
             children: [

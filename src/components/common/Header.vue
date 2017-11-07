@@ -18,7 +18,7 @@
     </el-col>
 </template>
 <script type="es6">
-    import { loginOut } from '../../api/api';
+    import { httpGet } from '../../api/api';
 
     export default {
         data() {
@@ -30,20 +30,16 @@
         methods: {
             //退出登录
             logout: function () {
-                var _this = this;
-                this.$confirm('确认退出吗?', '提示', {}).then(() => {
-                    loginOut().then(res => {
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            _this.$message({
-                                message: error,
-                                type: 'error'
-                            });
-                        } else {
+                var _self = this;
+                _self.$confirm('确认退出吗?', '提示', {}).then(() => {
+                    httpGet('logout', '', _self, function (res) {
+                        try {
                             sessionStorage.removeItem('user');
-                            _this.$router.push({path: '/login'});
+                            _self.$router.push({path: '/login'});
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 });
             }
         },

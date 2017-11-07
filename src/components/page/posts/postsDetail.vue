@@ -1,5 +1,5 @@
 <template>
-    <el-dialog title="帖子详情" :value="value" v-model="visible">
+    <el-dialog title="帖子详情" :value="value" v-model="visible" @close="resetFormData">
         <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" v-loading="showLoading">
             <el-form-item label="作者id">
                 <el-input :disabled="isEdit" type="number" v-model.trim="formData.uid" style="width: 200px;" auto-complete="off"></el-input>
@@ -64,7 +64,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
     export default {
         name: 'vDetail',
         props: ['value', 'postsData'],
@@ -104,35 +104,18 @@
         },
         computed: {
             detail(){ //返回详情
-                if(!this.value){ //不显示的时候不请求详细
+                let _self = this;
+                if(!_self.value){ //不显示的时候不请求详细
                     return;
                 }
-                this.showLoading = true;
-                this.formData = {
-                    id: '',
-                    uid: '',
-                    des: '',
-                    videoId: '',
-                    start: '',
-                    del: '',
-                    essence: '',
-                    topicId: '',
-                    playId: ''
-                };
-                if (this.postsData.id) {
-                    axiosGet('postsDetail', {id: this.postsData.id}).then((res) => {
-                        let { error, status, data } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.showLoading = false;
-                            this.isEdit = true;
-                            this.formData = {
+                _self.showLoading = true;
+                if (_self.postsData.id) {
+                    httpGet('postsDetail', {id: _self.postsData.id}, _self, function (res) {
+                        _self.showLoading = false;
+                        try {
+                            let { error, status,data } = res;
+                            _self.isEdit = true;
+                            _self.formData = {
                                 id: data.id,
                                 uid: data.uid,
                                 des: data.videoText,
@@ -143,11 +126,13 @@
                                 topicId: data.topicId,
                                 playId: data.playId
                             }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 } else {
-                    this.showLoading = false;
-                    this.isEdit = false;
+                    _self.showLoading = false;
+                    _self.isEdit = false;
                 }
             }
         },
@@ -156,120 +141,120 @@
                 this.visible = false;
             },
             formSubmit(){ //提交表单
-                this.formLoading = true;
+                let _self = this;
+                _self.formLoading = true;
                 let paras = new FormData();
-                paras.append("id", this.formData.id);
-                paras.append("uid", this.formData.uid);
-                paras.append("videoText", this.formData.des);
-                paras.append("videoResourceId", this.formData.videoId);
-                paras.append("topicId", this.formData.topicId);
-                paras.append("playId", this.formData.playId);
-                paras.append("createTime", this.formData.start);
-                paras.append("del", Number(!this.formData.del));
-                paras.append("essence", Number(this.formData.essence));
-                axiosPost('postsEdit', paras).then((res) => {
-                    this.formLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.visible = false;
-                        this.$emit('refresh');
+                paras.append("id", _self.formData.id);
+                paras.append("uid", _self.formData.uid);
+                paras.append("videoText", _self.formData.des);
+                paras.append("videoResourceId", _self.formData.videoId);
+                paras.append("topicId", _self.formData.topicId);
+                paras.append("playId", _self.formData.playId);
+                paras.append("createTime", _self.formData.start);
+                paras.append("del", Number(!_self.formData.del));
+                paras.append("essence", Number(_self.formData.essence));
+                httpPost('postsEdit', paras, _self, function (res) {
+                    _self.formLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('提交成功');
+                        _self.visible = false;
+                        _self.$emit('refresh');
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handlePlay(query){ //搜索剧本
-                this.searchPlay.loading = true;
-                let para = {
+                let _self = this;
+                _self.searchPlay.loading = true;
+                let paras = {
                     offset: 0,
                     size: 30,
                     id: '',
                     kw: ''
                 };
                 if (isNaN(query)) { //输入不为数字，值传入kw
-                    para.kw = query;
+                    paras.kw = query;
                 } else {
-                    para.id = query;
+                    paras.id = query;
                 }
-                axiosGet('contentPlayList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.searchPlay.loading = false;
-                        this.searchPlay.list = data.content;
+                httpGet('contentPlayList', paras, _self, function (res) {
+                    _self.searchPlay.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchPlay.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleSource(query){ //搜索视频资源
+                let _self = this;
                 this.searchSource.loading = true;
-                let para = {
+                let paras = {
                     offset: 0,
                     size: 30,
                     id: '',
                     kw: ''
                 };
                 if (isNaN(query)) { //输入不为数字，值传入kw
-                    para.kw = query;
+                    paras.kw = query;
                 } else {
-                    para.id = query;
+                    paras.id = query;
                 }
-                axiosGet('contentSourceList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.searchSource.loading = false;
-                        this.searchSource.list = data.content;
+                httpGet('contentSourceList', paras, _self, function (res) {
+                    _self.searchSource.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchSource.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleTopic(query){ //搜索话题
-                this.searchTopic.loading = true;
-                let para = {
+                let _self = this;
+                _self.searchTopic.loading = true;
+                let paras = {
                     offset: 0,
                     size: 30,
                     id: '',
                     kw: ''
                 };
                 if (isNaN(query)) { //输入不为数字，值传入kw
-                    para.kw = query;
+                    paras.kw = query;
                 } else {
-                    para.id = query;
+                    paras.id = query;
                 }
-                axiosGet('topicList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.searchTopic.loading = false;
-                        this.searchTopic.list = data.content;
+                httpGet('topicList', paras, _self, function (res) {
+                    _self.searchTopic.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchTopic.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             setStart(val){
                 this.formData.start = val;
+            },
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formLoading = false;
+                _self.showLoading = false;
+                _self.formData = {
+                    id: '',
+                    uid: '',
+                    des: '',
+                    videoId: '',
+                    start: '',
+                    del: '',
+                    essence: '',
+                    topicId: '',
+                    playId: ''
+                };
             }
         },
         watch: {

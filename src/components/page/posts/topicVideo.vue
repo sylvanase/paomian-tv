@@ -84,7 +84,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
     export default {
         name: 'vVideo',
         props: ['value', 'topicData'],
@@ -115,34 +115,30 @@
                 this.visible = false;
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    id: this.topicData.id
+                    id: _self.topicData.id
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('topicVideoList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('topicVideoList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
                             if(item.lastBarrageTime){
                                 item.lastBarrageTime = util.timestampFormat(item.lastBarrageTime);
                             }
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleCurrentChange(val) { //翻页
                 this.page = val;
@@ -155,67 +151,55 @@
                 this.videoHtml = '';
             },
             handleLike(row){ //点赞
-                let para = new FormData();
-                para.append("vpId", row.id);
-                para.append("num", 100);
-                axiosPost('postsLike', para).then((res) => {
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success(data);
+                let _self = this;
+                let paras = new FormData();
+                paras.append("vpId", row.id);
+                paras.append("num", 100);
+                httpPost('postsLike', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success(data);
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleEssence(row){
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
                 paras.append("status", Number(!row.isEssence));
-                axiosPost('postsEssence', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpPost('postsEssence', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             postsBarrage(row){ //查看弹幕
                 this.$emit('barrage', row);
             },
             postsDel: function (row) { //软删除帖子
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
                 paras.append("status", Number(!row.isDel));
-                axiosPost('postsStatus', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpPost('postsStatus', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         watch: {

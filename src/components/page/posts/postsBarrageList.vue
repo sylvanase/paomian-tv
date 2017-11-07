@@ -25,7 +25,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet} from '../../../api/api';
+    import { httpGet} from '../../../api/api';
     export default {
         name: 'vBarrageList',
         props: ['value', 'postsData'],
@@ -57,25 +57,20 @@
                 this.visible = false;
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    id: this.postsData.id
+                    id: _self.postsData.id
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('postsBarrageList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('postsBarrageList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             if(item.createTime){
                                 item.createTime = util.timestampFormat(item.createTime);
                             }
@@ -85,9 +80,10 @@
                             item.text = item.text.replace(/http:\/\/([^\s]*).jpeg/g,'<img src="http://$1.jpeg">');
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         watch: {

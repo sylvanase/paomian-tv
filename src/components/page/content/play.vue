@@ -63,6 +63,12 @@
                     </el-tag>
                 </template>
             </el-table-column>
+            <el-table-column label="使用统计">
+                <template scope="scope">
+                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
+                    '0'}}人
+                </template>
+            </el-table-column>
             <el-table-column label="操作" width="350">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
@@ -86,7 +92,7 @@
             </el-pagination>
         </el-col>
         <!--新建/编辑剧本素材-->
-        <el-dialog :title="scriptTitle" v-model="scriptVisible" :close-on-click-modal="false">
+        <el-dialog :title="scriptTitle" v-model="scriptVisible" :close-on-click-modal="false" @close="resetScriptData">
             <el-form :model="scriptData" label-width="80px" :rules="scriptRules" ref="scriptData">
                 <el-form-item label="片段类型" prop="showType" required>
                     <el-select size="small" v-model="scriptData.showType" :disabled="scriptSelect" placeholder="请选择"
@@ -219,7 +225,7 @@
                             <el-button type="danger" size="small" @click.prevent="clearMusicId">删除</el-button>
                             <span>（可从本地上传音乐或者从音乐库中选择音乐）</span>
                         </div>
-                        <input type="file"  id="musicFile" @change="changeFile"/>
+                        <input type="file" id="musicFile" @change="changeFile"/>
                         <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUploadKs">上传到服务器
                         </el-button>
                         <el-progress size="small" style="width: 70%;" :percentage="fileUpload.percentage"></el-progress>
@@ -302,7 +308,7 @@
         </el-dialog>
 
         <!--新建/编辑剧本-->
-        <el-dialog :title="formTitle" v-model="formVisible" :close-on-click-modal="false">
+        <el-dialog :title="formTitle" v-model="formVisible" :close-on-click-modal="false" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="剧本名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
@@ -336,15 +342,16 @@
                     </template>
                 </el-form-item>
                 <el-form-item label="视频封面" required>
-                    <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                               action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false"
-                               :before-upload="beforeAvatarUpload">
-                        <img v-if="formData.coverImgUrl" v-model="formData.coverId" :src="formData.coverImgUrl"
-                             class="avatar">
-                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                    </el-upload>
-                    <el-button :loading="avatarLoading" type="primary" size="small" @click="submitUpload">上传
-                    </el-button>
+                    <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                        <div class="el-upload el-upload--text">
+                            <i v-show="avatarLoading" class="el-icon-loading avatar-uploader-icon"></i>
+                            <i v-show="!formData.coverImgUrl && !avatarLoading"
+                               class="el-icon-plus avatar-uploader-icon"></i>
+                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl"
+                                 class="avatar">
+                            <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                        </div>
+                    </div>
                 </el-form-item>
                 <el-form-item label="关键字" prop="keyword">
                     <el-tag style="margin-right: 10px;" :key="word" v-for="word in formData.keyword" :closable="true"
@@ -386,7 +393,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost } from '../../../api/api';
+    import { httpGet, httpDel, httpPost } from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
@@ -434,7 +441,6 @@
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
                 avatarLoading: false,
-                avatarDisabled: false,
                 searchMovie: { //搜索相关电影
                     loading: false,
                     list: []
@@ -494,33 +500,28 @@
                 this.fetchList();
             },
             fetchList() { //获取列表
+                let _self = this;
                 let para = {
-                    type: this.filters.type,
-                    status: this.filters.status,
+                    type: _self.filters.type,
+                    status: _self.filters.status,
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: ''
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    para.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    para.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentPlayList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) {
+                para.offset = (_self.page - 1) * para.size;
+                _self.tableLoading = true;
+                httpGet('contentPlayList', para, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) {
                             if (item.scriptList.length > 0) {
                                 let array = item.scriptList;
                                 for (let k = 0, length = array.length; k < length; k++) {
@@ -529,9 +530,10 @@
                             }
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             playVideo(row){ //播放视频
                 this.videoVisible = true;
@@ -545,149 +547,139 @@
                 this.formVisible = true;
                 if (index == -1) { //索引为-1时，新增操作
                     this.formTitle = '新增剧本';
-                    this.formData = {
-                        id: '',
-                        name: '',
-                        coverImgUrl: '', //封面url
-                        coverId: '',
-                        description: '',
-                        previewId: '', //预览视频资源id及name
-                        previewName: '',
-                        movieIds: [], //电影id及名称
-                        movieNames: [],
-                        tagIds: [], //标签id及名称
-                        tagNames: [],
-                        keyword: [],
-                        montageOrNot: ''
-                    };
-                    this.searchMovie.list = [];
-                    this.searchSource.list = [];
-                    this.searchTag.list = [];
                 } else {
                     this.formTitle = '编辑剧本';
-                    let para = {id: row.id};
-                    axiosGet('contentPlayDetail', para).then((res) => {
-                        let { error, status,data } = res;
-                        this.formData = Object.assign({}, data);
-                        this.formData.montageOrNot = Boolean(data.montageOrNot);
-                        //this.formData.montage = true;
-                        if (data.keyword != '') {
-                            this.formData.keyword = data.keyword.split(' ');
-                        } else {
-                            this.formData.keyword = [];
-                        }
-                        this.searchMovie.list = [];
-                        this.searchSource.list = [];
-                        this.searchTag.list = [];
-                        //生成下拉框已选项 电影、视频、标签
-                        if (this.formData.movieIds.length > 0) {
-                            let array = this.formData.movieIds;
-                            let arrayName = this.formData.movieNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchMovie.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                    let _self = this;
+                    httpGet('contentPlayDetail', {id: row.id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            _self.formData = Object.assign({}, data);
+                            _self.formData.montageOrNot = Boolean(data.montageOrNot);
+                            //this.formData.montage = true;
+                            if (data.keyword != '') {
+                                _self.formData.keyword = data.keyword.split(' ');
+                            } else {
+                                _self.formData.keyword = [];
                             }
-                        }
-                        this.searchSource.list.push({
-                            name: this.formData.previewName,
-                            id: this.formData.previewId
-                        });
-                        if (this.formData.tagIds.length > 0) {
-                            let array = this.formData.tagIds;
-                            let arrayName = this.formData.tagNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchTag.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            _self.searchMovie.list = [];
+                            _self.searchSource.list = [];
+                            _self.searchTag.list = [];
+                            //生成下拉框已选项 电影、视频、标签
+                            if (_self.formData.movieIds.length > 0) {
+                                let array = _self.formData.movieIds;
+                                let arrayName = _self.formData.movieNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchMovie.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
+                            _self.searchSource.list.push({
+                                name: _self.formData.previewName,
+                                id: _self.formData.previewId
+                            });
+                            if (_self.formData.tagIds.length > 0) {
+                                let array = _self.formData.tagIds;
+                                let arrayName = _self.formData.tagNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchTag.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
+                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 }
+            },
+            resetFormData(){ //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    coverImgUrl: '', //封面url
+                    coverId: '',
+                    description: '',
+                    previewId: '', //预览视频资源id及name
+                    previewName: '',
+                    movieIds: [], //电影id及名称
+                    movieNames: [],
+                    tagIds: [], //标签id及名称
+                    tagNames: [],
+                    keyword: [],
+                    montageOrNot: ''
+                };
+                _self.searchMovie.list = [];
+                _self.searchSource.list = [];
+                _self.searchTag.list = [];
+                document.getElementById('cover').value = '';
             },
             formSubmit(){ //提交表格
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
-                        this.formLoading = true;
+                        let _self = this;
+                        _self.formLoading = true;
                         let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
-                        para.append("coverId", this.formData.coverId);
-                        para.append("description", this.formData.description);
-                        para.append("previewId", this.formData.previewId);
-                        para.append("movieIds", this.formData.movieIds.join(','));
-                        para.append("tagIds", this.formData.tagIds.join(','));
-                        para.append("montageOrNot", Number(this.formData.montageOrNot));
-                        para.append("kw", this.formData.keyword.join(' '));
-                        axiosPost('contentPlayEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        para.append("id", _self.formData.id);
+                        para.append("name", _self.formData.name);
+                        para.append("coverId", _self.formData.coverId);
+                        para.append("description", _self.formData.description);
+                        para.append("previewId", _self.formData.previewId);
+                        para.append("movieIds", _self.formData.movieIds.join(','));
+                        para.append("tagIds", _self.formData.tagIds.join(','));
+                        para.append("montageOrNot", Number(_self.formData.montageOrNot));
+                        para.append("kw", _self.formData.keyword.join(' '));
+                        httpPost('contentPlayEdit', para, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
+
 
                     }
                 });
             },
             //删除表格数据
             handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id};
-                    axiosDel('contentPlayDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
+                let _self = this;
+                _self.tableLoading = true;
+                httpDel('contentPlayDel', {id: row.id}, _self, function (res) {
+                    try {
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
                 })
             },
             handleTableLine(index, row){
+                let _self = this;
                 let para = new FormData();
                 para.append("id", row.id);
                 para.append("status", Number(!row.status));
-                axiosPost('contentPlayStatus', para).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                httpPost('contentPlayStatus', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleMovie(query){ //搜索相关电影操作
-                this.searchMovie.loading = true;
+                let _self = this;
+                _self.searchMovie.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -699,14 +691,19 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentMovieList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchMovie.loading = false;
-                    this.searchMovie.list = data.content;
-                });
+                httpGet('contentMovieList', para, _self, function (res) {
+                    _self.searchMovie.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchMovie.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleSource(query){ //搜索视频资源
-                this.searchSource.loading = true;
+                let _self = this;
+                _self.searchSource.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -718,14 +715,19 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentSourceList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchSource.loading = false;
-                    this.searchSource.list = data.content;
-                });
+                httpGet('contentSourceList', para, _self, function (res) {
+                    _self.searchSource.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchSource.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleTag(query){ //搜索标签
-                this.searchTag.loading = true;
+                let _self = this;
+                _self.searchTag.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -737,14 +739,20 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentTagList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchTag.loading = false;
-                    this.searchTag.list = data.content;
-                });
+                httpGet('contentTagList', para, _self, function (res) {
+                    _self.searchTag.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchTag.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+
             },
             handleMusic(query){ //搜索音乐资源
-                this.searchMusic.loading = true;
+                let _self = this;
+                _self.searchMusic.loading = true;
                 let para = {
                     type: 0,
                     offset: 0,
@@ -757,68 +765,52 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentMusicList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchMusic.loading = false;
-                    this.searchMusic.list = data.content;
-                });
+                httpGet('contentMusicList', para, _self, function (res) {
+                    _self.searchMusic.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchMusic.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleMusicChange(value){ //更改背景音乐选择
                 this.searchMusic.id = value;
                 this.scriptData.musicId = value;
             },
-            /*
-             * 封面选择相关操作
-             * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.coverImgUrl = file.url;
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
             },
-            beforeAvatarUpload(file) { //上传前校验
-                const isType = file.type.substring(0, 5);
-                const isJPG = isType === 'image';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.error('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.error('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                if (imgFile == undefined) { //file为空，提示并返回
-                    this.$message.warning('请选择或更换图片');
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if(!fileDom){
                     return;
                 }
-                if (!this.beforeAvatarUpload(imgFile)) {
-                    return;
-                }
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('imgUpload', para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('imgUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.coverId = data.id;
+                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
                     }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.coverId = res.id;
+                }
             },
             /*
              * 关键字相关操作
@@ -842,60 +834,66 @@
                 this.inputVisible = false;
                 this.inputValue = '';
             },
+            resetScriptData(){
+                this.scriptData = {
+                    id: '',
+                    playId: row.id, //剧本id
+                    showType: '1',
+                    musicId: '',
+                    materialType: '0',
+                    materialJson: [],
+                    subtitleJson: []
+                };
+                this.searchMusic.id = '';
+            },
             scriptEdit(row, id){ //编辑素材 剧本id、素材id ，id为空则为新增
-                this.scriptVisible = true;
+                let _self = this;
+                _self.scriptVisible = true;
                 if (id == '') { //id为空，新增
-                    this.scriptTitle = '新增剧本素材';
-                    this.scriptData = {
-                        id: '',
-                        playId: row.id, //剧本id
-                        showType: '1',
-                        musicId: '',
-                        materialType: '0',
-                        materialJson: [],
-                        subtitleJson: []
-                    };
-                    this.searchMusic.id = '';
-                    this.scriptSelect = false;
+                    _self.scriptTitle = '新增剧本素材';
+                    _self.scriptSelect = false;
                 } else {
-                    this.scriptTitle = '编辑剧本素材';
-                    this.scriptSelect = true;
-                    this.searchMusic.id = '';
-                    let para = {id: id};
-                    axiosGet('contentPlayScriptDetail', para).then((res) => {
-                        let { error, status,data } = res;
-                        var materialArr = data.typeContent; //处理接口素材数据
-                        for (var k = 0, length = materialArr.length; k < length; k++) {
-                            if (materialArr[k].type == 0) { //将0|1处理为布尔值
-                                materialArr[k].data.muteOrNot = Boolean(materialArr[k].data.muteOrNot);
-                                materialArr[k].data.speed = materialArr[k].data.speed + '';
+                    _self.scriptTitle = '编辑剧本素材';
+                    _self.scriptSelect = true;
+                    _self.searchMusic.id = '';
+                    httpGet('contentPlayScriptDetail', {id: id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            var materialArr = data.typeContent; //处理接口素材数据
+                            for (var k = 0, length = materialArr.length; k < length; k++) {
+                                if (materialArr[k].type == 0) { //将0|1处理为布尔值
+                                    materialArr[k].data.muteOrNot = Boolean(materialArr[k].data.muteOrNot);
+                                    materialArr[k].data.speed = materialArr[k].data.speed + '';
+                                }
+                                if (materialArr[k].type == 1) { //将下拉框值处理为字符串
+                                    materialArr[k].data.turnTypeId = materialArr[k].data.turnTypeId + '';
+                                }
+                                if (materialArr[k].type == 2) { //将素材片段选项value与label拼凑
+                                    materialArr[k].data.muteOrNot = Boolean(materialArr[k].data.muteOrNot);
+                                    _self.searchMaterial.list.push({
+                                        id: materialArr[k].data.materialId,
+                                        name: materialArr[k].data.materialName
+                                    });
+                                    materialArr[k].data.materialId = materialArr[k].data.materialId + ',' + materialArr[k].data.materialName;
+                                }
                             }
-                            if (materialArr[k].type == 1) { //将下拉框值处理为字符串
-                                materialArr[k].data.turnTypeId = materialArr[k].data.turnTypeId + '';
+                            data.subtitleDtoList = data.subtitleDtoList.map(function (item) {
+                                item.wordPositionId = item.wordPositionId + '';
+                                return item;
+                            });
+                            _self.scriptData = {
+                                id: id,
+                                playId: row.id, //剧本id
+                                showType: data.showType + '',
+                                musicId: data.musicId,
+                                materialType: '0',
+                                materialJson: materialArr,
+                                subtitleJson: data.subtitleDtoList
                             }
-                            if (materialArr[k].type == 2) { //将素材片段选项value与label拼凑
-                                materialArr[k].data.muteOrNot = Boolean(materialArr[k].data.muteOrNot);
-                                this.searchMaterial.list.push({
-                                    id: materialArr[k].data.materialId,
-                                    name: materialArr[k].data.materialName
-                                });
-                                materialArr[k].data.materialId = materialArr[k].data.materialId + ',' + materialArr[k].data.materialName;
-                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                        data.subtitleDtoList = data.subtitleDtoList.map(function (item) {
-                            item.wordPositionId = item.wordPositionId + '';
-                            return item;
-                        });
-                        this.scriptData = {
-                            id: id,
-                            playId: row.id, //剧本id
-                            showType: data.showType + '',
-                            musicId: data.musicId,
-                            materialType: '0',
-                            materialJson: materialArr,
-                            subtitleJson: data.subtitleDtoList
-                        }
-                    });
+                    })
                 }
 
                 let clearFile = document.getElementById('musicFile');
@@ -906,43 +904,34 @@
 
             },
             scriptDel (row, item){ //删除素材
-                this.$confirm('确认删除该素材吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {
-                        id: item.id,
-                        playId: row.id,
-                        showType: item.showType
-                    };
-                    axiosPost('contentPlayScriptDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
+                let _self = this;
+                _self.tableLoading = true;
+                let para = {
+                    id: item.id,
+                    playId: row.id,
+                    showType: item.showType
+                };
+                httpPost('contentPlayScriptDel', para, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
                 })
             },
             scriptSubmit(){
-                this.scriptLoading = true;
-                /*let para = Object.assign({}, this.scriptData);
-                 */
+                let _self = this;
+                _self.scriptLoading = true;
                 let para = new FormData();
-                para.append("id", this.scriptData.id);
-                para.append("playId", this.scriptData.playId);
-                para.append("showType", this.scriptData.showType);
-                para.append("musicId", this.scriptData.musicId);
+                para.append("id", _self.scriptData.id);
+                para.append("playId", _self.scriptData.playId);
+                para.append("showType", _self.scriptData.showType);
+                para.append("musicId", _self.scriptData.musicId);
                 //处理需要转换的素材数据
-                let materialObj = this.scriptData.materialJson;
+                let materialObj = _self.scriptData.materialJson;
                 let materialArr = [];
                 for (var k = 0, length = materialObj.length; k < length; k++) {
                     if (materialObj[k].type == 0) {
@@ -987,24 +976,19 @@
                     }
                 }
                 para.append("materialJson", JSON.stringify(materialArr));
-                para.append("subtitleJson", JSON.stringify(this.scriptData.subtitleJson));
-                axiosPost('contentPlayScriptEdit', para).then((res) => {
-                    this.scriptLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.$refs['scriptData'].resetFields();
-                        this.scriptVisible = false;
-                        this.fetchList();
+                para.append("subtitleJson", JSON.stringify(_self.scriptData.subtitleJson));
+                httpPost('contentPlayScriptEdit', para, _self, function (res) {
+                    _self.scriptLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('提交成功');
+                        _self.$refs['scriptData'].resetFields();
+                        _self.scriptVisible = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             removeSubtitle(item) { //移除字幕dom
                 var index = this.scriptData.subtitleJson.indexOf(item);
@@ -1025,7 +1009,8 @@
                 });
             },
             handleMaterial(query){ //搜索相关电影操作
-                this.searchMaterial.loading = true;
+                let _self = this;
+                _self.searchMaterial.loading = true;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -1037,11 +1022,15 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentMaterialList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchMaterial.loading = false;
-                    this.searchMaterial.list = data.content;
-                });
+                httpGet('contentMaterialList', para, _self, function (res) {
+                    _self.searchMaterial.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchMaterial.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             removeMaterial(item) { //移除素材组合dom
                 var index = this.scriptData.materialJson.indexOf(item);
@@ -1088,17 +1077,9 @@
                     contentType: file.type,
                     fileName: file.name
                 };
-                //服务器端获取上传所需签名
-                axiosGet('musicSign', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            _self.$router.push('/login');
-                        } else {
-                            _self.$message.error(error);
-                        }
-                    } else {
+                httpGet('musicSign', para, _self, function (res) { //服务器端获取上传所需签名
+                    try {
+                        let { error, status,data } = res;
                         Ks3.Ks3.config.baseUrl = data.url;
                         Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
                         Ks3.Ks3.config.bucket = data.bucketName;
@@ -1119,23 +1100,22 @@
                                 let paras = new FormData();
                                 paras.append("objectKey", data.formParam.key);
                                 paras.append("name", file.name);
-                                axiosPost('musicUpload', paras).then((res) => {
-                                    let { error, status,data } = res;
-                                    if (status !== 0) {
-                                        if (status == 403) { //返回403时，重新登录
-                                            sessionStorage.removeItem('user');
-                                            _self.$router.push('/login');
-                                        } else {
-                                            _self.$message.error(error);
-                                        }
-                                    } else {
+                                httpPost('musicUpload', paras, _self, function (res) {
+                                    try {
+                                        let { error, status,data } = res;
                                         _self.scriptData.musicId = data.id;
+                                    } catch (error) {
+                                        util.jsErrNotify(error);
                                     }
-                                });
+                                })
+
+
                             }
                         });
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
                 function progressFunction(e) {
                     if (e.lengthComputable) {
                         let percent = parseInt((e.loaded / e.total) * 100);
@@ -1176,40 +1156,4 @@
         width: 100%;
     }
 
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
-
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 </style>

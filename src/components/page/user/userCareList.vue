@@ -144,7 +144,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosPost} from '../../../api/api';
+    import { httpGet, httpPost} from '../../../api/api';
     import vVideo from './videoList.vue'
     import vLike from './likeList.vue'
 
@@ -186,30 +186,26 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('userCareOperate', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('userCareOperate', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             showVideo (row){ //显示用户帖子列表
                 this.isShowVideo = true;
@@ -235,25 +231,20 @@
             },
             //运营取关用户
             careUser: function (row) {
-                this.tableLoading = true;
+                let _self = this;
+                _self.tableLoading = true;
                 let paras = new FormData();
                 paras.append("uid", row.id);
                 paras.append("status", Number(!row.userCare));
-                axiosPost('userCare', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                httpPost('userCare', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             /*
              * 处理弹幕开始
@@ -263,61 +254,49 @@
                 this.fetchBarrage();
             },
             fetchBarrage() {    //获取弹幕列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    tagId: this.barrage.filters.tag
+                    tagId: _self.barrage.filters.tag
                 };
-                para.offset = (this.barrage.page - 1) * para.size;
-                this.barrage.tableLoading = true;
-                axiosGet('barrageList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.barrage.tableList = data.content;
-                        this.barrage.total = data.totalElements;
-                        this.barrage.tableLoading = false;
+                paras.offset = (_self.barrage.page - 1) * paras.size;
+                _self.barrage.tableLoading = true;
+                httpGet('barrageList', paras, _self, function (res) {
+                    _self.barrage.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.barrage.tableList = data.content;
+                        _self.barrage.total = data.totalElements;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             submitBarrage(){ //提交所选弹幕
+                let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", this.barrage.vpId);
                 paras.append("barrageIds", this.barrage.multipleBarrageIds.join(','));
-                axiosPost('postsBarrageAdd', paras).then((res) => {
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('增加弹幕成功');
+                httpPost('postsBarrageAdd', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('增加弹幕成功');
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             barrageTag(){ //加载弹幕标签
-                axiosGet('barrageTag', '').then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.barrage.tagList = data;
+                let _self = this;
+                httpGet('barrageTag', '', _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.barrage.tagList = data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleSelectionChange(val) { //选择弹幕更改时
                 //val为对象数组
@@ -329,20 +308,16 @@
                 }
             },
             handleEdit(index, row) {
-                let para = new FormData();
-                para.append("id", row.id);
-                para.append("text", row.text);
-                axiosPost('barrageEdit', para).then((res) => {
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("text", row.text);
+                httpPost('barrageEdit', paras, _self, function (res) {
+                    try {
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         mounted() {

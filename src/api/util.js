@@ -1,6 +1,7 @@
 import moment from 'moment';
+import { Notification } from 'element-ui'
+import { Message } from 'element-ui';
 
-var DEFAULT_PATTERN = 'YYYY-MM-DD HH:mm:ss'; //时间戳默认解析格式
 var filterDate = [  //滤镜数据
     {id: 0, name: '无滤镜-原味'},
     {id: 1, name: '密阳-笋干味'},
@@ -26,6 +27,12 @@ var filterDate = [  //滤镜数据
     {id: 30, name: '田园味'}
 ];
 
+var illegalDate = [ // 举报类型定义
+    {id: 0, name: '低俗内容'},
+    {id: 1, name: '违法行为'},
+    {id: 2, name: '垃圾广告'}
+];
+
 export default {
     getQueryStringByName: function (name) {
         var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
@@ -37,42 +44,66 @@ export default {
         r = null;
         return context == null || context == "" || context == "undefined" ? "" : context;
     },
-    timestampFormat: function (date, pattern) {
+    timestampFormat: function (date, pattern) { //使用moment进行时间戳解析，默认格式YYYY-MM-DD HH:mm:ss
         var timeString = '';
+        var DEFAULT_PATTERN = 'YYYY-MM-DD HH:mm:ss'; //时间戳默认解析格式
         pattern = pattern || DEFAULT_PATTERN;
         timeString = moment(parseInt(date)).format(pattern);
         return timeString;
     },
-    formatDate: {
-        format: function (date, pattern) {
-            pattern = pattern || DEFAULT_PATTERN;
-            /*return pattern.replace(SIGN_REGEXP, function ($0) {
-             switch ($0.charAt(0)) {
-             case 'y': return padding(date.getFullYear(), $0.length);
-             case 'M': return padding(date.getMonth() + 1, $0.length);
-             case 'd': return padding(date.getDate(), $0.length);
-             case 'w': return date.getDay() + 1;
-             case 'h': return padding(date.getHours(), $0.length);
-             case 'm': return padding(date.getMinutes(), $0.length);
-             case 's': return padding(date.getSeconds(), $0.length);
-             }
-             });*/
-            var o = {
-                "M+": date.getMonth() + 1, //月份
-                "d+": date.getDate(), //日
-                "h+": date.getHours(), //小时
-                "m+": date.getMinutes(), //分
-                "s+": date.getSeconds(), //秒
-                "q+": Math.floor((date.getMonth() + 3) / 3), //季度
-                "S": date.getMilliseconds() //毫秒
-            };
-            if (/(y+)/.test(pattern))
-                pattern = pattern.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
-            for (var k in o)
-                if (new RegExp("(" + k + ")").test(pattern))
-                    pattern = pattern.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
-            return pattern;
+    filterDate, //素材的滤镜数据
+    fileSizeFormat: function (item) { // 文件大小格式化
+        var size = item / 1024;//计算kb
+        if (size >= 1024) {
+            size = size / 1024; //计算M
+            size = size.toFixed(2) + " M";
+        } else {
+            size = size.toFixed(2) + ' kb';
         }
+        return size;
     },
-    filterDate //素材的滤镜数据
+    fileDuration: function (item) { // 文件时长
+        var html, //计算时长
+            s = (item % 60).toFixed(1),
+            min = parseInt(item / 60),
+            h;
+        if (0 < min < 60) {
+            html = min + ' 分 ' + s + ' 秒 ';
+        } else if (min >= 60) {
+            h = parseInt(min / 60);
+            min = min % 60;
+            html = h + ' 小时 ' + min + ' 分 ' + s + ' 秒 ';
+        }
+        return html;
+    },
+    jsErrNotify: function (error) { //js处理发生错误统一报错
+        let errTxt = '恭喜你得到了一个diss主席的机会。';
+        errTxt += '错误：' + error.message;
+        Notification.error({
+            title: 'js错误',
+            message: errTxt,
+            duration: 0,
+            offset: 150
+        });
+        console.error(error)
+    },
+    illegalType: function (type) { //查询举报类型
+        return illegalDate[type].name;
+    },
+    imgFileCheck: function (dom) {
+        const _type = dom.files[0].type.substring(0, 5);
+        const isJPG = _type === 'image';
+        if (!isJPG) { //判断文件是否是图片
+            Message.warning('必须是图片文件，请重选');
+            dom.value = ''; // 清空文件
+            return false;
+        }
+        const isLt2M = dom.files[0].size / 1024 / 1024 <= 10;
+        if (!isLt2M) {
+            Message.warning('上传图片大小不能超过 10MB!');
+            dom.value = ''; // 清空文件
+            return false;
+        }
+        return true;
+    }
 };

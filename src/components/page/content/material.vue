@@ -55,7 +55,7 @@
                 </template>
             </el-table-column>-->
             <el-table-column prop="id" label="id"></el-table-column>
-            <el-table-column prop="name" label="片段名称" width="220"></el-table-column>
+            <el-table-column prop="name" label="片段名称"></el-table-column>
             <el-table-column prop="showTypeName" label="片段类型" width="100"></el-table-column>
             <el-table-column label="片段属性">
                 <template scope="props">
@@ -70,6 +70,11 @@
             <el-table-column label="相关电影">
                 <template scope="props">
                     {{ props.row.movieNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="使用统计">
+                <template scope="scope">
+                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount : '0'}}人
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="210">
@@ -209,7 +214,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import { httpGet, httpDel, httpPost} from '../../../api/api';
     import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
 
     export default {
@@ -294,34 +299,29 @@
             },
             //获取列表
             fetchList() {
-                let para = {
-                    type: this.filters.type,
-                    attrId: this.filters.attr,
-                    catId: this.filters.category,
+                let _self = this;
+                let paras = {
+                    type: _self.filters.type,
+                    attrId: _self.filters.attr,
+                    catId: _self.filters.category,
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: ''
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    paras.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('contentMaterialList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) {
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('contentMaterialList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) {
                             if (item.showType == 0) {
                                 item.showTypeName = '横竖屏';
                             } else if (item.showType == 1) {
@@ -333,53 +333,44 @@
                             }
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             attrList(){
+                let _self = this;
                 let para = {
                     type: '1',
                     status: '',
                     offset: 0,
                     size: 99999
                 };
-                this.tableLoading = true;
-                axiosGet('contentAttrList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.attrSelect = data.content;
+                httpGet('contentAttrList', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.attrSelect = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             catList(){
+                let _self = this;
                 let para = {
                     type: '1',
                     status: '',
                     offset: 0,
                     size: 99999
                 };
-                this.tableLoading = true;
-                axiosGet('contentCatList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.catSelect = data.content;
+                httpGet('contentCatList', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.catSelect = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             showForm (index, row){ //显示表单
                 this.formVisible = true;
@@ -414,69 +405,73 @@
                     this.searchTag.list = [];
                 } else {
                     this.formTitle = '编辑片段';
-                    let para = {id: row.id};
-                    axiosGet('contentMaterialDetail', para).then((res) => {
-                        let { error, status,data } = res;
-                        this.formData = Object.assign({}, data);
-                        if (data.keyword != '') {
-                            this.formData.keyword = data.keyword.split(' ');
-                        } else {
-                            this.formData.keyword = [];
-                        }
-                        this.searchMovie.list = [];
-                        this.searchAttr.list = [];
-                        this.searchCat.list = [];
-                        this.searchSource.list = [];
-                        this.searchTag.list = []; //先清空选项
-                        //生成下拉框已选项 电影、属性、分类、标签
-                        if (this.formData.movieIds.length > 0) {
-                            let array = this.formData.movieIds;
-                            let arrayName = this.formData.movieNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchMovie.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                    let _self = this;
+                    httpGet('contentMaterialDetail', {id: row.id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            _self.formData = Object.assign({}, data);
+                            if (data.keyword != '') {
+                                _self.formData.keyword = data.keyword.split(' ');
+                            } else {
+                                _self.formData.keyword = [];
                             }
-                        }
-                        if (this.formData.attributeIds.length > 0) {
-                            let array = this.formData.attributeIds;
-                            let arrayName = this.formData.attributeNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchAttr.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            _self.searchMovie.list = [];
+                            _self.searchAttr.list = [];
+                            _self.searchCat.list = [];
+                            _self.searchSource.list = [];
+                            _self.searchTag.list = []; //先清空选项
+                            //生成下拉框已选项 电影、属性、分类、标签
+                            if (_self.formData.movieIds.length > 0) {
+                                let array = _self.formData.movieIds;
+                                let arrayName = _self.formData.movieNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchMovie.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
-                        }
-                        if (this.formData.categoryIds.length > 0) {
-                            let array = this.formData.categoryIds;
-                            let arrayName = this.formData.categoryNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchCat.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            if (_self.formData.attributeIds.length > 0) {
+                                let array = _self.formData.attributeIds;
+                                let arrayName = _self.formData.attributeNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchAttr.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
-                        }
-                        if (this.formData.tagIds.length > 0) {
-                            let array = this.formData.tagIds;
-                            let arrayName = this.formData.tagNames;
-                            for (var k = 0, length = array.length; k < length; k++) {
-                                this.searchTag.list.push({
-                                    name: arrayName[k],
-                                    id: array[k]
-                                });
+                            if (_self.formData.categoryIds.length > 0) {
+                                let array = _self.formData.categoryIds;
+                                let arrayName = _self.formData.categoryNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchCat.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
                             }
+                            if (_self.formData.tagIds.length > 0) {
+                                let array = _self.formData.tagIds;
+                                let arrayName = _self.formData.tagNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchTag.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
+                            }
+                            _self.formData.showType = data.showType + '';
+                            if (_self.formData.horiVideoId == 0) {
+                                _self.formData.horiVideoId = '';
+                            }
+                            if (_self.formData.vertVideoId == 0) {
+                                _self.formData.vertVideoId = '';
+                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                        this.formData.showType = data.showType + '';
-                        if (this.formData.horiVideoId == 0) {
-                            this.formData.horiVideoId = '';
-                        }
-                        if (this.formData.vertVideoId == 0) {
-                            this.formData.vertVideoId = '';
-                        }
-                    });
+                    })
                 }
             },
             formSubmit(){ //提交表格
@@ -507,61 +502,46 @@
                                 return;
                             }
                         }
-                        this.formLoading = true;
+                        let _self = this;
+                        _self.formLoading = true;
                         let para = new FormData();
-                        para.append("id", this.formData.id);
-                        para.append("name", this.formData.name);
+                        para.append("id", _self.formData.id);
+                        para.append("name", _self.formData.name);
                         //para.append("coverId", this.formData.coverId);
-                        para.append("showType", this.formData.showType);
-                        para.append("horiVideoId", this.formData.horiVideoId);
-                        para.append("vertVideoId", this.formData.vertVideoId);
-                        para.append("movieIds", this.formData.movieIds.join(','));
-                        para.append("attributeIds", this.formData.attributeIds.join(','));
-                        para.append("categoryIds", this.formData.categoryIds.join(','));
-                        para.append("tagIds", this.formData.tagIds.join(','));
-                        para.append("kw", this.formData.keyword.join(' '));
-                        axiosPost('contentMaterialEdit', para).then((res) => {
-                            this.formLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                }else{
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('提交成功');
-                                this.$refs['formData'].resetFields();
-                                this.formVisible = false;
-                                this.fetchList();
+                        para.append("showType", _self.formData.showType);
+                        para.append("horiVideoId", _self.formData.horiVideoId);
+                        para.append("vertVideoId", _self.formData.vertVideoId);
+                        para.append("movieIds", _self.formData.movieIds.join(','));
+                        para.append("attributeIds", _self.formData.attributeIds.join(','));
+                        para.append("categoryIds", _self.formData.categoryIds.join(','));
+                        para.append("tagIds", _self.formData.tagIds.join(','));
+                        para.append("kw", _self.formData.keyword.join(' '));
+                        httpPost('contentMaterialEdit', para, _self, function (res) {
+                            try {
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
                             }
-                        });
+                        })
                     }
                 });
             },
             //删除表格数据
             handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    this.tableLoading = true;
-                    let para = {id: row.id};
-                    axiosDel('contentMaterialDel', para).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            }else{
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('删除成功');
-                            this.fetchList();
-                        }
-                    });
+                let _self = this;
+                _self.tableLoading = true;
+                httpDel('topConfigDetail', {id: row.id}, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
                 })
             },
             playVideo(index, row){ //播放视频
@@ -586,7 +566,7 @@
                 this.videoHtml = '';
             },
             handleMovie(query){ //搜索相关电影操作
-                this.searchMovie.loading = true;
+                let _self = this;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -598,14 +578,19 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentMovieList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchMovie.loading = false;
-                    this.searchMovie.list = data.content;
-                });
+                _self.searchMovie.loading = true;
+                httpGet('contentMovieList', para, _self, function (res) {
+                    _self.searchMovie.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchMovie.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleAttr(query){ //搜索属性
-                this.searchAttr.loading = true;
+                let _self = this;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -618,14 +603,19 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentAttrList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchAttr.loading = false;
-                    this.searchAttr.list = data.content;
-                });
+                _self.searchAttr.loading = true;
+                httpGet('contentAttrList', para, _self, function (res) {
+                    _self.searchAttr.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchAttr.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleCat(query){ //搜索分类
-                this.searchCat.loading = true;
+                let _self = this;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -638,14 +628,19 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentCatList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchCat.loading = false;
-                    this.searchCat.list = data.content;
-                });
+                _self.searchCat.loading = true;
+                httpGet('contentCatList', para, _self, function (res) {
+                    _self.searchCat.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchCat.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleSource(query){ //搜索视频资源
-                this.searchSource.loading = true;
+                let _self = this;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -657,15 +652,19 @@
                 } else {
                     para.id = query;
                 }
-                this.searchSource.list = []; //先清空列表
-                axiosGet('contentSourceList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchSource.loading = false;
-                    this.searchSource.list = data.content;
-                });
+                _self.searchSource.loading = true;
+                httpGet('contentSourceList', para, _self, function (res) {
+                    _self.searchSource.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchSource.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleTag(query){ //搜索标签
-                this.searchTag.loading = true;
+                let _self = this;
                 let para = {
                     offset: 0,
                     size: 30,
@@ -677,11 +676,16 @@
                 } else {
                     para.id = query;
                 }
-                axiosGet('contentTagList', para).then((res) => {
-                    let { error, status,data } = res;
-                    this.searchTag.loading = false;
-                    this.searchTag.list = data.content;
-                });
+                _self.searchTag.loading = true;
+                httpGet('contentTagList', para, _self, function (res) {
+                    _self.searchTag.loading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.searchTag.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             handleType(){ //更改片段类型，重置横竖屏内容
                 if (this.formData.showType == '0') { //横竖屏
@@ -745,40 +749,5 @@
         width: 100%;
     }
 
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
 
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
-    }
 </style>

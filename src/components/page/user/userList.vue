@@ -166,18 +166,17 @@
             </el-pagination>
         </el-col>
 
-        <el-dialog title="用户详情" v-model="isShowForm">
+        <el-dialog title="用户详情" v-model="isShowForm" @close="resetFormData">
             <el-form :model="formData" label-width="80px" ref="formData" v-loading="showLoading">
                 <el-form-item label="用户头像" prop="coverId">
-                    <el-upload style="width: 80%;" :disabled="avatarDisabled" class="avatar-uploader" ref="upload"
-                               action="" :show-file-list="false" :on-change="avatarChange" :auto-upload="false">
-                        <img v-if="formData.coverImgUrl" v-model="formData.coverId" :src="formData.coverImgUrl"
-                             class="avatar">
-                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                    </el-upload>
-                    <el-button :loading="avatarLoading" class="mb-10" type="primary" size="small" @click="submitUpload">
-                        上传
-                    </el-button>
+                    <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
+                        <div class="el-upload el-upload--text">
+                            <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
+                            <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
+                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
+                            <input type="file" id="cover" class="el-upload__input" @change="fileChange">
+                        </div>
+                    </div>
                     <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
                 </el-form-item>
                 <el-form-item label="uid">
@@ -324,7 +323,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosPost, axiosDel} from '../../../api/api';
+    import { httpGet, httpPost, httpDel} from '../../../api/api';
     //import vDetail from './userDetail.vue'
     import vFan from './fansList.vue'
     import vFollow from './followList.vue'
@@ -359,7 +358,6 @@
                 formLoading: false,
                 showLoading: true,
                 avatarLoading: false,
-                avatarDisabled: false,
                 formData: {
                     id: '',
                     name: '',
@@ -408,43 +406,39 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
                     id: '',
                     username: '',
-                    sex: this.filters.sex,
-                    phone: this.filters.phone,
-                    registerDevice: this.filters.os,
-                    startTime: this.filters.start,
-                    endTime: this.filters.end,
-                    cityId: this.filters.city
+                    sex: _self.filters.sex,
+                    phone: _self.filters.phone,
+                    registerDevice: _self.filters.os,
+                    startTime: _self.filters.start,
+                    endTime: _self.filters.end,
+                    cityId: _self.filters.city
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.username = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.username = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    paras.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('userList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('userList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             setStart(val){ //格式化日期控件值
                 this.filters.start = val;
@@ -453,9 +447,38 @@
                 this.filters.end = val;
             },
             showForm (row){ //显示用户详情表单
-                this.isShowForm = true;
-                this.userData = row;
-                this.showLoading = true;
+                let _self = this;
+                _self.isShowForm = true;
+                _self.userData = row;
+                _self.showLoading = true;
+                if (_self.userData.id) {
+                    httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
+                        _self.showLoading = false;
+                        try {
+                            let { error, status,data } = res;
+                            _self.formData = {
+                                id: data.id,
+                                name: data.username,
+                                coverId: data.avatarUrl,
+                                coverImgUrl: data.fullUrl,
+                                time: util.timestampFormat(data.createTime),
+                                regionId: data.countryId + '',
+                                cityId: data.cityId + '',
+                                os: '',
+                                imei: data.userDevicePoList,
+                                phone: data.phone,
+                                qq: data.qqBind,
+                                wechat: data.wxBind,
+                                weibo: data.wbBind,
+                                count: 0
+                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                }
+            },
+            resetFormData (){ //关闭表格弹窗，重置表格数据
                 this.formData = {
                     id: '',
                     name: '',
@@ -472,38 +495,9 @@
                     weibo: '',
                     count: 0
                 };
-                //this.fetchRegion();
-                if (this.userData.id) {
-                    axiosGet('userDetail', {uid: this.userData.id}).then((res) => {
-                        let { error, status, data } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.showLoading = false;
-                            this.formData = {
-                                id: data.id,
-                                name: data.username,
-                                coverId: data.avatarUrl,
-                                coverImgUrl: data.fullUrl,
-                                time: util.timestampFormat(data.createTime),
-                                regionId: data.countryId + '',
-                                cityId: data.cityId + '',
-                                os: '',
-                                imei: data.userDevicePoList,
-                                phone: data.phone,
-                                qq: data.qqBind,
-                                wechat: data.wxBind,
-                                weibo: data.wbBind,
-                                count: 0
-                            }
-                        }
-                    });
-                }
+                this.showLoading = false;
+                this.formLoading = false;
+                document.getElementById('cover').value = '';
             },
             showFan (row){ //显示用户粉丝列表
                 this.isShowFan = true;
@@ -537,255 +531,172 @@
             },
             //软删除用户
             userDel: function (row) {
-                if (row.userStatus == 1) { //原来是删除状态，现执行恢复操作
-                    this.tableLoading = true;
-                    let paras = new FormData();
-                    paras.append("uid", row.id);
-                    paras.append("status", 0);
-                    axiosPost('userStatus', paras).then((res) => {
-                        this.tableLoading = false;
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('恢复成功');
-                            this.fetchList();
-                        }
-                    });
-                } else { //删除用户
-                    this.$confirm('确认删除该用户吗?', '提示', {
-                        type: 'warning'
-                    }).then(() => {
-                        this.tableLoading = true;
-                        let paras = new FormData();
-                        paras.append("uid", row.id);
-                        paras.append("status", 1);
-                        axiosPost('userStatus', paras).then((res) => {
-                            this.tableLoading = false;
-                            let { error, status } = res;
-                            if (status !== 0) {
-                                if (status == 403) { //返回403时，重新登录
-                                    sessionStorage.removeItem('user');
-                                    this.$router.push('/login');
-                                } else {
-                                    this.$message.error(error);
-                                }
-                            } else {
-                                this.$message.success('删除成功');
-                                this.fetchList();
-                            }
-                        });
-                    });
-                }
+                let _self = this;
+                let paras = new FormData();
+                paras.append("uid", row.id);
+                paras.append("status", Number(!row.userStatus));
+                _self.tableLoading = true;
+                httpPost('userStatus', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             },
             //运营关注用户
             careUser: function (row) {
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("uid", row.id);
                 paras.append("status", Number(!row.userCare));
-                axiosPost('userCare', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpPost('userCare', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             fetchRegion() { //获取省列表
-                axiosGet('regionList').then((res) => {
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.regionList = data;
+                let _self = this;
+                httpGet('regionList', '', _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.regionList = data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             fetchCity: function(id){ //根据省id获取城市列表
-                this.formData.count = this.formData.count + 1;
+                let _self = this;
+                _self.formData.count = _self.formData.count + 1;
                 if (id) {
-                    axiosGet('cityList', {regionId: id}).then((res) => {
-                        let { error, status, data } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
+                    httpGet('cityList', {regionId: id}, _self, function (res) {
+                        try {
+                            let { error, status,data } = res;
+                            _self.cityList = data;
+                            if(_self.formData.count > 1){
+                                _self.formData.cityId = '0';
                             }
-                        } else {
-                            this.cityList = data;
-                            if(this.formData.count > 1){
-                                this.formData.cityId = '0';
-                            }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 }
             },
             fetchCityFilter: function(){ //根据省id获取城市列表
-                axiosGet('cityList', {regionId: this.filters.region}).then((res) => {
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.cityFilterList = data;
-
+                let _self = this;
+                httpGet('cityList', {regionId: _self.filters.region}, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.cityFilterList = data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             formSubmit(){ //提交表单
-                this.formLoading = true;
+                let _self = this;
                 let paras = new FormData();
-                paras.append("avatar", this.formData.coverId);
-                paras.append("uid", this.formData.id);
-                paras.append("username", this.formData.name);
-                paras.append("regionId", this.formData.regionId);
-                paras.append("cityId", this.formData.cityId);
-                axiosPost('userEdit', paras).then((res) => {
-                    this.formLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.isShowForm = false;
-                        this.fetchList();
+                paras.append("avatar", _self.formData.coverId);
+                paras.append("uid", _self.formData.id);
+                paras.append("username", _self.formData.name);
+                paras.append("regionId", _self.formData.regionId);
+                paras.append("cityId", _self.formData.cityId);
+                _self.formLoading = true;
+                httpPost('userEdit', paras, _self, function (res) {
+                    _self.formLoading = false;
+                    try {
+                        _self.$message.success('提交成功');
+                        _self.isShowForm = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             /*
              * 封面选择相关操作
              * */
-            avatarChange(file){ //更改图片时,重置预览文件路径
-                this.formData.coverImgUrl = file.url;
+            chooseFile(){ //触发选择文件
+                let fileDom = document.getElementById('cover');
+                fileDom.click();
+            },
+            fileChange(){ // 文件变更后操作
+                let fileDom = document.getElementById('cover');
+                let _self = this;
+                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
+                    const _verify = util.imgFileCheck(fileDom);
+                    if (_verify) { //文件校验通过，进行上传操作
+                        let paras = new FormData();
+                        paras.append("imageFile", fileDom.files[0]);
+                        _self.avatarLoading = true;
+                        httpPost('avatarUpload', paras, _self, function (res) {
+                            _self.avatarLoading = false;
+                            try {
+                                let { error, status,data } = res;
+                                _self.formData.coverId = data.url;
+                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        },function (res) { // 上传失败回调
+                            _self.avatarLoading = false;
+                            fileDom.value = '';
+                            _self.$message.error('上传失败，请重新选择文件');
+                        })
+                    }
+                }
             },
             resetCoverImg(){ //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
-            },
-            beforeAvatarUpload(file) { //上传前校验
-                const isType = file.type.substring(0, 5);
-                const isJPG = isType === 'image';
-                const isLt2M = file.size / 1024 / 1024 <= 10;
-
-                if (!isJPG) {
-                    this.$message.warning('封面文件必须是图片类型!');
-                }
-                if (!isLt2M) {
-                    this.$message.warning('上传图片大小不能超过 10MB!');
-                }
-                return isJPG && isLt2M;
-            },
-            submitUpload() { //上传图片
-                let file = document.getElementsByName('file')[0].files;
-                if (file.length == 0) { //file为空，提示并返回
-                    this.$message.warning('请选择文件');
-                    return;
-                }
-                var imgFile = document.getElementsByName('file')[0].files[0];
-                if (!this.beforeAvatarUpload(imgFile)) {
-                    return;
-                }
-                let para = new FormData();
-                para.append("imageFile", imgFile);
-                axiosPost('avatarUpload',para).then((res) => {
-                    this.avatarDisabled = true;
-                    this.avatarLoading = true;
-                    let { error, status, data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        //上传图片成功回调
-                        this.handleAvatarSuccess(data);
-                    }
-                });
-            },
-            handleAvatarSuccess(res) { //上传成功后操作
-                this.$message.success('上传图片成功');
-                this.avatarDisabled = false;
-                this.avatarLoading = false;
-                this.formData.coverId = res.url;
+                document.getElementById('cover').value = '';
             },
             phoneUpdate(){ //更换手机号
+                let _self= this;
                 let paras = new FormData();
-                paras.append("uid", this.userData.id);
-                paras.append("mobile", this.formData.phone);
-                axiosPost('userPhoneUpdate', paras).then((res) => {
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('更换成功');
+                paras.append("uid", _self.userData.id);
+                paras.append("mobile", _self.formData.phone);
+                httpPost('userPhoneUpdate', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('更换成功');
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             unbindThird(type){ //第三方账号解绑
                 this.$confirm('确认解绑吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
-                    let para = {
-                        uid: this.userData.id,
+                    let _self= this;
+                    let paras = {
+                        uid: _self.userData.id,
                         snsType: type
                     };
-                    axiosDel('userUnbind', para).then((res) => {
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('解绑成功');
+                    httpDel('userUnbind', paras, _self, function (res) {
+                        try {
+                            _self.$message.success('解绑成功');
                             if (type == 0) {
-                                this.formData.qq = '';
+                                _self.formData.qq = '';
                             } else if (type == 1) {
-                                this.formData.wechat = '';
+                                _self.formData.wechat = '';
                             } else if (type == 2) {
-                                this.formData.weibo = '';
+                                _self.formData.weibo = '';
                             }
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 });
             },
             /*
@@ -796,61 +707,49 @@
                 this.fetchBarrage();
             },
             fetchBarrage() {    //获取弹幕列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
-                    tagId: this.barrage.filters.tag
+                    tagId: _self.barrage.filters.tag
                 };
-                para.offset = (this.barrage.page - 1) * para.size;
-                this.barrage.tableLoading = true;
-                axiosGet('barrageList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.barrage.tableList = data.content;
-                        this.barrage.total = data.totalElements;
-                        this.barrage.tableLoading = false;
+                paras.offset = (_self.barrage.page - 1) * paras.size;
+                _self.barrage.tableLoading = true;
+                httpGet('barrageList', paras, _self, function (res) {
+                    _self.barrage.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.barrage.tableList = data.content;
+                        _self.barrage.total = data.totalElements;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             submitBarrage(){ //提交所选弹幕
+                let _self = this;
                 let paras = new FormData();
-                paras.append("vpId", this.barrage.vpId);
-                paras.append("barrageIds", this.barrage.multipleBarrageIds.join(','));
-                axiosPost('postsBarrageAdd', paras).then((res) => {
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('增加弹幕成功');
+                paras.append("vpId", _self.barrage.vpId);
+                paras.append("barrageIds", _self.barrage.multipleBarrageIds.join(','));
+                httpPost('postsBarrageAdd', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('增加弹幕成功');
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             barrageTag(){ //加载弹幕标签
-                axiosGet('barrageTag', '').then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.barrage.tagList = data;
+                let _self = this;
+                httpGet('barrageTag', '', _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.barrage.tagList = data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleSelectionChange(val) { //选择弹幕更改时
                 //val为对象数组
@@ -862,20 +761,17 @@
                 }
             },
             handleEdit(index, row) {
-                let para = new FormData();
-                para.append("id", row.id);
-                para.append("text", row.text);
-                axiosPost('barrageEdit', para).then((res) => {
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        }else{
-                            this.$message.error(error);
-                        }
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", row.id);
+                paras.append("text", row.text);
+                httpPost('barrageEdit', paras, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         mounted() {
@@ -891,43 +787,6 @@
         height: 100px;
         border-radius: 50%;
         margin-top: 10px;
-    }
-
-    /*
-        封面选择部分
-    */
-    .avatar-uploader .el-upload {
-        border: 1px dashed #d9d9d9;
-        border-radius: 6px;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        background-color: #fff;
-        box-sizing: border-box;
-        width: 360px;
-        height: 180px;
-        text-align: center;
-
-    }
-
-    .avatar-uploader .el-upload:hover {
-        border-color: #20a0ff;
-    }
-
-    .avatar-uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 178px;
-        height: 178px;
-        line-height: 178px;
-        text-align: center;
-    }
-
-    .avatar {
-        max-width: 100%;
-        max-height: 100%;
-        display: block;
-        margin: 0 auto;
     }
 
     .tb-edit .el-input {

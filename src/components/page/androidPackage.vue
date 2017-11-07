@@ -86,7 +86,7 @@
 
 <script type="es6">
     import util from '../../api/util'
-    import { axiosGet, axiosPost} from '../../api/api';
+    import { httpGet, httpPost} from '../../api/api';
 
     export default {
         data() {
@@ -105,72 +105,58 @@
             }
         },
         methods: {
-            handleCurrentChange(val) { //翻页
+            handleCurrentChange(val) { //表格翻页
                 this.page = val;
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let paras = {
                     offset: 0,
                     size: 10
                 };
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('androidApkList', para).then((res) => {
+                let _self = this;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('androidApkList', paras, _self, function (res) {
+                    _self.tableLoading = false;
                     let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content.map(function (item) { //格式化显示时间
-                            var size = item.size / 1024;//计算kb
-                            if (size >= 1024) {
-                                size = size / 1024; //计算M
-                                size = size.toFixed(2) + " M";
-                            } else {
-                                size = size.toFixed(2) + ' kb';
-                            }
-                            item.size = size;
+                    try {
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content.map(function (item) { //格式化显示时间
+                            item.size = util.fileSizeFormat(item.size);
                             if (item.createTime) {
                                 item.createTime = util.timestampFormat(item.createTime);
                             }
                             return item;
                         });
-                        this.tableLoading = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             handleApkStatus(row){ //启动、停止包
-                this.tableLoading = true;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
                 paras.append("status", Number(!row.status));
-                axiosPost('apkStatus', paras).then((res) => {
-                    this.tableLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('操作成功');
-                        this.fetchList();
+                _self.tableLoading = true;
+                httpPost('apkStatus', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    // let { error, status } = res;
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
-            downloadApk(row){
+            downloadApk(row){ // 下载安装包
                 window.open(row.apkUrl);
             },
             showForm (){
                 this.formVisible = true;
+                this.formLoading = false;
                 let clearFile = document.getElementById('apkFile');
                 if (clearFile) {
                     clearFile.outerHTML = clearFile.outerHTML;
@@ -182,33 +168,29 @@
                 };
             },
             formSubmit(){ //提交表格
+                let _self = this;
                 let file = document.getElementById('apkFile').files.length;
-                if(file == 0){
-                    this.$message.warning('请选择安装包文件');
+                if (file == 0) {
+                    _self.$message.warning('请选择安装包文件');
                     return;
                 }
-                this.formLoading = true;
+                _self.formLoading = true;
                 let paras = new FormData();
-                paras.append("desc", this.formData.des);
-                paras.append("force", Number(this.formData.force));
-                paras.append("status", Number(this.formData.status));
+                paras.append("desc", _self.formData.des);
+                paras.append("force", Number(_self.formData.force));
+                paras.append("status", Number(_self.formData.status));
                 paras.append("apkFile", document.getElementById('apkFile').files[0]);
-                axiosPost('apkAdd', paras).then((res) => {
-                    this.formLoading = false;
-                    let { error, status } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.$message.success('提交成功');
-                        this.visible = false;
-                        this.$emit('refresh');
+                httpPost('apkAdd', paras, _self, function (res) {
+                    _self.formLoading = false;
+                    // let { error, status } = res;
+                    try {
+                        _self.$message.success('提交成功');
+                        _self.visible = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             }
         },
         mounted() {

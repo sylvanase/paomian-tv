@@ -97,7 +97,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { axiosGet, axiosDel, axiosPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
     import vVideo from './masterVideoList.vue'
     import vBarrageList from './masterBarrageList.vue'
     import vLikeList from './masterLikeList.vue'
@@ -133,15 +133,7 @@
                             start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
                             picker.$emit('pick', [start, end]);
                         }
-                    }/*, {
-                        text: '最近三个月',
-                        onClick(picker) {
-                            const end = new Date();
-                            const start = new Date();
-                            start.setTime(start.getTime() - 3600 * 1000 * 24 * 90);
-                            picker.$emit('pick', [start, end]);
-                        }
-                    }*/]
+                    }]
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
@@ -171,36 +163,32 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
-                let para = {
+                let _self = this;
+                let paras = {
                     offset: 0,
                     size: 10,
                     id: '',
                     kw: '',
-                    startTime: this.filters.start,
-                    endTime: this.filters.end
+                    startTime: _self.filters.start,
+                    endTime: _self.filters.end
                 };
-                if (isNaN(this.filters.kw)) { //输入不为数字，值传入kw
-                    para.kw = this.filters.kw;
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.kw = _self.filters.kw;
                 } else {
-                    para.id = this.filters.kw;
+                    paras.id = _self.filters.kw;
                 }
-                para.offset = (this.page - 1) * para.size;
-                this.tableLoading = true;
-                axiosGet('userMasterList', para).then((res) => {
-                    let { error, status,data } = res;
-                    if (status !== 0) {
-                        if (status == 403) { //返回403时，重新登录
-                            sessionStorage.removeItem('user');
-                            this.$router.push('/login');
-                        } else {
-                            this.$message.error(error);
-                        }
-                    } else {
-                        this.total = data.totalElements;
-                        this.tableList = data.content;
-                        this.tableLoading = false;
+                paras.offset = (_self.page - 1) * paras.size;
+                _self.tableLoading = true;
+                httpGet('userMasterList', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.total = data.totalElements;
+                        _self.tableList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
                     }
-                });
+                })
             },
             setRange(val){ //格式化日期控件值
                 this.filters.start = val.substring(0,19);
@@ -214,24 +202,19 @@
             },
             configSubmit(){
                 this.$refs.configData.validate((valid) => {
-                    let para = new FormData();
-                    para.append("uid", this.configData.uid);
-                    axiosPost('userMasterAdd', para).then((res) => {
-                        let { error, status } = res;
-                        if (status !== 0) {
-                            if (status == 403) { //返回403时，重新登录
-                                sessionStorage.removeItem('user');
-                                this.$router.push('/login');
-                            } else {
-                                this.$message.error(error);
-                            }
-                        } else {
-                            this.$message.success('账号权限开通成功');
-                            this.$refs['configData'].resetFields();
-                            this.configVisible = false;
-                            this.fetchList();
+                    let _self = this;
+                    let paras = new FormData();
+                    paras.append("uid", _self.configData.uid);
+                    httpPost('userMasterAdd', paras, _self, function (res) {
+                        try {
+                            _self.$message.success('账号权限开通成功');
+                            _self.$refs['configData'].resetFields();
+                            _self.configVisible = false;
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
                         }
-                    });
+                    })
                 });
             },
             showVideo (row){ //显示视频列表
