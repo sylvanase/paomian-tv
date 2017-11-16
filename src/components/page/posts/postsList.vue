@@ -4,10 +4,10 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="帖子ID/关键字"></el-input>
+                    <el-input v-model="filters.kw" placeholder="帖子ID/关键字" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-input type="number" v-model="filters.uid" placeholder="用户ID"></el-input>
+                    <el-input type="number" v-model="filters.uid" placeholder="用户ID" icon="circle-close" :on-icon-click="resetSearchUser" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
@@ -18,14 +18,14 @@
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.isDel" @change="fetchList"  style="width: 110px;">
-                        <el-option label="全部状态" value=""></el-option>
+                        <el-option label="显示状态" value=""></el-option>
                         <el-option label="显示" value="0"></el-option>
                         <el-option label="隐藏" value="1"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.isEssence" @change="fetchList"  style="width: 110px;">
-                        <el-option label="全部状态" value=""></el-option>
+                        <el-option label="精华状态" value=""></el-option>
                         <el-option label="非精" value="0"></el-option>
                         <el-option label="精华" value="1"></el-option>
                     </el-select>
@@ -49,7 +49,11 @@
                 </template>
             </el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
-            <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column>
+            <el-table-column prop="videoText" min-width="200" label="帖子描述">
+                <template scope="scope">
+                    {{ scope.row.topicName ? '#'+ scope.row.topicName + '#' : '' }}{{ scope.row.videoText }}
+                </template>
+            </el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
             <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180"></el-table-column>
             <el-table-column label="精华" width="80">
@@ -199,6 +203,14 @@
                     }
                 })
             },
+            resetSearch(){
+                this.filters.kw = '';
+                this.fetchList();
+            },
+            resetSearchUser(){
+                this.filters.uid = '';
+                this.fetchList();
+            },
             showForm (row){ //显示详情表单
                 this.isShowForm = true;
                 this.postsData = row;
@@ -275,10 +287,13 @@
             }
         },
         mounted() {
+            if(this.$route.params.uid){
+                this.filters.uid = this.$route.params.uid;
+            }
             this.fetchList();
         }
     }
 </script>
 
-<style>
+<style scoped>
 </style>

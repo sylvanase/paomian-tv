@@ -110,6 +110,8 @@ let api = { //接口地址
     postsEssence: '/video/update_essence', //帖子加精
     postsStatus: '/video/update_status', //帖子隐藏、恢复
     postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表
+    postsCheckList: '/video/check_result_list', // 鉴黄列表
+    postsBlocked: '/video/vpid_blocked', // 封禁视频
 
     topicList: '/topic/list', //话题列表
     topicDel: '/topic/update_status', //删除话题
@@ -134,13 +136,15 @@ let api = { //接口地址
     launchBannerList: '/ad/launch/list', // 开机页list
     launchBannerAdd: '/ad/launch/add', // 新增开机页banner
     launchBannerUpdate: '/ad/launch/update', // 新增开机页banner
+    launchBannerDel: '/ad/launch/delete', // 删除开机页banner
     topicBannerList: '/ad/banner/list', // 话题页list
     topicBannerAdd: '/ad/banner/add', // 新增话题页banner
     topicBannerUpdate: '/ad/banner/update', // 新增话题页banner
+    topicBannerDel: '/ad/banner/delete', // 删除话题页banner
     squareBannerList: '/ad/square/list', // 广场页list
     squareBannerAdd: '/ad/square/add', // 新增广场页banner
     squareBannerUpdate: '/ad/square/update', // 新增广场页banner
-
+    squareBannerDel: '/ad/square/delete', // 删除广场页banner
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传
@@ -177,7 +181,7 @@ function specialCodeHandle(vm, res, callback) { // 服务器端特殊的返回co
     }
     if (res.data.error.length > 20) {
         Notification.error({
-            title: '接口请求报错',
+            title: '错误',
             message: res.data.error,
             duration: 0,
             offset: 150

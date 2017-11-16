@@ -105,7 +105,7 @@
 
 </script>
 
-<style>
+<style scoped>
 table img{
     max-width: 100px;
     margin-top: 5px;

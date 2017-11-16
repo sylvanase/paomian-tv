@@ -33,6 +33,20 @@ var illegalDate = [ // 举报类型定义
     {id: 2, name: '垃圾广告'}
 ];
 
+var postsLevel = [ // 鉴黄级别信息
+    {id: 0, name: '正常'},
+    {id: 1, name: '不确定'},
+    {id: 2, name: '确定'}
+];
+
+var postsStatus = [ // 鉴黄视频处理状态码
+    {id: 0, name: '检测成功'},
+    {id: 110, name: '请求重复'},
+    {id: 120, name: '参数错误'},
+    {id: 130, name: '解析错误'},
+    {id: 140, name: '数据类型错误'}
+];
+
 export default {
     getQueryStringByName: function (name) {
         var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
@@ -105,5 +119,17 @@ export default {
             return false;
         }
         return true;
+    },
+    postsLevel: function (code) { // 查询鉴黄视频级别
+        return postsLevel[code].name;
+    },
+    postsStatus: function (code) { // 鉴黄视频处理状态码
+        let _name = '无对应状态码';
+        for (var i = 0; i < postsStatus.length; i++) {
+            if (postsStatus[i].id == code) {
+                _name = postsStatus[i].name;
+            }
+        }
+        return _name;
     }
 };

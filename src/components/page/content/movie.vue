@@ -4,13 +4,13 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/名称"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="fetchList">查询</el-button>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="showForm('-1')">新增</el-button>
+                    <el-button type="primary" @click="showForm()">新增</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -23,7 +23,7 @@
             </el-table-column>
             <el-table-column label="操作" width="150">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
                 </template>
@@ -39,7 +39,7 @@
         </el-col>
 
         <!--新建/编辑电影-->
-        <el-dialog :title="formTitle" v-model="formVisible">
+        <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" style="margin-bottom: -20px;">
                 <el-form-item label="电影名称" prop="name">
                     <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
@@ -68,7 +68,7 @@
                 page: 1, //当前页，默认为第一页
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                formTitle: '',
+                formTitle: '新增电影',
                 formVisible: false,//新增界面是否显示
                 formLoading: false,
                 formRules: {
@@ -119,15 +119,13 @@
                     }
                 })
             },
-            showForm (index, row){ //显示表单
+            resetSearch(){
+                this.filters.kw = '';
+                this.fetchList();
+            },
+            showForm (row){ //显示表单
                 this.formVisible = true;
-                if (index == -1) { //索引为-1时，新增操作
-                    this.formTitle = '新增电影';
-                    this.formData = {
-                        id: '',
-                        name: ''
-                    };
-                } else {
+                if (row) {
                     this.formTitle = '编辑电影';
                     this.formData = Object.assign({}, row);
                 }
@@ -154,6 +152,16 @@
                         })
                     }
                 });
+            },
+            resetFormData(){
+                let _self = this;
+                _self.formTitle = '新增电影';
+                _self.formLoading = false;
+                _self.formData = {
+                    id: '',
+                    name: ''
+                };
+                _self.$refs['formData'].resetFields();
             },
             //删除表格数据
             handleTableDel: function (index, row) {

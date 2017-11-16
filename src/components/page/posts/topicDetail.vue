@@ -220,6 +220,7 @@
                 };
                 _self.wordNum = '0/60'; //重置字数统计
                 document.getElementById('cover').value = '';
+                _self.topicData = {};
             }
         },
         watch: {

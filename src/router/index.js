@@ -90,7 +90,7 @@ export default new Router({
                 {
                     path: '/posts',
                     component: resolve => require(['../components/page/posts/postsList.vue'], resolve),
-                    name: '全部帖子'
+                    name: '帖子列表'
                 }, {
                     path: '/topic',
                     component: resolve => require(['../components/page/posts/topicList.vue'], resolve),
@@ -103,6 +103,10 @@ export default new Router({
                     path: '/barrage',
                     component: resolve => require(['../components/page/posts/barrageList.vue'], resolve),
                     name: '弹幕列表'
+                }, {
+                    path: '/postsCheck',
+                    component: resolve => require(['../components/page/posts/postsCheck.vue'], resolve),
+                    name: '鉴黄列表'
                 }
             ]
         }, {

@@ -51,9 +51,9 @@
                     end: ''
                 },
                 pickerOptions: { // 时间控件约束条件
-                    disabledDate(time) {
+                    /*disabledDate(time) {
                         return time.getTime() < Date.now() - 8.64e7;
-                    }
+                    }*/
                 }
             }
         },
@@ -136,6 +136,7 @@
                 };
                 let imgFile = document.getElementById('imgFile');
                 imgFile.value = '';
+                _self.squareData = {};
             }
         },
         watch: {

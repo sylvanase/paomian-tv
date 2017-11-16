@@ -53,9 +53,9 @@
                     end: ''
                 },
                 pickerOptions: { // 时间控件约束条件
-                    disabledDate(time) {
+                    /*disabledDate(time) {
                         return time.getTime() < Date.now() - 8.64e7;
-                    }
+                    }*/
                 }
             }
         },
@@ -141,6 +141,7 @@
                 let andFile = document.getElementById('androidFile');
                 iosFile.value = '';
                 andFile.value = '';
+                _self.launchData = {};
             }
         },
         watch: {

@@ -33,7 +33,7 @@
     import vHead from './Header.vue';
     import vSidebar from './Sidebar.vue';
     export default {
-        components:{
+        components: {
             vHead, vSidebar
         }
     }

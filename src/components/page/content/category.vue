@@ -10,7 +10,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="showForm('-1')">新增</el-button>
+                    <el-button type="primary" @click="showForm()">新增</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -22,7 +22,7 @@
             <el-table-column prop="countNum" label="数量"></el-table-column>
             <el-table-column label="操作" width="250">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
                 </template>
@@ -38,7 +38,7 @@
         </el-col>
 
         <!--新建/编辑-->
-        <el-dialog :title="formTitle" v-model="formVisible">
+        <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
                 <el-form-item label="类型" prop="type" required>
                     <el-select v-model="formData.type" :disabled="formSelect" placeholder="请选择类型">
@@ -72,7 +72,7 @@
                 page: 1, //当前页，默认为第一页
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                formTitle: '',
+                formTitle: '新增分类',
                 formVisible: false,//新增界面是否显示
                 formLoading: false,
                 formSelect: false,
@@ -116,17 +116,9 @@
                     }
                 })
             },
-            showForm (index, row){ //显示表单
+            showForm (row){ //显示表单
                 this.formVisible = true;
-                if (index == -1) { //索引为-1时，新增操作
-                    this.formTitle = '新增分类';
-                    this.formData = {
-                        id: '',
-                        name: '',
-                        type: '0'
-                    };
-                    this.formSelect = false;
-                } else {
+                if (row) { //索引为-1时，新增操作
                     this.formTitle = '编辑分类';
                     this.formSelect = true;
                     this.formData = {
@@ -158,6 +150,18 @@
                         })
                     }
                 });
+            },
+            resetFormData(){
+                let _self = this;
+                _self.formLoading = false;
+                _self.formTitle = '新增分类';
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    type: '0'
+                };
+                _self.formSelect = false;
+                _self.$refs['formData'].resetFields();
             },
             //删除表格数据
             handleTableDel: function (index, row) {

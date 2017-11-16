@@ -4,7 +4,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/昵称"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-date-picker v-model="filters.time" type="datetimerange" :picker-options="pickerOptions"
@@ -189,6 +189,10 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            resetSearch(){
+                this.filters.kw = '';
+                this.fetchList();
             },
             setRange(val){ //格式化日期控件值
                 this.filters.start = val.substring(0,19);

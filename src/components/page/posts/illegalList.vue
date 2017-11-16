@@ -73,15 +73,6 @@
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
                             item.type = util.illegalType(item.type);
-                            /*if (item.type == 0) {
-                                item.type = '低俗内容';
-                            } else if (item.type == 1) {
-                                item.type = '违法行为';
-                            } else if (item.type == 2) {
-                                item.type = '垃圾广告';
-                            } else {
-                                item.type = '尚未定义';
-                            }*/
                             return item;
                         });
                     } catch (error) {

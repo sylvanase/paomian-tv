@@ -4,7 +4,8 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/昵称"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.sex" @change="fetchList" placeholder="请选择" style="width: 120px;">
@@ -14,7 +15,8 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-input type="number" v-model="filters.phone" placeholder="手机号码"></el-input>
+                    <el-input type="number" v-model="filters.phone" placeholder="手机号码" icon="circle-close"
+                              :on-icon-click="resetSearchPhone" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.os" @change="fetchList" placeholder="请选择" style="width: 120px;">
@@ -60,7 +62,12 @@
                     <img v-else class="user-avatar" src="../../../../static/img/TV.png" alt="用户头像"/>
                 </template>
             </el-table-column>
-            <el-table-column prop="username" min-width="150" label="昵称"></el-table-column>
+            <el-table-column prop="username" min-width="150" label="昵称">
+                <template scope="scope">
+                    <router-link :to="{ name: '帖子列表', params: { uid: scope.row.id }}">{{ scope.row.username }}
+                    </router-link>
+                </template>
+            </el-table-column>
             <el-table-column prop="createTime" label="注册时间" min-width="120"></el-table-column>
             <el-table-column prop="sex" label="性别" width="80">
                 <template scope="scope">
@@ -171,9 +178,11 @@
                 <el-form-item label="用户头像" prop="coverId">
                     <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
                         <div class="el-upload el-upload--text">
-                            <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
-                            <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
-                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
+                            <i v-show="avatarLoading" class="el-icon-loading avatar-uploader-icon"></i>
+                            <i v-show="!formData.coverImgUrl && !avatarLoading"
+                               class="el-icon-plus avatar-uploader-icon"></i>
+                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl"
+                                 class="avatar">
                             <input type="file" id="cover" class="el-upload__input" @change="fileChange">
                         </div>
                     </div>
@@ -203,10 +212,10 @@
                     </el-select>
                 </el-form-item>
                 <template v-if="formData.imei.length > 0" v-for="item in formData.imei">
-                    <el-form-item label="设备类型" >
+                    <el-form-item label="设备类型">
                         <span>{{ item.name }}</span>
                     </el-form-item>
-                    <el-form-item label="设备号" >
+                    <el-form-item label="设备号">
                         <span>{{ item.uuid }}</span>
                     </el-form-item>
                 </template>
@@ -262,7 +271,8 @@
             <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top: -20px;">
                 <el-form :inline="true" :model="barrage.filters">
                     <el-form-item>
-                        <el-select v-model="barrage.filters.tag" @change="fetchBarrage" placeholder="请选择" style="width: 150px;">
+                        <el-select v-model="barrage.filters.tag" @change="fetchBarrage" placeholder="请选择"
+                                   style="width: 150px;">
                             <el-option label="全部标签" value=""></el-option>
                             <el-option v-for="item in barrage.tagList" :key="item.id" :label="item.name"
                                        :value="item.id">
@@ -278,13 +288,16 @@
                 </el-form>
             </el-col>
             <!--表格-->
-            <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border style="width: 100%;"
+            <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border
+                      style="width: 100%;"
                       @selection-change="handleSelectionChange" highlight-current-row>
                 <el-table-column type="selection" width="55"></el-table-column>
                 <el-table-column prop="id" label="id" width="150"></el-table-column>
                 <el-table-column prop="text" label="弹幕内容">
                     <template scope="scope">
-                        <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容" @change="handleEdit(scope.$index, scope.row)"></el-input> <span>{{scope.row.text}}</span>
+                        <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
+                                  @change="handleEdit(scope.$index, scope.row)"></el-input>
+                        <span>{{scope.row.text}}</span>
                     </template>
                 </el-table-column>
             </el-table>
@@ -345,9 +358,9 @@
                     sex: '',
                     phone: '',
                     start: '',
-                    end:'',
+                    end: '',
                     region: '0',
-                    city:'0',
+                    city: '0',
                     os: ''
                 },
                 total: 0, //表格列表数据总数
@@ -388,7 +401,7 @@
                 videoHtml: '',
                 barrage: {
                     vpId: '', //视频id
-                    tagList:[],
+                    tagList: [],
                     total: 0, //表格列表数据总数
                     page: 1, //当前页，默认为第一页
                     tableLoading: false, //表格的loading符号
@@ -439,6 +452,14 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            resetSearch(){
+                this.filters.kw = '';
+                this.fetchList();
+            },
+            resetSearchPhone(){
+                this.filters.phone = '';
+                this.fetchList();
             },
             setStart(val){ //格式化日期控件值
                 this.filters.start = val;
@@ -575,7 +596,7 @@
                     }
                 })
             },
-            fetchCity: function(id){ //根据省id获取城市列表
+            fetchCity: function (id) { //根据省id获取城市列表
                 let _self = this;
                 _self.formData.count = _self.formData.count + 1;
                 if (id) {
@@ -583,7 +604,7 @@
                         try {
                             let { error, status,data } = res;
                             _self.cityList = data;
-                            if(_self.formData.count > 1){
+                            if (_self.formData.count > 1) {
                                 _self.formData.cityId = '0';
                             }
                         } catch (error) {
@@ -592,7 +613,7 @@
                     })
                 }
             },
-            fetchCityFilter: function(){ //根据省id获取城市列表
+            fetchCityFilter: function () { //根据省id获取城市列表
                 let _self = this;
                 httpGet('cityList', {regionId: _self.filters.region}, _self, function (res) {
                     try {
@@ -648,7 +669,7 @@
                             } catch (error) {
                                 util.jsErrNotify(error);
                             }
-                        },function (res) { // 上传失败回调
+                        }, function (res) { // 上传失败回调
                             _self.avatarLoading = false;
                             fileDom.value = '';
                             _self.$message.error('上传失败，请重新选择文件');
@@ -662,7 +683,7 @@
                 document.getElementById('cover').value = '';
             },
             phoneUpdate(){ //更换手机号
-                let _self= this;
+                let _self = this;
                 let paras = new FormData();
                 paras.append("uid", _self.userData.id);
                 paras.append("mobile", _self.formData.phone);
@@ -678,7 +699,7 @@
                 this.$confirm('确认解绑吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
-                    let _self= this;
+                    let _self = this;
                     let paras = {
                         uid: _self.userData.id,
                         snsType: type
@@ -792,10 +813,12 @@
     .tb-edit .el-input {
         display: none
     }
+
     .tb-edit .current-row .el-input {
         display: block
     }
-    .tb-edit .current-row .el-input+span {
+
+    .tb-edit .current-row .el-input + span {
         display: none
     }
 </style>

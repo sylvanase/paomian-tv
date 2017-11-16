@@ -5,13 +5,13 @@
                 <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="launch.filters.id" placeholder="bannerID"></el-input>
+                            <el-input v-model="launch.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="launchList"></el-input>
                         </el-form-item>
-                        <el-form-item>
+                        <!--<el-form-item>
                             <el-date-picker v-model="launch.filters.time" type="datetimerange" placeholder="选择时间范围"
                                             align="center" @change="setRange">
                             </el-date-picker>
-                        </el-form-item>
+                        </el-form-item>-->
                         <el-form-item>
                             <el-button type="primary" @click="launchList">查询</el-button>
                         </el-form-item>
@@ -23,10 +23,11 @@
                 <!--表格-->
                 <el-table v-loading="launch.loading" :data="launch.list" stripe border style="width: 100%;">
                     <el-table-column prop="id" label="id" width="80"></el-table-column>
-                    <el-table-column prop="iosImageUrl" label="ios开机图" width="135">
+                    <el-table-column prop="iosImageUrl" label="ios开机图" width="160">
                         <template scope="scope">
                             <img v-if="scope.row.iosImageUrl !== ''"
-                                 style="width: 100%;vertical-align: middle;margin: 5px 0;" :src="scope.row.iosImageUrl" alt="ios开机图"/>
+                                 style="width: 100%;vertical-align: middle;margin: 5px 0;" :src="scope.row.iosImageUrl"
+                                 alt="ios开机图"/>
                             <span v-else>图片路径缺失</span>
                         </template>
                     </el-table-column>
@@ -41,7 +42,7 @@
                     <el-table-column prop="appLink" label="外链"></el-table-column>
                     <el-table-column prop="startTime" label="开始时间" width="175"></el-table-column>
                     <el-table-column prop="endTime" label="停止时间" width="175"></el-table-column>
-                    <el-table-column label="操作" width="150">
+                    <el-table-column label="操作" width="140">
                         <template scope="scope">
                             <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                             <el-button type="danger" size="small" @click="bannerDel(scope.row)">删除</el-button>
@@ -60,12 +61,12 @@
                 <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="topic.filters.id" placeholder="bannerID"></el-input>
+                            <el-input v-model="topic.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="topicList"></el-input>
                         </el-form-item>
-                        <el-form-item>
+                        <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
                             </el-date-picker>
-                        </el-form-item>
+                        </el-form-item>-->
                         <el-form-item>
                             <el-button type="primary" @click="topicList">查询</el-button>
                         </el-form-item>
@@ -76,18 +77,19 @@
                 </el-col>
                 <!--表格-->
                 <el-table v-loading="topic.loading" :data="topic.list" stripe border style="width: 100%;">
-                    <el-table-column prop="id" label="id" width="100"></el-table-column>
-                    <el-table-column prop="topicUrl" label="banner图" width="135">
+                    <el-table-column prop="id" label="id" width="80"></el-table-column>
+                    <el-table-column prop="topicUrl" label="banner图" width="240">
                         <template scope="scope">
                             <img v-if="scope.row.topicUrl !== ''"
-                                 style="width: 100%;vertical-align: middle;margin: 5px 0;" :src="scope.row.topicUrl" alt=""/>
+                                 style="width: 100%;vertical-align: middle;margin: 5px 0;" :src="scope.row.topicUrl"
+                                 alt=""/>
                             <span v-else>图片路径缺失</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="appLink" label="外链"></el-table-column>
                     <el-table-column prop="startTime" label="开始时间" width="175"></el-table-column>
                     <el-table-column prop="endTime" label="停止时间" width="175"></el-table-column>
-                    <el-table-column label="操作" width="150">
+                    <el-table-column label="操作" width="140">
                         <template scope="scope">
                             <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                             <el-button type="danger" size="small" @click="bannerDel(scope.row)">删除</el-button>
@@ -107,12 +109,12 @@
                 <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="square.filters.id" placeholder="bannerID"></el-input>
+                            <el-input v-model="square.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="squareList"></el-input>
                         </el-form-item>
-                        <el-form-item>
+                        <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
                             </el-date-picker>
-                        </el-form-item>
+                        </el-form-item>-->
                         <el-form-item>
                             <el-button type="primary" @click="squareList">查询</el-button>
                         </el-form-item>
@@ -123,18 +125,19 @@
                 </el-col>
                 <!--表格-->
                 <el-table v-loading="square.loading" :data="square.list" stripe border style="width: 100%;">
-                    <el-table-column prop="id" label="id" width="100"></el-table-column>
-                    <el-table-column prop="squareImageUrl" label="banner图" width="135">
+                    <el-table-column prop="id" label="id" width="80"></el-table-column>
+                    <el-table-column prop="squareImageUrl" label="banner图" width="240">
                         <template scope="scope">
                             <img v-if="scope.row.squareImageUrl !== ''"
-                                 style="width: 100%;vertical-align: middle;margin: 5px 0;" :src="scope.row.squareImageUrl" alt=""/>
+                                 style="width: 100%;vertical-align: middle;margin: 5px 0;"
+                                 :src="scope.row.squareImageUrl" alt=""/>
                             <span v-else>图片路径缺失</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="appLink" label="外链"></el-table-column>
                     <el-table-column prop="startTime" label="开始时间" width="175"></el-table-column>
                     <el-table-column prop="endTime" label="停止时间" width="175"></el-table-column>
-                    <el-table-column label="操作" width="150">
+                    <el-table-column label="操作" width="140">
                         <template scope="scope">
                             <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                             <el-button type="danger" size="small" @click="bannerDel(scope.row)">删除</el-button>
@@ -289,6 +292,23 @@
                     _self.squareList();
                 }
             },
+            resetSearch(){
+                const _self = this;
+                let _name = _self.activeName;
+                _self[_name].filters.id = '';
+                if (_name == 'launch') {
+                    _self.launchList();
+                }
+                if (_name == 'topic') {
+                    _self.topicList();
+                }
+                if (_name == 'personal') {
+                    _self.personalList();
+                }
+                if (_name == 'square') {
+                    _self.squareList();
+                }
+            },
             handleCurrentChange(val) { //翻页
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
@@ -318,8 +338,8 @@
                 paras.append('size', _self.launch.size);
                 paras.append('offset', (_self.launch.page - 1) * _self.launch.size);
                 paras.append('id', _self.launch.filters.id);
-                paras.append('startTime', _self.launch.filters.start);
-                paras.append('endTime', _self.launch.filters.end);
+                /*paras.append('startTime', _self.launch.filters.start);
+                paras.append('endTime', _self.launch.filters.end);*/
                 _self.launch.loading = true;
                 httpPost('launchBannerList', paras, _self, function (res) {
                     _self.launch.loading = false;
@@ -334,6 +354,9 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
+                }, function(res){
+                    _self.launch.loading = false;
+                    _self.$message.error(res.data.error);
                 })
             },
             topicList() {    // 获取话题页列表
@@ -342,8 +365,8 @@
                 paras.append('size', _self.topic.size);
                 paras.append('offset', (_self.topic.page - 1) * _self.topic.size);
                 paras.append('id', _self.topic.filters.id);
-                paras.append('startTime', _self.topic.filters.start);
-                paras.append('endTime', _self.topic.filters.end);
+                /*paras.append('startTime', _self.topic.filters.start);
+                paras.append('endTime', _self.topic.filters.end);*/
                 _self.topic.loading = true;
                 httpPost('topicBannerList', paras, _self, function (res) {
                     _self.topic.loading = false;
@@ -358,6 +381,9 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
+                }, function(res){
+                    _self.topic.loading = false;
+                    _self.$message.error(res.data.error);
                 })
             },
             personalList() {    // 获取个人页列表
@@ -369,9 +395,9 @@
                 paras.append('size', _self.square.size);
                 paras.append('offset', (_self.square.page - 1) * _self.square.size);
                 paras.append('id', _self.square.filters.id);
-                paras.append('startTime', _self.square.filters.start);
-                paras.append('endTime', _self.square.filters.end);
-                _self.topic.loading = true;
+                /*paras.append('startTime', _self.square.filters.start);
+                paras.append('endTime', _self.square.filters.end);*/
+                _self.square.loading = true;
                 httpPost('squareBannerList', paras, _self, function (res) {
                     _self.square.loading = false;
                     try {
@@ -385,6 +411,9 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
+                }, function(res){
+                    _self.square.loading = false;
+                    _self.$message.error(res.data.error);
                 })
             },
             showForm (row){ // 根据当前显示tab显示对应的类型表单
@@ -396,7 +425,29 @@
             bannerDel (row){
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
-                _self.$message.warning('该功能尚未提供接口');
+                let paras = {
+                    id: row.id
+                };
+                _self[_name].tableLoading = true;
+                httpGet(_name + 'BannerDel', paras, _self, function (res) {
+                    _self[_name].tableLoading = false;
+                    try {
+                        if (_name == 'launch') {
+                            _self.launchList();
+                        }
+                        if (_name == 'topic') {
+                            _self.topicList();
+                        }
+                        if (_name == 'personal') {
+                            _self.personalList();
+                        }
+                        if (_name == 'square') {
+                            _self.squareList();
+                        }
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         mounted() {

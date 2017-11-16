@@ -32,5 +32,6 @@
     .menu-expanded{
         flex:0 0 230px;
         width: 230px;
+        overflow: scroll;
     }
 </style>

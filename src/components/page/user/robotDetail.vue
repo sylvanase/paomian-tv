@@ -178,6 +178,7 @@
                     count: 0
                 };
                 document.getElementById('cover').value = '';
+                _self.userData = {};
             },
             fetchRegion() { //获取省列表
                 let _self = this;

@@ -255,6 +255,7 @@
                     topicId: '',
                     playId: ''
                 };
+                _self.postsData = {};
             }
         },
         watch: {
