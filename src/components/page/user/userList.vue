@@ -21,8 +21,8 @@
                 <el-form-item>
                     <el-select v-model="filters.os" @change="fetchList" placeholder="请选择" style="width: 120px;">
                         <el-option label="全部系统" value=""></el-option>
-                        <el-option label="android" value="0"></el-option>
-                        <el-option label="iOS" value="1"></el-option>
+                        <el-option label="android" value="1"></el-option>
+                        <el-option label="iOS" value="2"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item>
@@ -134,12 +134,11 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="设备" width="100">
+            <el-table-column label="注册设备" width="100">
                 <template scope="scope">
-                    {{ scope.row.registerDevice == 0 ? 'android' : 'ios' }}
+                    {{ scope.row.registerDevice == 1 ? 'android' : 'ios' }}
                 </template>
             </el-table-column>
-            <!--<el-table-column prop="level" label="类型"></el-table-column>-->
             <el-table-column prop="userStatus" label="用户状态" width="130">
                 <template scope="scope">
                     <el-tag :type="scope.row.userStatus == 0 ? 'success' : 'danger'"
@@ -150,7 +149,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="210" fixed="right">
+            <el-table-column label="操作" width="310" fixed="right">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
@@ -161,6 +160,7 @@
                                @click="careUser(scope.row)">
                         {{ scope.row.userCare == 1 ? '取关' : '关注' }}
                     </el-button>
+                    <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -316,6 +316,24 @@
             <div style="text-align: center;" v-html="videoHtml"></div>
         </el-dialog>
 
+        <!--增加粉丝-->
+        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny" :close-on-click-modal="false">
+            <el-form :model="fanData" label-width="80px" ref="fanData" style="margin-bottom: -20px;">
+                <el-form-item label="粉丝数量" prop="num" style="margin-bottom: -20px;">
+                    <el-input placeholder="请输入增加的粉丝数量" min="0" max="100" v-model.number="fanData.num" type="number"
+                              auto-complete="off"></el-input>
+                    <div class="el-upload__tip" style="line-height: 20px;">
+                        (单次限制最多100个)
+                    </div>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="fanVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="fanSubmit" :loading="fanData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
+
         <!--用户详情-->
         <!--<v-detail :userData="userData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>-->
 
@@ -336,7 +354,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost, httpDel} from '../../../api/api';
+    import {httpGet, httpPost, httpDel} from '../../../api/api';
     //import vDetail from './userDetail.vue'
     import vFan from './fansList.vue'
     import vFollow from './followList.vue'
@@ -410,6 +428,13 @@
                         tag: ''
                     },
                     multipleBarrageIds: [] //添加的弹幕id集合
+                },
+                fanVisible: false,
+                fanData: { // 为用户增加粉丝
+                    title: '',
+                    loading: false,
+                    num: 0,
+                    id: ''
                 }
             }
         },
@@ -442,7 +467,7 @@
                 httpGet('userList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
@@ -453,21 +478,21 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            resetSearchPhone(){
+            resetSearchPhone() {
                 this.filters.phone = '';
                 this.fetchList();
             },
-            setStart(val){ //格式化日期控件值
+            setStart(val) { //格式化日期控件值
                 this.filters.start = val;
             },
-            setEnd(val){
+            setEnd(val) {
                 this.filters.end = val;
             },
-            showForm (row){ //显示用户详情表单
+            showForm(row) { //显示用户详情表单
                 let _self = this;
                 _self.isShowForm = true;
                 _self.userData = row;
@@ -476,7 +501,7 @@
                     httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
                         _self.showLoading = false;
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.formData = {
                                 id: data.id,
                                 name: data.username,
@@ -499,7 +524,7 @@
                     })
                 }
             },
-            resetFormData (){ //关闭表格弹窗，重置表格数据
+            resetFormData() { //关闭表格弹窗，重置表格数据
                 this.formData = {
                     id: '',
                     name: '',
@@ -520,31 +545,31 @@
                 this.formLoading = false;
                 document.getElementById('cover').value = '';
             },
-            showFan (row){ //显示用户粉丝列表
+            showFan(row) { //显示用户粉丝列表
                 this.isShowFan = true;
                 this.userId = row.id;
             },
-            showFollow (row){ //显示用户关注列表
+            showFollow(row) { //显示用户关注列表
                 this.isShowFollow = true;
                 this.userId = row.id;
             },
-            showVideo (row){ //显示用户帖子列表
+            showVideo(row) { //显示用户帖子列表
                 this.isShowVideo = true;
                 this.userId = row.id;
             },
-            showLike (row){ //显示用户喜欢的帖子列表
+            showLike(row) { //显示用户喜欢的帖子列表
                 this.isShowLike = true;
                 this.userId = row.id;
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            showBarrage (row){ //显示弹幕列表
+            showBarrage(row) { //显示弹幕列表
                 this.isShowBarrage = true;
                 this.fetchBarrage();
                 this.barrageTag();
@@ -560,7 +585,7 @@
                 httpPost('userStatus', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {
@@ -589,7 +614,7 @@
                 let _self = this;
                 httpGet('regionList', '', _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.regionList = data;
                     } catch (error) {
                         util.jsErrNotify(error);
@@ -602,7 +627,7 @@
                 if (id) {
                     httpGet('cityList', {regionId: id}, _self, function (res) {
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.cityList = data;
                             if (_self.formData.count > 1) {
                                 _self.formData.cityId = '0';
@@ -617,14 +642,14 @@
                 let _self = this;
                 httpGet('cityList', {regionId: _self.filters.region}, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.cityFilterList = data;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            formSubmit(){ //提交表单
+            formSubmit() { //提交表单
                 let _self = this;
                 let paras = new FormData();
                 paras.append("avatar", _self.formData.coverId);
@@ -647,11 +672,11 @@
             /*
              * 封面选择相关操作
              * */
-            chooseFile(){ //触发选择文件
+            chooseFile() { //触发选择文件
                 let fileDom = document.getElementById('cover');
                 fileDom.click();
             },
-            fileChange(){ // 文件变更后操作
+            fileChange() { // 文件变更后操作
                 let fileDom = document.getElementById('cover');
                 let _self = this;
                 if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
@@ -663,7 +688,7 @@
                         httpPost('avatarUpload', paras, _self, function (res) {
                             _self.avatarLoading = false;
                             try {
-                                let { error, status,data } = res;
+                                let {error, status, data} = res;
                                 _self.formData.coverId = data.url;
                                 _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
                             } catch (error) {
@@ -677,12 +702,12 @@
                     }
                 }
             },
-            resetCoverImg(){ //删除封面
+            resetCoverImg() { //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
                 document.getElementById('cover').value = '';
             },
-            phoneUpdate(){ //更换手机号
+            phoneUpdate() { //更换手机号
                 let _self = this;
                 let paras = new FormData();
                 paras.append("uid", _self.userData.id);
@@ -695,7 +720,7 @@
                     }
                 })
             },
-            unbindThird(type){ //第三方账号解绑
+            unbindThird(type) { //第三方账号解绑
                 this.$confirm('确认解绑吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
@@ -739,7 +764,7 @@
                 httpGet('barrageList', paras, _self, function (res) {
                     _self.barrage.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.barrage.tableList = data.content;
                         _self.barrage.total = data.totalElements;
                     } catch (error) {
@@ -747,25 +772,25 @@
                     }
                 })
             },
-            submitBarrage(){ //提交所选弹幕
+            submitBarrage() { //提交所选弹幕
                 let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", _self.barrage.vpId);
                 paras.append("barrageIds", _self.barrage.multipleBarrageIds.join(','));
                 httpPost('postsBarrageAdd', paras, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('增加弹幕成功');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            barrageTag(){ //加载弹幕标签
+            barrageTag() { //加载弹幕标签
                 let _self = this;
                 httpGet('barrageTag', '', _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.barrage.tagList = data;
                     } catch (error) {
                         util.jsErrNotify(error);
@@ -788,11 +813,41 @@
                 paras.append("text", row.text);
                 httpPost('barrageEdit', paras, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            addFan(row) { // 显示增加粉丝弹窗
+                this.fanVisible = true;
+                this.fanData.id = row.id;
+                this.fanData.title = '为"' + row.username + '"增加粉丝数量'
+            },
+            fanSubmit() { // 提交增加的粉丝数
+                let _self = this;
+                let paras = new FormData();
+                paras.append("num", _self.fanData.num);
+                paras.append("followId", _self.fanData.id);
+                _self.fanData.loading = true;
+                httpPost('userFansAdd', paras, _self, function (res) {
+                    _self.fanData.loading = false;
+                    try {
+                        _self.$message.success('成功增加粉丝' + res.data + '个');
+                        _self.fanVisible = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                }, function (res) {
+                    _self.$message.error(res.data.error);
+                    _self.fanData.loading = false;
+                })
+            },
+            resetFan() { // 重置增加粉丝弹窗中的数据
+                this.fanData.id = '';
+                this.fanData.num = 0;
+                this.fanData.loading = false;
             }
         },
         mounted() {

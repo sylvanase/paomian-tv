@@ -134,7 +134,6 @@
                 let _self = this;
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
-                        _self.formLoading = true;
                         let paras = new FormData();
                         paras.append("id", this.formData.id);
                         paras.append("name", this.formData.name);

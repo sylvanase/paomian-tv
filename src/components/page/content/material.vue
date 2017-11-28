@@ -80,7 +80,7 @@
             </el-pagination>
         </el-col>
 
-        <!--素材编辑-->
+        <!--片段编辑-->
         <v-detail :matData="matData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
         <!--播放弹窗-->

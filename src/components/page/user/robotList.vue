@@ -4,6 +4,13 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true">
                 <el-form-item>
+                    <el-input v-model="filters.id" placeholder="ID" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="fetchList">查询</el-button>
+                </el-form-item>
+                <el-form-item>
                     <el-button type="primary" @click="showForm('')">新建</el-button>
                 </el-form-item>
             </el-form>
@@ -104,6 +111,9 @@
         },
         data() {
             return {
+                filters: {
+                    id: ''
+                },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 tableLoading: false, //表格的loading符号
@@ -122,11 +132,16 @@
                 this.page = val;
                 this.fetchList();
             },
+            resetSearch() {
+                this.filters.id = '';
+                this.fetchList();
+            },
             fetchList() {    //获取列表
                 let _self = this;
                 let paras = {
                     offset: 0,
-                    size: 10
+                    size: 10,
+                    id: _self.filters.id
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;

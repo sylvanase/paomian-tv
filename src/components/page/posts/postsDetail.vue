@@ -121,7 +121,7 @@
                                 des: data.videoText,
                                 videoId: data.videoInfoPo == null ? data.id : data.videoInfoPo.vpId,
                                 start: util.timestampFormat(data.createTime),
-                                del: !Boolean(data.isdel),
+                                del: !Boolean(data.isDel),
                                 essence: Boolean(data.isEssence),
                                 topicId: data.topicId,
                                 playId: data.playId

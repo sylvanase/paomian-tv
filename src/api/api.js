@@ -29,7 +29,7 @@ let api = { //接口地址
     login: '/login/ajax', // 登录
     logout: '/logout/ajax', // 登出
     logCode: '/sys/send_email', // 验证码获取
-
+    changePwd: '/account/password/update', // 修改密码
 
     contentSourceList: '/content/video_resource/list', //内容资源列表
     contentSourceDel: '/content/video_resource/delete', //内容资源列表删除
@@ -44,7 +44,6 @@ let api = { //接口地址
     contentPlayScriptDetail: '/content/play/script_detail', //剧本素材详情
     contentPlayScriptEdit: '/content/play/script_edit', //剧本素材编辑
     contentPlayScriptDel: '/content/play/script_delete', //剧本素材删除
-
 
     contentTagList: '/content/tag/list', //内容标签列表
     contentTagDel: '/content/tag/delete',
@@ -93,7 +92,7 @@ let api = { //接口地址
     userMasterVideo: '/user/master/video/list', //主账号下小号视频列表
     userMasterBarrage: '/user/master/video/barrage/list', //主账号下小号发送弹幕列表
     userMasterLike: '/user/master/video/like/list', //主账号下小号点赞列表
-
+    userFansAdd: '/robot/user/followBatch', // 为用户增加粉丝
 
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表

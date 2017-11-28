@@ -40,7 +40,7 @@ export default new Router({
                 }, {
                     path: '/material',
                     component: resolve => require(['../components/page/content/material.vue'], resolve),
-                    name: '素材'
+                    name: '片段'
                 }, {
                     path: '/resource',
                     component: resolve => require(['../components/page/content/resource.vue'], resolve),

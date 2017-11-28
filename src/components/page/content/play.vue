@@ -38,10 +38,10 @@
                         <el-form-item label="剧本描述：">
                             <span>{{ props.row.description }}</span>
                         </el-form-item>
-                        <template v-for="item in props.row.scriptList">
-                            <el-form-item label="素材：">
+                        <template v-if="props.row.scriptList.length < 3">
+                            <el-form-item label="素材：" v-for="item in props.row.scriptList">
                                 <span class="mr-10">id： {{ item.id }}</span>
-                                <span class="mr-10">类型： {{ item.showType == 1 ? '横屏' : '竖屏' }}</span>
+                                <span class="mr-10">类型： {{ item.showType == 0 ? '横竖屏' : '' }}{{ item.showType == 1 ? '横屏' : '' }}{{ item.showType == 2 ? '竖屏' : '' }}</span>
                                 <span class="mr-10">创建时间： {{ item.createTime }}</span>
                                 <span>
                                     <el-button size="small" @click="scriptEdit(props.row, item.id)">编辑</el-button>
@@ -50,7 +50,21 @@
                                 </span>
                             </el-form-item>
                         </template>
-
+                        <!-- 剧本下脚本数量为3，只显示横竖屏 -->
+                        <template v-else-if="props.row.scriptList.length == 3">
+                            <template v-for="item in props.row.scriptList">
+                                <el-form-item label="素材：" v-if="item.showType == 0" >
+                                    <span class="mr-10">id： {{ item.id }}</span>
+                                    <span class="mr-10">类型： 横竖屏</span>
+                                    <span class="mr-10">创建时间： {{ item.createTime }}</span>
+                                    <span>
+                                    <el-button size="small" @click="scriptEdit(props.row, item.id)">编辑</el-button>
+                                    <el-button type="danger" size="small" @click="scriptDel(props.row, item)">删除
+                                    </el-button>
+                                </span>
+                                </el-form-item>
+                            </template>
+                        </template>
                     </el-form>
                 </template>
             </el-table-column>
