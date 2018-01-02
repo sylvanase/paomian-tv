@@ -34,6 +34,10 @@ export default new Router({
                     component: resolve => require(['../components/page/content/play.vue'], resolve),
                     name: '剧本'
                 }, {
+                    path: '/recPlay',
+                    component: resolve => require(['../components/page/content/recPlay.vue'], resolve),
+                    name: '推荐剧本'
+                }, {
                     path: '/music',
                     component: resolve => require(['../components/page/content/music.vue'], resolve),
                     name: '音乐'
@@ -42,9 +46,21 @@ export default new Router({
                     component: resolve => require(['../components/page/content/material.vue'], resolve),
                     name: '片段'
                 }, {
+                    path: '/choiceMaterial',
+                    component: resolve => require(['../components/page/content/choiceMaterial.vue'], resolve),
+                    name: '精选片段'
+                }, {
+                    path: '/feedbackMaterial',
+                    component: resolve => require(['../components/page/content/feedbackMaterial.vue'], resolve),
+                    name: '片段反馈'
+                }, {
                     path: '/resource',
                     component: resolve => require(['../components/page/content/resource.vue'], resolve),
                     name: '资源库'
+                }, {
+                    path: '/resourceImg',
+                    component: resolve => require(['../components/page/content/resourceImg.vue'], resolve),
+                    name: '图片库'
                 }, {
                     path: '/category',
                     component: resolve => require(['../components/page/content/category.vue'], resolve),

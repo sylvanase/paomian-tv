@@ -48,7 +48,12 @@
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
+            <el-table-column prop="username" label="发帖人" min-width="150">
+                <template scope="scope">
+                    <router-link :to="{ name: '用户列表', params: { uid: scope.row.uid }}">{{ scope.row.username }}
+                    </router-link>
+                </template>
+            </el-table-column>
             <el-table-column prop="videoText" min-width="200" label="帖子描述">
                 <template scope="scope">
                     {{ scope.row.topicName ? '#'+ scope.row.topicName + '#' : '' }}{{ scope.row.videoText }}

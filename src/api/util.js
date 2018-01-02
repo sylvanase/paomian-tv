@@ -91,8 +91,7 @@ export default {
         return html;
     },
     jsErrNotify: function (error) { //js处理发生错误统一报错
-        let errTxt = '恭喜你得到了一个diss主席的机会。';
-        errTxt += '错误：' + error.message;
+        let errTxt = '错误：' + error.message;
         Notification.error({
             title: 'js错误',
             message: errTxt,

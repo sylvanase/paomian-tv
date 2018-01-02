@@ -41,7 +41,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-select v-model="filters.city" style="width: 180px;" filterable placeholder="请选择城市">
+                    <el-select v-model="filters.city" style="width: 180px;" @change="fetchList" filterable placeholder="请选择城市">
                         <el-option label="全部城市" value="0"></el-option>
                         <el-option v-for="item in cityFilterList" :key="item.cityId" :label="item.cityName"
                                    :value="item.cityId"></el-option>
@@ -317,14 +317,11 @@
         </el-dialog>
 
         <!--增加粉丝-->
-        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny" :close-on-click-modal="false">
-            <el-form :model="fanData" label-width="80px" ref="fanData" style="margin-bottom: -20px;">
+        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny"
+                   :close-on-click-modal="false">
+            <el-form :model="fanData" label-width="80px" :rules="fanRules" ref="fanData" style="margin-bottom: -20px;">
                 <el-form-item label="粉丝数量" prop="num" style="margin-bottom: -20px;">
-                    <el-input placeholder="请输入增加的粉丝数量" min="0" max="100" v-model.number="fanData.num" type="number"
-                              auto-complete="off"></el-input>
-                    <div class="el-upload__tip" style="line-height: 20px;">
-                        (单次限制最多100个)
-                    </div>
+                    <el-input-number placeholder="单次限制最多100个" :min="1" :max="100" v-model="fanData.num"></el-input-number>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -370,6 +367,15 @@
             vLike
         },
         data() {
+            let validateNum = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入粉丝数量'));
+                } else {
+                    if(value > 100){
+                        callback(new Error('数量不能超过100!'));
+                    }
+                }
+            };
             return {
                 filters: {
                     kw: '',
@@ -435,6 +441,12 @@
                     loading: false,
                     num: 0,
                     id: ''
+                },
+                fanRules:{
+                    num: [
+                        { validator: validateNum, trigger: 'blur' },
+                        /*{ min: 6, max: 20, message: '密码长度在6到20个字符'}*/
+                    ],
                 }
             }
         },
@@ -455,6 +467,7 @@
                     registerDevice: _self.filters.os,
                     startTime: _self.filters.start,
                     endTime: _self.filters.end,
+                    regionId: _self.filters.region,
                     cityId: _self.filters.city
                 };
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
@@ -640,6 +653,7 @@
             },
             fetchCityFilter: function () { //根据省id获取城市列表
                 let _self = this;
+                _self.filters.city = '0';
                 httpGet('cityList', {regionId: _self.filters.region}, _self, function (res) {
                     try {
                         let {error, status, data} = res;
@@ -851,6 +865,9 @@
             }
         },
         mounted() {
+            if (this.$route.params.uid) {
+                this.filters.kw = this.$route.params.uid;
+            }
             this.fetchList();
             this.fetchRegion();
         }

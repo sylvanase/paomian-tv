@@ -7,6 +7,7 @@
                     <el-select v-model="filters.type" @change="fetchList" placeholder="请选择" style="width: 150px;">
                         <el-option label="音乐属性" value="0"></el-option>
                         <el-option label="片段属性" value="1"></el-option>
+                        <el-option label="剧本属性" value="2"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item>

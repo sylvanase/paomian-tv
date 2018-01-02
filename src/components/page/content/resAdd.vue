@@ -7,7 +7,7 @@
                        @click="submitUploadKs">上传文件
             </el-button>
             <span style="margin-left: 10px;" class="el-upload__tip">
-                tips:按住ctrl/command可多选文件，最多支持20个
+                tips:按住ctrl/command可多选文件，最多支持30个
             </span>
         </div>
         <ul class="el-upload-list mt-10" style="width: 80%;">
@@ -48,12 +48,12 @@
                 let fileDom = document.getElementById('videoFile');
                 let _self = this;
                 _self.fileList = [];
-                if (fileDom.files.length > 20) {
-                    _self.$message.warning('文件数不得超过20');
+                if (fileDom.files.length > 30) {
+                    _self.$message.warning('文件数不得超过30');
                     fileDom.value = '';
                     return;
                 }
-                if (0 < fileDom.files.length <= 20) { // 文件长度大于0
+                if (0 < fileDom.files.length <= 30) { // 文件长度大于0
                     for (var i = 0; i < fileDom.files.length; i++) {
                         let reg = /\.\w+$/;
                         let str = fileDom.files[i].name; // 获取文件名

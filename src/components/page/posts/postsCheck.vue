@@ -53,7 +53,8 @@
             <el-table-column prop="level" label="嫌疑类型" width="130"></el-table-column>
             <el-table-column label="操作" fixed="right" width="100">
                 <template scope="scope">
-                    <el-button :disabled="scope.row.isDel == 1 ? true : false" type="danger" size="small" @click="blockedVideo(scope.row)">封禁</el-button>
+                    <el-button v-if="scope.row.isDel == 0" type="danger" size="small" @click="blockedVideo(scope.row)">封禁</el-button>
+                    <el-button v-else size="small" @click="unblockVideo(scope.row)">解封</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -134,12 +135,29 @@
             videoClose(){
                 this.videoHtml = '';
             },
-            blockedVideo: function (row) { // 封禁帖子
+            blockedVideo (row) { // 封禁帖子
                 let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", row.id);
                 _self.tableLoading = true;
                 httpPost('postsBlocked', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let { error, status,data } = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            unblockVideo(row){
+                let _self = this;
+                let paras = {
+                    vpId: row.id
+                };
+                _self.tableLoading = true;
+                httpGet('postsUnblock', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let { error, status,data } = res;

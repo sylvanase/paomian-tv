@@ -4,7 +4,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true">
                 <el-form-item>
-                    <el-input v-model="filters.id" placeholder="ID" icon="circle-close" :on-icon-click="resetSearch"
+                    <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch"
                               @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
@@ -112,7 +112,7 @@
         data() {
             return {
                 filters: {
-                    id: ''
+                    kw: ''
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
@@ -133,7 +133,7 @@
                 this.fetchList();
             },
             resetSearch() {
-                this.filters.id = '';
+                this.filters.kw = '';
                 this.fetchList();
             },
             fetchList() {    //获取列表
@@ -141,8 +141,14 @@
                 let paras = {
                     offset: 0,
                     size: 10,
-                    id: _self.filters.id
+                    id: '',
+                    kw: ''
                 };
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.kw = _self.filters.kw;
+                } else {
+                    paras.id = _self.filters.kw;
+                }
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
                 httpGet('robotList', paras, _self, function (res) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
-import { Message } from 'element-ui';
-import { Notification } from 'element-ui'
+import {Message} from 'element-ui';
+import {Notification} from 'element-ui'
 
 let base = '';
 let header = {
@@ -35,6 +35,9 @@ let api = { //接口地址
     contentSourceDel: '/content/video_resource/delete', //内容资源列表删除
     contentSourceEdit: '/ks3/video_upload_edit', //内容资源编辑
 
+    contentImgSourceList: '/content/image/list', // 图片库列表
+    contentImgSourceAdd: '/content/image/add', // 图片库新增
+
     contentPlayList: '/content/play/list', //内容剧本列表
     contentPlayDel: '/content/play/delete',
     contentPlayEdit: '/content/play/edit',
@@ -44,6 +47,12 @@ let api = { //接口地址
     contentPlayScriptDetail: '/content/play/script_detail', //剧本素材详情
     contentPlayScriptEdit: '/content/play/script_edit', //剧本素材编辑
     contentPlayScriptDel: '/content/play/script_delete', //剧本素材删除
+
+    contentTopPlay: 'content/play/stick', //置顶剧本
+    contentCancelTopPlay: 'content/play/cancelStick', //取消置顶剧本
+    contentRecPlay: '/content/play/recommendOperation', //推荐剧本
+    contentRecPlayList: '/content/recommendPlay/list', //推荐剧本列表
+
 
     contentTagList: '/content/tag/list', //内容标签列表
     contentTagDel: '/content/tag/delete',
@@ -72,6 +81,13 @@ let api = { //接口地址
     contentMaterialDel: '/content/material/delete',
     contentMaterialEdit: '/content/material/edit',
     contentMaterialDetail: '/content/material/detail',
+    contentChoiceMaterialList: '/content/choiceMaterial/list', //精选片段列表
+    contentChoiceMaterial: '/content/material/choiceOperation',
+    contentTopMaterial: '/content/material/stick', // 片段置顶
+    contentCancelTopMaterial: '/content/material/cancelStick', // 取消片段置顶
+    contentMaterialFeedbackList: '/content/material/feedback/list', // 片段反馈
+    contentFeedbackReply: '/content/material/feedback/reply', // 回复片段反馈
+
 
     userList: '/user/list', //用户列表
     userDetail: '/user/detail', //用户详情
@@ -111,6 +127,7 @@ let api = { //接口地址
     postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表
     postsCheckList: '/video/check_result_list', // 鉴黄列表
     postsBlocked: '/video/vpid_blocked', // 封禁视频
+    postsUnblock: '/video/vpid_relieve', // 解封视频
 
     topicList: '/topic/list', //话题列表
     topicDel: '/topic/update_status', //删除话题

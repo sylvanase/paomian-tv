@@ -4,7 +4,8 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.type" @change="fetchList" placeholder="请选择" style="width: 150px;">
@@ -42,7 +43,7 @@
                             <el-form-item label="素材：" v-for="item in props.row.scriptList">
                                 <span class="mr-10">id： {{ item.id }}</span>
                                 <span class="mr-10">类型： {{ item.showType == 0 ? '横竖屏' : '' }}{{ item.showType == 1 ? '横屏' : '' }}{{ item.showType == 2 ? '竖屏' : '' }}</span>
-                                <span class="mr-10">创建时间： {{ item.createTime }}</span>
+                                <span class="mr-10">更新时间： {{ item.updateTime }}</span>
                                 <span>
                                     <el-button size="small" @click="scriptEdit(props.row, item.id)">编辑</el-button>
                                     <el-button type="danger" size="small" @click="scriptDel(props.row, item)">删除
@@ -53,10 +54,10 @@
                         <!-- 剧本下脚本数量为3，只显示横竖屏 -->
                         <template v-else-if="props.row.scriptList.length == 3">
                             <template v-for="item in props.row.scriptList">
-                                <el-form-item label="素材：" v-if="item.showType == 0" >
+                                <el-form-item label="素材：" v-if="item.showType == 0">
                                     <span class="mr-10">id： {{ item.id }}</span>
                                     <span class="mr-10">类型： 横竖屏</span>
-                                    <span class="mr-10">创建时间： {{ item.createTime }}</span>
+                                    <span class="mr-10">更新时间： {{ item.updateTime }}</span>
                                     <span>
                                     <el-button size="small" @click="scriptEdit(props.row, item.id)">编辑</el-button>
                                     <el-button type="danger" size="small" @click="scriptDel(props.row, item)">删除
@@ -83,17 +84,32 @@
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="350">
+            <el-table-column label="操作" width="300">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                    </el-button>
-                    <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
-                               @click="handleTableLine(scope.$index, scope.row)">
-                        {{ scope.row.status == 1 ? '下线' : '上线' }}
-                    </el-button>
-                    <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
+                    <div class="mt-10">
+                        <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
+                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
+                        </el-button>
+                        <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
+
+                    </div>
+                    <div class="mt-10 mb-10">
+                        <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleTableLine(scope.$index, scope.row)">
+                            {{ scope.row.status == 1 ? '下线' : '上线' }}
+                        </el-button>
+                        <template v-if="scope.row.status == 1">
+                            <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
+                                       @click="handleRecommend(scope.row)">
+                                {{ scope.row.isRecommend == 1 ? '取消推荐' : '推荐' }}
+                            </el-button>
+                            <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
+                                       @click="handleTop(scope.row)">
+                                {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
+                            </el-button>
+                        </template>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -121,8 +137,8 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost } from '../../../api/api';
-    import  Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
+    import {httpGet, httpDel, httpPost} from '../../../api/api';
+    import Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
     import vDetail from './playDetail.vue'
     import vScriptDetail from './scriptDetail.vue'
 
@@ -179,13 +195,14 @@
                 httpGet('contentPlayList', para, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) {
                             if (item.scriptList.length > 0) {
                                 let array = item.scriptList;
                                 for (let k = 0, length = array.length; k < length; k++) {
                                     array[k].createTime = util.timestampFormat(array[k].createTime);
+                                    array[k].updateTime = util.timestampFormat(array[k].updateTime);
                                 }
                             }
                             return item;
@@ -195,19 +212,19 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.previewUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            showForm (row){ //显示表单
+            showForm(row) { //显示表单
                 this.isShowForm = true;
                 this.playData = row;
             },
@@ -224,14 +241,14 @@
                     }
                 })
             },
-            handleTableLine(index, row){
+            handleTableLine(index, row) {
                 let _self = this;
                 let para = new FormData();
                 para.append("id", row.id);
                 para.append("status", Number(!row.status));
                 httpPost('contentPlayStatus', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {
@@ -239,7 +256,46 @@
                     }
                 })
             },
-            scriptEdit(row, id){ //编辑素材 剧本id、素材id ，id为空则为新增
+            handleRecommend(row) {
+                let _self = this;
+                let para = {
+                    operation: Number(!row.isRecommend),
+                    id: row.id
+                };
+                httpGet('contentRecPlay', para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            handleTop(row) {
+                let _self = this;
+                let para = {
+                    size: 10,
+                    id: row.id
+                };
+                let _api = null;
+                if (row.isTop == 1) { // 该条目现在为已置顶状态
+                    _api = 'contentCancelTopPlay';
+                } else {
+                    _api = 'contentTopPlay';
+                    para.offset = (_self.page - 1) * para.size;
+                }
+                httpGet(_api, para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            scriptEdit(row, id) { //编辑素材 剧本id、素材id ，id为空则为新增
                 let _self = this;
                 _self.isShowScript = true;
                 _self.scriptData = {
@@ -247,7 +303,7 @@
                     playId: row.id // 剧本id
                 };
             },
-            scriptDel (row, item){ //删除素材
+            scriptDel(row, item) { //删除素材
                 let _self = this;
                 _self.tableLoading = true;
                 let para = {
@@ -258,7 +314,7 @@
                 httpPost('contentPlayScriptDel', para, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('删除成功');
                         _self.fetchList();
                     } catch (error) {

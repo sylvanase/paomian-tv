@@ -4,8 +4,12 @@
             <el-form-item label="剧本名称" prop="name">
                 <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
             </el-form-item>
-            <el-form-item label="蒙太奇">
-                <el-switch on-text="是" off-text="否" v-model="formData.montageOrNot"></el-switch>
+            <el-form-item label="剧本玩法">
+                <el-select v-model="formData.playType" placeholder="请选择" style="width: 50%;">
+                    <el-option label="对手戏" value="0"></el-option>
+                    <el-option label="蒙太奇" value="1"></el-option>
+                    <el-option label="表演型" value="2"></el-option>
+                </el-select>
             </el-form-item>
             <el-form-item label="相关电影" prop="movieIds">
                 <template>
@@ -67,7 +71,17 @@
                     </el-select>
                 </template>
             </el-form-item>
-
+            <el-form-item label="剧本属性" prop="attrIds">
+                <template>
+                    <el-select style="width: 50%;" v-model="formData.playAttrIds" multiple filterable remote
+                               loading-text="搜索中" placeholder="输入关键词搜索属性" :remote-method="handleAttr"
+                               :loading="searchAttr.loading">
+                        <el-option v-for="item in searchAttr.list" :key="item.id" :label="item.name"
+                                   :value="item.id">
+                        </el-option>
+                    </el-select>
+                </template>
+            </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
             <el-button size="small" @click.native="change">取消</el-button>
@@ -78,7 +92,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
 
     export default {
         name: 'vDetail',
@@ -111,9 +125,14 @@
                     movieNames: [],
                     tagIds: [], //标签id及名称
                     tagNames: [],
+                    playAttrIds: [], //属性id及名称
+                    playAttrNames: [],
                     keyword: [],
-                    montageOrNot: ''
+                    playType: '0'
                 },
+                playTypeArr: [ // 剧本玩法的枚举类型
+                    'RIVAL_SHOW', 'MONTAGE', 'PERFORM'
+                ],
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
                 avatarLoading: false,
@@ -128,20 +147,23 @@
                 searchTag: { //搜索标签
                     loading: false,
                     list: []
+                },
+                searchAttr: { //搜索属性
+                    loading: false,
+                    list: []
                 }
             }
         },
         computed: {
-            detail(){ //返回详情
+            detail() { //返回详情
                 let _self = this;
                 if (_self.playData.id) {
                     _self.formTitle = '编辑剧本';
                     httpGet('contentPlayDetail', {id: _self.playData.id}, _self, function (res) {
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.formData = Object.assign({}, data);
-                            _self.formData.montageOrNot = Boolean(data.montageOrNot);
-                            //this.formData.montage = true;
+                            _self.formData.playType = data.playType + '';
                             if (data.keyword != '') {
                                 _self.formData.keyword = data.keyword.split(' ');
                             } else {
@@ -150,7 +172,8 @@
                             _self.searchMovie.list = [];
                             _self.searchSource.list = [];
                             _self.searchTag.list = [];
-                            //生成下拉框已选项 电影、视频、标签
+                            _self.searchAttr.list = [];
+                            //生成下拉框已选项 电影、视频、标签、属性
                             if (_self.formData.movieIds.length > 0) {
                                 let array = _self.formData.movieIds;
                                 let arrayName = _self.formData.movieNames;
@@ -161,15 +184,29 @@
                                     });
                                 }
                             }
-                            _self.searchSource.list.push({
-                                name: _self.formData.previewName,
-                                id: _self.formData.previewId
-                            });
+
+                            if (_self.formData.previewId) {
+                                _self.searchSource.list.push({
+                                    name: _self.formData.previewName,
+                                    id: _self.formData.previewId
+                                });
+                            }
+
                             if (_self.formData.tagIds.length > 0) {
                                 let array = _self.formData.tagIds;
                                 let arrayName = _self.formData.tagNames;
                                 for (var k = 0, length = array.length; k < length; k++) {
                                     _self.searchTag.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
+                            }
+                            if (_self.formData.playAttrIds.length > 0) {
+                                let array = _self.formData.playAttrIds;
+                                let arrayName = _self.formData.playAttrNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchAttr.list.push({
                                         name: arrayName[k],
                                         id: array[k]
                                     });
@@ -183,7 +220,7 @@
             }
         },
         methods: {
-            formSubmit(){ //提交表单
+            formSubmit() { //提交表单
                 let _self = this;
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
@@ -196,7 +233,8 @@
                         para.append("previewId", _self.formData.previewId);
                         para.append("movieIds", _self.formData.movieIds.join(','));
                         para.append("tagIds", _self.formData.tagIds.join(','));
-                        para.append("montageOrNot", Number(_self.formData.montageOrNot));
+                        para.append("playAttrIds", _self.formData.playAttrIds.join(','));
+                        para.append("playType", _self.playTypeArr[_self.formData.playType]);
                         para.append("kw", _self.formData.keyword.join(' '));
                         httpPost('contentPlayEdit', para, _self, function (res) {
                             _self.formLoading = false;
@@ -212,7 +250,7 @@
                     }
                 });
             },
-            handleMovie(query){ //搜索相关电影操作
+            handleMovie(query) { //搜索相关电影操作
                 let _self = this;
                 _self.searchMovie.loading = true;
                 let para = {
@@ -229,14 +267,14 @@
                 httpGet('contentMovieList', para, _self, function (res) {
                     _self.searchMovie.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchMovie.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleSource(query){ //搜索视频资源
+            handleSource(query) { //搜索视频资源
                 let _self = this;
                 _self.searchSource.loading = true;
                 let para = {
@@ -253,14 +291,14 @@
                 httpGet('contentSourceList', para, _self, function (res) {
                     _self.searchSource.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchSource.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleTag(query){ //搜索标签
+            handleTag(query) { //搜索标签
                 let _self = this;
                 _self.searchTag.loading = true;
                 let para = {
@@ -277,7 +315,7 @@
                 httpGet('contentTagList', para, _self, function (res) {
                     _self.searchTag.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchTag.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
@@ -285,11 +323,36 @@
                 })
 
             },
-            chooseFile(){ //触发选择文件
+            handleAttr(query) { //搜索属性
+                let _self = this;
+                let para = {
+                    offset: 0,
+                    size: 30,
+                    type: '2',
+                    id: '',
+                    kw: ''
+                };
+                if (isNaN(query)) { //输入不为数字，值传入kw
+                    para.kw = query;
+                } else {
+                    para.id = query;
+                }
+                _self.searchAttr.loading = true;
+                httpGet('contentAttrList', para, _self, function (res) {
+                    _self.searchAttr.loading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.searchAttr.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            chooseFile() { //触发选择文件
                 let fileDom = document.getElementById('cover');
                 fileDom.click();
             },
-            fileChange(){ // 文件变更后操作
+            fileChange() { // 文件变更后操作
                 let fileDom = document.getElementById('cover');
                 let _self = this;
                 if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
@@ -301,7 +364,7 @@
                         httpPost('imgUpload', paras, _self, function (res) {
                             _self.avatarLoading = false;
                             try {
-                                let { error, status,data } = res;
+                                let {error, status, data} = res;
                                 _self.formData.coverId = data.id;
                                 _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
                             } catch (error) {
@@ -340,7 +403,7 @@
             change() {
                 this.visible = false;
             },
-            resetFormData(){ //关闭表格弹窗，重置表格数据
+            resetFormData() { //关闭表格弹窗，重置表格数据
                 let _self = this;
                 _self.formTitle = '新增剧本';
                 _self.formData = {
@@ -355,18 +418,21 @@
                     movieNames: [],
                     tagIds: [], //标签id及名称
                     tagNames: [],
+                    playAttrIds: [], //属性id及名称
+                    playAttrNames: [],
                     keyword: [],
-                    montageOrNot: ''
+                    playType: '0'
                 };
                 _self.searchMovie.list = [];
                 _self.searchSource.list = [];
                 _self.searchTag.list = [];
+                _self.searchAttr.list = [];
                 document.getElementById('cover').value = '';
                 _self.playData = {};
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
             },
             value(val) {
                 this.visible = val;

@@ -435,7 +435,7 @@
                 this.formData.musicId = '';
             },
             submitUploadKs(){ //文件上传至金山
-                let file = document.getElementsByName('file')[1].files[0];
+                let file = document.getElementById('musicFile').files[0];
                 let _self = this;
                 if (!file) { //未选择文件
                     _self.$message({

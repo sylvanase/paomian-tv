@@ -5,6 +5,7 @@
                 <el-select v-model="formData.type" :disabled="formSelect" placeholder="请选择类型">
                     <el-option label="音乐属性" value="0"></el-option>
                     <el-option label="片段属性" value="1"></el-option>
+                    <el-option label="剧本属性" value="2"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="属性名称" prop="name">
@@ -76,7 +77,6 @@
                         iconId: this.attrData.iconId
                     };
                 }
-
             }
         },
         methods: {

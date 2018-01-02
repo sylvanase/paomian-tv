@@ -4,7 +4,8 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.type" @change="fetchList" placeholder="请选择" style="width: 150px;">
@@ -59,15 +60,28 @@
             </el-table-column>
             <el-table-column label="使用统计">
                 <template scope="scope">
-                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount : '0'}}人
+                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
+                    '0'}}人
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="210">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                    </el-button>
-                    <el-button type="info" size="small" @click="playVideo(scope.$index, scope.row)">播放</el-button>
+                    <div class="mt-10">
+                        <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
+                        </el-button>
+                        <el-button type="info" size="small" @click="playVideo(scope.$index, scope.row)">播放</el-button>
+                    </div>
+                    <div class="mt-10 mb-10">
+                        <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleRecommend(scope.row)">
+                            {{ scope.row.isRecommend == 1 ? '取消精选' : '精选' }}
+                        </el-button>
+                        <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleTop(scope.row)">
+                            {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -92,7 +106,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost} from '../../../api/api';
+    import {httpGet, httpDel, httpPost} from '../../../api/api';
     import vDetail from './materialDetail.vue'
 
     export default {
@@ -147,7 +161,7 @@
                 httpGet('contentMaterialList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) {
                             if (item.showType == 0) {
@@ -166,11 +180,11 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            attrList(){
+            attrList() {
                 let _self = this;
                 let para = {
                     type: '1',
@@ -180,14 +194,14 @@
                 };
                 httpGet('contentAttrList', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.attrSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            catList(){
+            catList() {
                 let _self = this;
                 let para = {
                     type: '1',
@@ -197,14 +211,14 @@
                 };
                 httpGet('contentCatList', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.catSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            showForm (row){ //显示表单
+            showForm(row) { //显示表单
                 this.isShowForm = true;
                 this.matData = row;
             },
@@ -212,10 +226,10 @@
             handleTableDel: function (index, row) {
                 let _self = this;
                 _self.tableLoading = true;
-                httpDel('topConfigDetail', {id: row.id}, _self, function (res) {
+                httpDel('contentMaterialDel', {id: row.id}, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('删除成功');
                         _self.fetchList();
                     } catch (error) {
@@ -223,7 +237,7 @@
                     }
                 })
             },
-            playVideo(index, row){ //播放视频
+            playVideo(index, row) { //播放视频
                 if (row.horiVideoUrl == null && row.vertVideoUrl == null) {
                     this.$message({
                         message: '视频链接均为空，请联系服务端同学',
@@ -241,8 +255,47 @@
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + _url + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
+            },
+            handleRecommend(row) {
+                let _self = this;
+                let para = {
+                    operation: Number(!row.isRecommend),
+                    id: row.id
+                };
+                httpGet('contentChoiceMaterial', para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            handleTop(row) {
+                let _self = this;
+                let para = {
+                    size: 10,
+                    id: row.id
+                };
+                let _api = null;
+                if (row.isTop == 1) { // 该条目现在为已置顶状态
+                    _api = 'contentCancelTopMaterial';
+                } else {
+                    _api = 'contentTopMaterial';
+                    para.offset = (_self.page - 1) * para.size;
+                }
+                httpGet(_api, para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         mounted() {
