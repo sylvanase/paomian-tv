@@ -20,8 +20,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="id" label="id"></el-table-column>
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
+            <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="materialName" label="片段名称"></el-table-column>
             <el-table-column prop="typeStr" label="片段类型" width="100">
             </el-table-column>
@@ -79,6 +79,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 videoVisible: false,  //播放视频界面 显示、隐藏
@@ -92,6 +93,7 @@
             },
             fetchList() { //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = new FormData();
                 paras.append('size', 10);
                 paras.append('offset', (_self.page - 1) * 10);

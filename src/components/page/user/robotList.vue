@@ -17,7 +17,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
@@ -65,7 +66,8 @@
             <el-table-column label="操作" width="150" fixed="right">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small" @click="userDel(scope.row)">
+                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
+                               @click="userDel(scope.row)">
                         {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
                     </el-button>
                 </template>
@@ -116,6 +118,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false,
@@ -138,6 +141,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -154,7 +158,7 @@
                 httpGet('robotList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
@@ -165,7 +169,7 @@
                     }
                 })
             },
-            showForm (row){ //显示用户详情表单
+            showForm(row) { //显示用户详情表单
                 this.isShowForm = true;
                 this.userData = row;
             },
@@ -179,7 +183,7 @@
                 httpDel('robotDel', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {
@@ -187,20 +191,20 @@
                     }
                 })
             },
-            showVideo (row){ //显示用户帖子列表
+            showVideo(row) { //显示用户帖子列表
                 this.isShowVideo = true;
                 this.userId = row.id;
             },
-            showLike (row){ //显示用户喜欢的帖子列表
+            showLike(row) { //显示用户喜欢的帖子列表
                 this.isShowLike = true;
                 this.userId = row.id;
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             }
         },

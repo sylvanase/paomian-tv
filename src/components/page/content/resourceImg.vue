@@ -10,11 +10,11 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="url" label="图片" width="200">
                 <template scope="scope">
-                    <img v-if="scope.row.url != ''" style="width: 100%;" :src="scope.row.url" alt=""/>
+                    <img v-if="scope.row.url != ''" style="width: 100%;vertical-align:middle;margin:10px auto;" :src="scope.row.url" alt=""/>
                 </template>
             </el-table-column>
             <el-table-column prop="url" label="url"></el-table-column>
@@ -53,6 +53,7 @@
             return {
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formVisible: false,//显示、隐藏编辑页
@@ -67,6 +68,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10

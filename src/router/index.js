@@ -85,6 +85,10 @@ export default new Router({
                     component: resolve => require(['../components/page/user/userList.vue'], resolve),
                     name: '用户列表'
                 }, {
+                    path: '/userCategory',
+                    component: resolve => require(['../components/page/user/category.vue'], resolve),
+                    name: '用户分类'
+                }, {
                     path: '/robot',
                     component: resolve => require(['../components/page/user/robotList.vue'], resolve),
                     name: '马甲号列表'
@@ -116,10 +120,22 @@ export default new Router({
                     component: resolve => require(['../components/page/posts/illegalList.vue'], resolve),
                     name: '举报贴'
                 }, {
+                    path: '/comment',
+                    component: resolve => require(['../components/page/posts/commentList.vue'], resolve),
+                    name: '评论库'
+                }, {
+                    path: '/commentAttr',
+                    component: resolve => require(['../components/page/posts/commentAttr.vue'], resolve),
+                    name: '评论库分类'
+                }, {
+                    path: '/commentRobot',
+                    component: resolve => require(['../components/page/posts/commentRobotList.vue'], resolve),
+                    name: '机器人评论'
+                }/*, {
                     path: '/barrage',
                     component: resolve => require(['../components/page/posts/barrageList.vue'], resolve),
                     name: '弹幕列表'
-                }, {
+                }*/, {
                     path: '/postsCheck',
                     component: resolve => require(['../components/page/posts/postsCheck.vue'], resolve),
                     name: '鉴黄列表'

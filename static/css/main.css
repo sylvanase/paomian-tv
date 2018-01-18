@@ -43,8 +43,7 @@ a {
 
 .toolbar {
     background: #f2f2f2;
-    padding: 10px;
-/ / border : 1 px solid #dfe6ec;
+    padding: 10px 10px 0;
     margin: 10px 0;
 
 }
@@ -74,7 +73,7 @@ a {
 
 .container .main {
     display: flex;
-/ / background : #324057;
+    /*background : #324057;*/
     position: absolute;
     top: 60px;
     bottom: 0;
@@ -84,7 +83,7 @@ a {
 .content-container {
     flex: 1;
     overflow-y: scroll;
-    padding: 10px 15px;
+    padding: 0 15px 10px;
 }
 
 .content-container .breadcrumb-container .title {

@@ -1,11 +1,11 @@
 <template>
     <el-dialog title="用户喜欢列表" :value="value" size="large" v-model="visible">
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;margin:-10px auto;">
             <el-table-column prop="id" label="id" width="180"></el-table-column>
             <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
-                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;vertical-align: middle;margin:10px auto;" :src="scope.row.coverUrl" alt="视频封面"/>
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
@@ -33,7 +33,7 @@
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
-                        <el-button size="small" type="success" @click="handleLike(scope.row)">100个赞</el-button>
+                        <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
@@ -67,6 +67,7 @@
                 visible: false, //默认隐藏
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: true,
                 tableList: []
             }
@@ -89,6 +90,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.body.clientHeight * 0.8 - 57 - 32 - 60;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -115,18 +117,7 @@
                 this.fetchList();
             },
             handleLike(row){ //点赞
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", row.id);
-                paras.append("num", 100);
-                httpPost('postsLike', paras, _self, function (res) {
-                    try {
-                        let { error, status,data } = res;
-                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+                this.$emit('like', row);
             },
             handleEssence(row){
                 let _self = this;

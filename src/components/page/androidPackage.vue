@@ -10,7 +10,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id"></el-table-column>
             <el-table-column prop="createTime" label="创建时间" width="175"></el-table-column>
             <el-table-column prop="size" label="包大小" width="100"></el-table-column>
@@ -86,13 +87,14 @@
 
 <script type="es6">
     import util from '../../api/util'
-    import { httpGet, httpPost} from '../../api/api';
+    import {httpGet, httpPost} from '../../api/api';
 
     export default {
         data() {
             return {
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formVisible: false,//新增界面是否显示
@@ -110,16 +112,17 @@
                 this.fetchList();
             },
             fetchList() {    //获取列表
+                let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10
                 };
-                let _self = this;
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
                 httpGet('androidApkList', paras, _self, function (res) {
                     _self.tableLoading = false;
-                    let { error, status,data } = res;
+                    let {error, status, data} = res;
                     try {
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
@@ -134,7 +137,7 @@
                     }
                 })
             },
-            handleApkStatus(row){ //启动、停止包
+            handleApkStatus(row) { //启动、停止包
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -151,10 +154,10 @@
                     }
                 })
             },
-            downloadApk(row){ // 下载安装包
+            downloadApk(row) { // 下载安装包
                 window.open(row.apkUrl);
             },
-            showForm (){
+            showForm() {
                 this.formVisible = true;
                 this.formLoading = false;
                 let clearFile = document.getElementById('apkFile');
@@ -167,7 +170,7 @@
                     des: ''
                 };
             },
-            formSubmit(){ //提交表格
+            formSubmit() { //提交表格
                 let _self = this;
                 let file = document.getElementById('apkFile').files.length;
                 if (file == 0) {

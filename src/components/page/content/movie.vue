@@ -1,7 +1,7 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
@@ -16,7 +16,7 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="电影名称"></el-table-column>
             <el-table-column prop="createTime" label="创建时间">
@@ -66,6 +66,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formTitle: '新增电影',
@@ -92,6 +93,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,

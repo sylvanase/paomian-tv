@@ -1,7 +1,7 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch"
@@ -14,9 +14,11 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-select v-model="filters.status" @change="fetchList" placeholder="请选择" style="width: 100px;">
-                        <el-option label="在线" value="1"></el-option>
-                        <el-option label="离线" value="0"></el-option>
+                    <el-select v-model="filters.attr" @change="fetchList" placeholder="请选择" style="width: 150px;">
+                        <el-option label="全部属性" value=""></el-option>
+                        <el-option v-for="item in attrSelect" :key="item.id" :label="item.name"
+                                   :value="item.id">
+                        </el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item>
@@ -29,7 +31,7 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column type="expand">
                 <template scope="props">
                     <el-form label-position="left" class="table-expand">
@@ -71,44 +73,30 @@
             </el-table-column>
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="剧本名称"></el-table-column>
-            <el-table-column prop="status" label="状态" width="80">
-                <template scope="scope">
-                    <el-tag :type="scope.row.status == 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.status == 1 ? '在线' : '离线' }}
-                    </el-tag>
-                </template>
-            </el-table-column>
             <el-table-column label="使用统计">
                 <template scope="scope">
                     {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="300">
+            <el-table-column label="操作" width="260">
                 <template scope="scope">
                     <div class="mt-10">
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                         <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
-                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                        </el-button>
                         <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
-
                     </div>
                     <div class="mt-10 mb-10">
-                        <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
-                                   @click="handleTableLine(scope.$index, scope.row)">
-                            {{ scope.row.status == 1 ? '下线' : '上线' }}
+                        <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleRecommend(scope.row)">
+                            {{ scope.row.isRecommend == 1 ? '取消推荐' : '推荐' }}
                         </el-button>
-                        <template v-if="scope.row.status == 1">
-                            <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
-                                       @click="handleRecommend(scope.row)">
-                                {{ scope.row.isRecommend == 1 ? '取消推荐' : '推荐' }}
-                            </el-button>
-                            <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
-                                       @click="handleTop(scope.row)">
-                                {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
-                            </el-button>
-                        </template>
+                        <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleTop(scope.row)">
+                            {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
+                        </el-button>
+                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
+                        </el-button>
                     </div>
                 </template>
             </el-table-column>
@@ -151,12 +139,14 @@
             return {
                 filters: { //搜索筛选条件
                     type: '0',
-                    status: '1',
+                    attr: '', //属性
                     kw: '',
                     id: ''
                 },
+                attrSelect: '', //属性列表
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false, //显示、隐藏编辑页
@@ -177,9 +167,10 @@
             },
             fetchList() { //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let para = {
                     type: _self.filters.type,
-                    status: _self.filters.status,
+                    attrId: _self.filters.attr,
                     offset: 0,
                     size: 10,
                     id: '',
@@ -216,6 +207,23 @@
                 this.filters.kw = '';
                 this.fetchList();
             },
+            attrList(){
+                let _self = this;
+                let para = {
+                    type: '2',
+                    status: '',
+                    offset: 0,
+                    size: 99999
+                };
+                httpGet('contentAttrList', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.attrSelect = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
             playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
@@ -231,15 +239,21 @@
             //删除表格数据
             handleTableDel: function (index, row) {
                 let _self = this;
-                _self.tableLoading = true;
-                httpDel('contentPlayDel', {id: row.id}, _self, function (res) {
-                    try {
-                        _self.$message.success('删除成功');
-                        _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+                _self.$confirm('此操作将删除该剧本, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    _self.tableLoading = true;
+                    httpDel('contentPlayDel', {id: row.id}, _self, function (res) {
+                        try {
+                            _self.$message.success('删除成功');
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                }).catch(() => {});
             },
             handleTableLine(index, row) {
                 let _self = this;
@@ -325,6 +339,7 @@
         },
         mounted() {
             this.fetchList();
+            this.attrList();
         }
     }
 

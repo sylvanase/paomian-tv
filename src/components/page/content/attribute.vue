@@ -24,7 +24,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="属性名称"></el-table-column>
             <el-table-column prop="countNum" label="数量"></el-table-column>
@@ -38,10 +39,10 @@
             <el-table-column label="操作" width="380">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
+                    <el-button type="danger" size="small" @click="handleTableDel(scope.row)">删除
                     </el-button>
                     <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
-                               @click="handleTableLine(scope.$index, scope.row)">
+                               @click="handleTableLine(scope.row)">
                         {{ scope.row.status == 1 ? '下线' : '上线' }}
                     </el-button>
                     <template v-if="scope.row.status == 1">
@@ -75,7 +76,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost } from '../../../api/api'
+    import {httpGet, httpDel, httpPost} from '../../../api/api'
     import vDetail from './attrDetail.vue'
 
     export default {
@@ -90,6 +91,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false, //显示、隐藏编辑页
@@ -104,6 +106,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -115,7 +118,7 @@
                 httpGet('contentAttrList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content;
                     } catch (error) {
@@ -123,12 +126,12 @@
                     }
                 })
             },
-            showForm (row){ //显示表单
+            showForm(row) { //显示表单
                 this.isShowForm = true;
                 this.attrData = row;
             },
             //删除表格数据
-            handleTableDel: function (index, row) {
+            handleTableDel(row) {
                 this.$confirm('确认删除该记录吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
@@ -138,7 +141,7 @@
                     httpDel('contentAttrDel', paras, _self, function (res) {
                         _self.tableLoading = false;
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.$message.success('删除成功');
                             _self.fetchList();
                         } catch (error) {
@@ -147,7 +150,7 @@
                     })
                 });
             },
-            handleTableLine(index, row){
+            handleTableLine(row) {
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -162,7 +165,7 @@
                     }
                 })
             },
-            handleTableShift(row, operate){
+            handleTableShift(row, operate) {
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);

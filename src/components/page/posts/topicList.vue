@@ -1,10 +1,11 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/关键字" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/关键字" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
@@ -26,7 +27,7 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" min-width="80" fixed></el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
             <el-table-column prop="name" label="标题" min-width="200"></el-table-column>
@@ -77,7 +78,7 @@
 
         <!--视频列表-->
         <v-video :topicData="topicData" v-model="isShowVideo" v-on:preview="playVideo"
-                 v-on:refresh="fetchList" v-on:barrage="showBarrage"></v-video>
+                 v-on:refresh="fetchList" v-on:barrage="showBarrage" v-on:like="addLike"></v-video>
 
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
@@ -88,15 +89,18 @@
         <el-dialog title="话题置顶配置" v-model="configVisible" size="tiny">
             <el-form :model="configData" label-width="80px" ref="configData">
                 <el-form-item label="top1" prop="first">
-                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.first" type="number"
+                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.first"
+                              type="number"
                               auto-complete="off"></el-input>
                 </el-form-item>
                 <el-form-item label="top2" prop="second">
-                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.second" type="number"
+                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.second"
+                              type="number"
                               auto-complete="off"></el-input>
                 </el-form-item>
                 <el-form-item label="top3" prop="third" style="margin-bottom: 0;">
-                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.third" type="number"
+                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="configData.third"
+                              type="number"
                               auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
@@ -111,7 +115,8 @@
             <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top: -20px;">
                 <el-form :inline="true" :model="barrage.filters">
                     <el-form-item>
-                        <el-select v-model="barrage.filters.tag" @change="fetchBarrage" placeholder="请选择" style="width: 150px;">
+                        <el-select v-model="barrage.filters.tag" @change="fetchBarrage" placeholder="请选择"
+                                   style="width: 150px;">
                             <el-option label="全部标签" value=""></el-option>
                             <el-option v-for="item in barrage.tagList" :key="item.id" :label="item.name"
                                        :value="item.id">
@@ -127,13 +132,16 @@
                 </el-form>
             </el-col>
             <!--表格-->
-            <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border style="width: 100%;"
+            <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border
+                      style="width: 100%;"
                       @selection-change="handleSelectionChange" highlight-current-row>
                 <el-table-column type="selection" width="55"></el-table-column>
                 <el-table-column prop="id" label="id" width="150"></el-table-column>
                 <el-table-column prop="text" label="弹幕内容">
                     <template scope="scope">
-                        <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容" @change="handleEdit(scope.$index, scope.row)"></el-input> <span>{{scope.row.text}}</span>
+                        <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
+                                  @change="handleEdit(scope.$index, scope.row)"></el-input>
+                        <span>{{scope.row.text}}</span>
                     </template>
                 </el-table-column>
             </el-table>
@@ -146,12 +154,28 @@
             </el-col>
 
         </el-dialog>
+
+        <!--为帖子点赞-->
+        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
+            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
+                     style="margin-bottom: -20px;">
+                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
+                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
+                                     v-model="likeData.num"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
     import vDetail from './topicDetail.vue'
     import vVideo from './topicVideo.vue'
 
@@ -161,6 +185,15 @@
             vVideo
         },
         data() {
+            let validateLike = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入赞数量'));
+                } else {
+                    if (value > 100) {
+                        callback(new Error('数量不能超过1000!'));
+                    }
+                }
+            };
             return {
                 filters: {
                     kw: '',
@@ -169,6 +202,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false, //显示、隐藏编辑页
@@ -186,7 +220,7 @@
                 isShowBarrage: false, //显示、隐藏弹幕列表
                 barrage: {
                     vpId: '', //视频id
-                    tagList:[],
+                    tagList: [],
                     total: 0, //表格列表数据总数
                     page: 1, //当前页，默认为第一页
                     tableLoading: false, //表格的loading符号
@@ -195,6 +229,17 @@
                         tag: ''
                     },
                     multipleBarrageIds: [] //添加的弹幕id集合
+                },
+                likeVisible: false,
+                likeData: { // 点赞
+                    loading: false,
+                    num: 0,
+                    id: ''
+                },
+                likeRules: {
+                    num: [
+                        {validator: validateLike, trigger: 'blur'},
+                    ]
                 }
             }
         },
@@ -205,6 +250,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -223,11 +269,11 @@
                 httpGet('topicList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
-                            if(item.lastVideoTime){
+                            if (item.lastVideoTime) {
                                 item.lastVideoTime = util.timestampFormat(item.lastVideoTime);
                             }
                             return item;
@@ -237,22 +283,22 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            setStart(val){ //格式化日期控件值
+            setStart(val) { //格式化日期控件值
                 this.filters.start = val;
             },
-            setEnd(val){
+            setEnd(val) {
                 this.filters.end = val;
             },
-            handelConfig(){ //显示置顶配置弹窗
+            handelConfig() { //显示置顶配置弹窗
                 let _self = this;
                 _self.configVisible = true;
                 httpGet('topConfigDetail', '', _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.configData = {
                             first: data.firstTopId,
                             second: data.secondTopId,
@@ -263,7 +309,7 @@
                     }
                 })
             },
-            configSubmit(){
+            configSubmit() {
                 this.$refs.configData.validate((valid) => {
                     let _self = this;
                     let paras = new FormData();
@@ -282,20 +328,20 @@
                     })
                 });
             },
-            showForm (row){ //显示详情表单
+            showForm(row) { //显示详情表单
                 this.isShowForm = true;
                 this.topicData = row;
             },
-            showVideo (row){ //显示视频列表
+            showVideo(row) { //显示视频列表
                 this.isShowVideo = true;
                 this.topicData = row;
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
             topicDel: function (row) { // 话题删除、恢复
@@ -330,7 +376,7 @@
                     }
                 })
             },
-            showBarrage (row){ //显示弹幕列表
+            showBarrage(row) { //显示弹幕列表
                 this.isShowBarrage = true;
                 this.fetchBarrage();
                 this.barrageTag();
@@ -354,7 +400,7 @@
                 _self.barrage.tableLoading = true;
                 httpGet('barrageList', paras, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.barrage.tableList = data.content;
                         _self.barrage.total = data.totalElements;
                         _self.barrage.tableLoading = false;
@@ -363,7 +409,7 @@
                     }
                 })
             },
-            submitBarrage(){ //提交所选弹幕
+            submitBarrage() { //提交所选弹幕
                 let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", _self.barrage.vpId);
@@ -376,11 +422,11 @@
                     }
                 })
             },
-            barrageTag(){ //加载弹幕标签
+            barrageTag() { //加载弹幕标签
                 let _self = this;
                 httpGet('barrageTag', '', _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.barrage.tagList = data;
                     } catch (error) {
                         util.jsErrNotify(error);
@@ -403,11 +449,36 @@
                 paras.append("text", row.text);
                 httpPost('barrageEdit', paras, _self, function (res) {
                     try {
-                        let { error, status } = res;
+                        let {error, status} = res;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            addLike(row) { // 显示增加赞数
+                this.likeVisible = true;
+                this.likeData.id = row.id;
+            },
+            likeSubmit() {
+                let _self = this;
+                let paras = new FormData();
+                paras.append("vpId", _self.likeData.id);
+                paras.append("num", _self.likeData.num);
+                httpPost('postsLike', paras, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+//                        _self.$message.success(data);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+                _self.$message.success('已发送点赞请求');
+                _self.likeVisible = false;
+            },
+            resetLike() {
+                this.likeData.id = '';
+                this.likeData.num = 0;
+                this.likeData.loading = false;
             }
         },
         mounted() {
@@ -420,10 +491,12 @@
     .tb-edit .el-input {
         display: none
     }
+
     .tb-edit .current-row .el-input {
         display: block
     }
-    .tb-edit .current-row .el-input+span {
+
+    .tb-edit .current-row .el-input + span {
         display: none
     }
 </style>

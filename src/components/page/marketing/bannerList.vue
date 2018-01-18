@@ -2,10 +2,11 @@
     <section>
         <el-tabs v-model="activeName" @tab-click="tabChange">
             <el-tab-pane label="开机广告" name="launch">
-                <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+                <el-col :span="24" class="toolbar">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="launch.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="launchList"></el-input>
+                            <el-input v-model="launch.filters.id" placeholder="bannerID" icon="circle-close"
+                                      :on-icon-click="resetSearch" @keyup.enter.native="launchList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker v-model="launch.filters.time" type="datetimerange" placeholder="选择时间范围"
@@ -21,7 +22,8 @@
                     </el-form>
                 </el-col>
                 <!--表格-->
-                <el-table v-loading="launch.loading" :data="launch.list" stripe border style="width: 100%;">
+                <el-table v-loading="launch.loading" :data="launch.list" stripe border :max-height="launch.height"
+                          style="width: 100%;">
                     <el-table-column prop="id" label="id" width="80"></el-table-column>
                     <el-table-column prop="iosImageUrl" label="ios开机图" width="160">
                         <template scope="scope">
@@ -58,10 +60,11 @@
                 </el-col>
             </el-tab-pane>
             <el-tab-pane label="话题列表" name="topic">
-                <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+                <el-col :span="24" class="toolbar">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="topic.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="topicList"></el-input>
+                            <el-input v-model="topic.filters.id" placeholder="bannerID" icon="circle-close"
+                                      :on-icon-click="resetSearch" @keyup.enter.native="topicList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
@@ -76,7 +79,8 @@
                     </el-form>
                 </el-col>
                 <!--表格-->
-                <el-table v-loading="topic.loading" :data="topic.list" stripe border style="width: 100%;">
+                <el-table v-loading="topic.loading" :data="topic.list" stripe border :max-height="topic.height"
+                          style="width: 100%;">
                     <el-table-column prop="id" label="id" width="80"></el-table-column>
                     <el-table-column prop="topicUrl" label="banner图" width="240">
                         <template scope="scope">
@@ -106,10 +110,11 @@
             </el-tab-pane>
             <el-tab-pane label="个人中心" name="personal">个人中心，暂无内容</el-tab-pane>
             <el-tab-pane label="广场" name="square">
-                <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+                <el-col :span="24" class="toolbar">
                     <el-form :inline="true">
                         <el-form-item>
-                            <el-input v-model="square.filters.id" placeholder="bannerID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="squareList"></el-input>
+                            <el-input v-model="square.filters.id" placeholder="bannerID" icon="circle-close"
+                                      :on-icon-click="resetSearch" @keyup.enter.native="squareList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
@@ -124,7 +129,8 @@
                     </el-form>
                 </el-col>
                 <!--表格-->
-                <el-table v-loading="square.loading" :data="square.list" stripe border style="width: 100%;">
+                <el-table v-loading="square.loading" :data="square.list" stripe border :max-height="square.height"
+                          style="width: 100%;">
                     <el-table-column prop="id" label="id" width="80"></el-table-column>
                     <el-table-column prop="squareImageUrl" label="banner图" width="240">
                         <template scope="scope">
@@ -170,7 +176,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
 
     import vLaunchDetail from './launchDetail.vue'
     import vTopicDetail from './topicDetail.vue'
@@ -188,6 +194,7 @@
                 launch: { // 开机页数据
                     loading: false,
                     list: [],
+                    height: '100%',
                     total: 0,
                     page: 1,
                     size: 10,
@@ -203,6 +210,7 @@
                 topic: { // 话题页数据
                     loading: false,
                     list: [],
+                    height: '100%',
                     total: 0,
                     page: 1,
                     size: 10,
@@ -218,6 +226,7 @@
                 personal: { // 个人页数据
                     loading: false,
                     list: [],
+                    height: '100%',
                     total: 0,
                     page: 1,
                     size: 10,
@@ -232,6 +241,7 @@
                 },
                 square: { // 广场页数据
                     loading: false,
+                    height: '100%',
                     list: [],
                     total: 0,
                     page: 1,
@@ -248,7 +258,7 @@
             }
         },
         methods: {
-            tabChange(tab){
+            tabChange(tab) {
                 const _self = this;
                 let _name = tab.name;
                 _self.launch.page = 1; // 将所有tab下的page重置为1
@@ -260,25 +270,25 @@
                     start: '',
                     end: '',
                     time: ''
-                }
+                };
                 _self.topic.filters = {
                     id: '',
                     start: '',
                     end: '',
                     time: ''
-                }
+                };
                 _self.personal.filters = {
                     id: '',
                     start: '',
                     end: '',
                     time: ''
-                }
+                };
                 _self.square.filters = {
                     id: '',
                     start: '',
                     end: '',
                     time: ''
-                }
+                };
                 if (_name == 'launch') {
                     _self.launchList();
                 }
@@ -292,7 +302,7 @@
                     _self.squareList();
                 }
             },
-            resetSearch(){
+            resetSearch() {
                 const _self = this;
                 let _name = _self.activeName;
                 _self[_name].filters.id = '';
@@ -326,7 +336,7 @@
                     _self.squareList();
                 }
             },
-            setRange(val){ //格式化日期控件值
+            setRange(val) { //格式化日期控件值
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
                 _self[_name].filters.start = val.substring(0, 19);
@@ -334,6 +344,7 @@
             },
             launchList() {    //获取开机页列表
                 let _self = this;
+                _self.launch.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
                 let paras = new FormData();
                 paras.append('size', _self.launch.size);
                 paras.append('offset', (_self.launch.page - 1) * _self.launch.size);
@@ -344,7 +355,7 @@
                 httpPost('launchBannerList', paras, _self, function (res) {
                     _self.launch.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.launch.total = data.totalElements;
                         _self.launch.list = data.content.map(function (item) { //格式化显示时间
                             item.startTime = util.timestampFormat(item.startTime);
@@ -354,13 +365,14 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
-                }, function(res){
+                }, function (res) {
                     _self.launch.loading = false;
                     _self.$message.error(res.data.error);
                 })
             },
             topicList() {    // 获取话题页列表
                 let _self = this;
+                _self.topic.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
                 let paras = new FormData();
                 paras.append('size', _self.topic.size);
                 paras.append('offset', (_self.topic.page - 1) * _self.topic.size);
@@ -371,7 +383,7 @@
                 httpPost('topicBannerList', paras, _self, function (res) {
                     _self.topic.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.topic.total = data.totalElements;
                         _self.topic.list = data.content.map(function (item) { //格式化显示时间
                             item.startTime = util.timestampFormat(item.startTime);
@@ -381,7 +393,7 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
-                }, function(res){
+                }, function (res) {
                     _self.topic.loading = false;
                     _self.$message.error(res.data.error);
                 })
@@ -391,6 +403,7 @@
             },
             squareList() {    // 获取广场页列表
                 let _self = this;
+                _self.square.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
                 let paras = new FormData();
                 paras.append('size', _self.square.size);
                 paras.append('offset', (_self.square.page - 1) * _self.square.size);
@@ -401,7 +414,7 @@
                 httpPost('squareBannerList', paras, _self, function (res) {
                     _self.square.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.square.total = data.totalElements;
                         _self.square.list = data.content.map(function (item) { //格式化显示时间
                             item.startTime = util.timestampFormat(item.startTime);
@@ -411,18 +424,18 @@
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
-                }, function(res){
+                }, function (res) {
                     _self.square.loading = false;
                     _self.$message.error(res.data.error);
                 })
             },
-            showForm (row){ // 根据当前显示tab显示对应的类型表单
+            showForm(row) { // 根据当前显示tab显示对应的类型表单
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
                 _self[_name].formData = row; // 对应tab的表格数据赋值
                 _self[_name].showForm = true; // 对应tab的表格显示
             },
-            bannerDel (row){
+            bannerDel(row) {
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
                 let paras = {
@@ -457,4 +470,7 @@
 </script>
 
 <style>
+    .el-tabs__header {
+        margin-bottom: 0;
+    }
 </style>

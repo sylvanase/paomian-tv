@@ -16,7 +16,7 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="分类名称"></el-table-column>
             <el-table-column prop="countNum" label="数量"></el-table-column>
@@ -70,6 +70,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formTitle: '新增分类',
@@ -98,6 +99,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,

@@ -1,7 +1,7 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top:-10px;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch"
@@ -41,7 +41,8 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-select v-model="filters.city" style="width: 180px;" @change="fetchList" filterable placeholder="请选择城市">
+                    <el-select v-model="filters.city" style="width: 180px;" @change="fetchList" filterable
+                               placeholder="请选择城市">
                         <el-option label="全部城市" value="0"></el-option>
                         <el-option v-for="item in cityFilterList" :key="item.cityId" :label="item.cityName"
                                    :value="item.cityId"></el-option>
@@ -54,7 +55,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="uid" min-width="100" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
@@ -69,12 +71,7 @@
                 </template>
             </el-table-column>
             <el-table-column prop="createTime" label="注册时间" min-width="120"></el-table-column>
-            <el-table-column prop="sex" label="性别" width="80">
-                <template scope="scope">
-                    {{ scope.row.sex == 0 ? '男' : '女' }}
-                </template>
-            </el-table-column>
-            <el-table-column prop="age" label="年龄"></el-table-column>
+
             <el-table-column prop="fansCount" label="粉丝" sortable width="120">
                 <template scope="scope">
                     <el-button v-if="scope.row.fansCount" size="small" @click="showFan(scope.row)">{{
@@ -111,6 +108,12 @@
                     <span v-else>0</span>
                 </template>
             </el-table-column>
+            <el-table-column prop="sex" label="性别" width="80">
+                <template scope="scope">
+                    {{ scope.row.sex == 0 ? '男' : '女' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="age" label="年龄"></el-table-column>
             <el-table-column prop="address" label="地址" min-width="200"></el-table-column>
             <el-table-column prop="phone" label="手机" min-width="150"></el-table-column>
             <el-table-column label="QQ" width="90">
@@ -149,7 +152,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="310" fixed="right">
+            <el-table-column label="操作" width="280" fixed="right">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
@@ -211,6 +214,17 @@
                                    :value="item.cityId+''"></el-option>
                     </el-select>
                 </el-form-item>
+                <!--<el-form-item label="用户分类" prop="catIds">
+                    <template>
+                        <el-select style="width: 50%;" v-model="formData.catIds" multiple filterable remote
+                                   loading-text="搜索中" placeholder="输入关键词搜索分类" :remote-method="handleCat"
+                                   :loading="searchCat.loading">
+                            <el-option v-for="item in searchCat.list" :key="item.id" :label="item.name"
+                                       :value="item.id">
+                            </el-option>
+                        </el-select>
+                    </template>
+                </el-form-item>-->
                 <template v-if="formData.imei.length > 0" v-for="item in formData.imei">
                     <el-form-item label="设备类型">
                         <span>{{ item.name }}</span>
@@ -222,6 +236,7 @@
                 <el-form-item label="手机号" prop="phone">
                     <el-input style="width: 200px;" v-model.trim="formData.phone" auto-complete="off"></el-input>
                     <el-button class="ml-10" size="small" @click.native="phoneUpdate">更换</el-button>
+                    <el-button class="ml-10" size="small" @click.native="phoneUnbind">解绑</el-button>
                 </el-form-item>
                 <el-form-item label="QQ">
                     <template v-if="formData.qq">
@@ -317,11 +332,11 @@
         </el-dialog>
 
         <!--增加粉丝-->
-        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny"
-                   :close-on-click-modal="false">
+        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny">
             <el-form :model="fanData" label-width="80px" :rules="fanRules" ref="fanData" style="margin-bottom: -20px;">
                 <el-form-item label="粉丝数量" prop="num" style="margin-bottom: -20px;">
-                    <el-input-number placeholder="单次限制最多100个" :min="1" :max="100" v-model="fanData.num"></el-input-number>
+                    <el-input-number placeholder="单次限制最多100个" step="1" :min="1" :max="100"
+                                     v-model="fanData.num"></el-input-number>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -331,8 +346,22 @@
             </div>
         </el-dialog>
 
-        <!--用户详情-->
-        <!--<v-detail :userData="userData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>-->
+
+        <!--为帖子点赞-->
+        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
+            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
+                     style="margin-bottom: -20px;">
+                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
+                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
+                                     v-model="likeData.num"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
 
         <!--用户粉丝-->
         <v-fan :userId="userId" v-model="isShowFan" v-on:preview="showForm"></v-fan>
@@ -341,10 +370,12 @@
         <v-follow :userId="userId" v-model="isShowFollow" v-on:preview="showForm"></v-follow>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"></v-video>
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"
+                 v-on:like="addLike"></v-video>
 
         <!--用户喜欢-->
-        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"
+                v-on:like="addLike"></v-like>
 
     </section>
 </template>
@@ -371,8 +402,17 @@
                 if (value === '') {
                     callback(new Error('请输入粉丝数量'));
                 } else {
-                    if(value > 100){
+                    if (value > 100) {
                         callback(new Error('数量不能超过100!'));
+                    }
+                }
+            };
+            let validateLike = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入赞数量'));
+                } else {
+                    if (value > 100) {
+                        callback(new Error('数量不能超过1000!'));
                     }
                 }
             };
@@ -389,6 +429,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false,
@@ -409,11 +450,16 @@
                     qq: '',
                     wechat: '',
                     weibo: '',
-                    count: 0
+                    count: 0,
+                    catIds: []
                 },
                 regionList: [],
                 cityList: [],
                 cityFilterList: [],
+                searchCat: { //搜索用户分类
+                    loading: false,
+                    list: []
+                },
                 userData: {},
                 userId: '', //用户id
                 isShowFan: false, //显示、隐藏粉丝列表
@@ -442,11 +488,22 @@
                     num: 0,
                     id: ''
                 },
-                fanRules:{
+                fanRules: {
                     num: [
-                        { validator: validateNum, trigger: 'blur' },
+                        {validator: validateNum, trigger: 'blur'},
                         /*{ min: 6, max: 20, message: '密码长度在6到20个字符'}*/
                     ],
+                },
+                likeVisible: false,
+                likeData: { // 点赞
+                    loading: false,
+                    num: 0,
+                    id: ''
+                },
+                likeRules: {
+                    num: [
+                        {validator: validateLike, trigger: 'blur'},
+                    ]
                 }
             }
         },
@@ -457,6 +514,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 124 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -515,6 +573,7 @@
                         _self.showLoading = false;
                         try {
                             let {error, status, data} = res;
+                            _self.searchCat.list = [];
                             _self.formData = {
                                 id: data.id,
                                 name: data.username,
@@ -529,8 +588,19 @@
                                 qq: data.qqBind,
                                 wechat: data.wxBind,
                                 weibo: data.wbBind,
-                                count: 0
-                            }
+                                count: 0,
+//                                catIds: data.catIds
+                            };
+                            /*if (_self.formData.catIds.length > 0) {
+                                let array = _self.formData.catIds;
+                                let arrayName = _self.formData.catNames;
+                                for (var k = 0, length = array.length; k < length; k++) {
+                                    _self.searchCat.list.push({
+                                        name: arrayName[k],
+                                        id: array[k]
+                                    });
+                                }
+                            }*/
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -663,6 +733,24 @@
                     }
                 })
             },
+            handleAttr(query) { //搜索用户分类
+                let _self = this;
+                let para = {
+                    offset: 0,
+                    size: 30,
+                    kw: query
+                };
+                _self.searchCat.loading = true;
+                httpGet('userCategory', para, _self, function (res) {
+                    _self.searchCat.loading = false;
+                    try {
+                        let {data} = res;
+                        _self.searchCat.list = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
             formSubmit() { //提交表单
                 let _self = this;
                 let paras = new FormData();
@@ -733,6 +821,24 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            phoneUnbind() { //用户手机解锁
+                this.$confirm('确认将该用户手机解绑吗?', '提示', {
+                    type: 'warning'
+                }).then(() => {
+                    let _self = this;
+                    let paras = {
+                        uid: _self.userData.id,
+                        mobile: _self.userData.phone
+                    };
+                    httpGet('userMobileUnbind', paras, _self, function (res) {
+                        try {
+                            _self.$message.success('解绑成功');
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                });
             },
             unbindThird(type) { //第三方账号解绑
                 this.$confirm('确认解绑吗?', '提示', {
@@ -862,6 +968,31 @@
                 this.fanData.id = '';
                 this.fanData.num = 0;
                 this.fanData.loading = false;
+            },
+            addLike(row) { // 显示增加赞数
+                this.likeVisible = true;
+                this.likeData.id = row.id;
+            },
+            likeSubmit() {
+                let _self = this;
+                let paras = new FormData();
+                paras.append("vpId", _self.likeData.id);
+                paras.append("num", _self.likeData.num);
+                httpPost('postsLike', paras, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+//                        _self.$message.success(data);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+                _self.$message.success('已发送点赞请求');
+                _self.likeVisible = false;
+            },
+            resetLike() {
+                this.likeData.id = '';
+                this.likeData.num = 0;
+                this.likeData.loading = false;
             }
         },
         mounted() {

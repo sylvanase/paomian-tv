@@ -95,6 +95,7 @@ let api = { //接口地址
     userStatus: '/user/status/update', //用户删除
     userCare: '/user/user_care_edit', //运营关注用户
     userUnbind: '/user/bind/delete', //用户解绑第三方
+    userMobileUnbind: '/user/mobile/unbind', //用户手机解锁
     userPhoneUpdate: '/user/mobile/update', //用户更换手机号
     userFansList: '/user/fans/list', //用户粉丝列表
     userFanDel: '/user/fans/delete', //用户粉丝移除
@@ -109,6 +110,11 @@ let api = { //接口地址
     userMasterBarrage: '/user/master/video/barrage/list', //主账号下小号发送弹幕列表
     userMasterLike: '/user/master/video/like/list', //主账号下小号点赞列表
     userFansAdd: '/robot/user/followBatch', // 为用户增加粉丝
+    userAtList: '/user/at_list', // @时进行用户查找
+    userCategory: '/user/category/list', // 用户分类
+    userCatAdd: '/user/category/add', // 新增用户分类
+    userCatEdit: '/user/category/edit', // 编辑用户分类
+    userCatDel: '/user/category/delete', // 删除用户分类
 
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表
@@ -128,6 +134,19 @@ let api = { //接口地址
     postsCheckList: '/video/check_result_list', // 鉴黄列表
     postsBlocked: '/video/vpid_blocked', // 封禁视频
     postsUnblock: '/video/vpid_relieve', // 解封视频
+
+    commentList: '/comment/list', // 评论库列表
+    commentListDel: '/comment/delete', // 评论库删除
+    commentListSearch: '/comment/add/list', // 为帖子增加评论时，所调用的评论库列表，带有查询参数
+    commentEdit: '/comment/edit', // 评论库新增、编辑
+    commentAttrList: '/comment/attr/list', // 评论库分类
+    commentAttrAdd: '/comment/attr/add', // 新增评论分类
+    commentAttrEdit: '/comment/attr/edit', // 编辑评论分类
+    commentAttrDel: '/comment/attr/delete', // 评论库分类删除
+    commentRobotList: '/comment/robot/list', // 机器人评论库列表
+    commentRobotReplyList: '/comment/robot/reply/list', // 机器人评论库列表
+    commentRobotReplyAdd: '/comment/robot/reply/add', // 机器人回复评论
+
 
     topicList: '/topic/list', //话题列表
     topicDel: '/topic/update_status', //删除话题

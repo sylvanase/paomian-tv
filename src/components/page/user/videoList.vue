@@ -1,38 +1,67 @@
 <template>
     <el-dialog title="用户发帖列表" :value="value" size="large" v-model="visible">
+        <!--顶部工具条-->
+        <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top:-10px;">
+            <el-form :inline="true" :model="filters">
+                <el-form-item>
+                    <el-select v-model="filters.isEssence" @change="fetchList" style="width: 110px;">
+                        <el-option label="精华状态" value=""></el-option>
+                        <el-option label="非精" value="0"></el-option>
+                        <el-option label="精华" value="1"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-input type="number" v-model="filters.minLikeCount" min="0" max="5000" placeholder="最小赞数"
+                              style="width: 100px;"></el-input>
+                    <span> - </span>
+                    <el-input type="number" v-model="filters.maxLikeCount" min="0" max="5000" placeholder="最大赞数"
+                              style="width: 100px;"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="fetchList">查询</el-button>
+                </el-form-item>
+            </el-form>
+        </el-col>
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;margin:-10px auto;">
             <el-table-column prop="id" label="id" width="180" fixed></el-table-column>
             <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
-                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''"
+                         style="width: 100%;cursor: pointer;vertical-align:middle;margin:10px auto;"
+                         :src="scope.row.coverUrl" alt="视频封面"/>
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
             <el-table-column prop="videoText" width="200" label="视频简介"></el-table-column>
-            <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
-            <el-table-column label="观看" width="120">
-                <template scope="scope">
-                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewUserCount : '0'}}人
-                </template>
-            </el-table-column>
             <el-table-column label="喜欢" width="120">
                 <template scope="scope">
-                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0'}}人
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0' }}次/{{ scope.row.videoInfoPo ?
+                    scope.row.videoInfoPo.likeCount : '0'}}人
+                </template>
+            </el-table-column>
+            <el-table-column label="观看" width="120">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.viewCount : '0' }}次/{{ scope.row.videoInfoPo ?
+                    scope.row.videoInfoPo.viewUserCount : '0'}}人
                 </template>
             </el-table-column>
             <el-table-column label="弹幕" width="120">
                 <template scope="scope">
-                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageUserCount : '0'}}人
+                    {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageCount : '0' }}次/{{ scope.row.videoInfoPo ?
+                    scope.row.videoInfoPo.barrageUserCount : '0'}}人
                 </template>
             </el-table-column>
+            <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
             <el-table-column label="操作" width="180" fixed="right">
                 <template scope="scope">
                     <div>
-                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleEssence(scope.row)">
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
-                        <el-button size="small" type="success" @click="handleLike(scope.row)">100个赞</el-button>
+                        <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
@@ -57,22 +86,29 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
+
     export default {
         name: 'vVideo',
         props: ['value', 'userId'],
         data() {
             return {
+                filters: {
+                    isEssence: '',
+                    minLikeCount: '',
+                    maxLikeCount: ''
+                },
                 visible: false, //默认隐藏
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: true,
                 tableList: []
             }
         },
         computed: {
-            detail(){
-                if(!this.value){ //不显示的时候不请求详细
+            detail() {
+                if (!this.value) { //不显示的时候不请求详细
                     return;
                 }
                 this.tableLoading = true;
@@ -88,17 +124,21 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.body.clientHeight * 0.8 - 77 - 57 - 32 - 60;
                 let paras = {
                     offset: 0,
                     size: 10,
-                    uid: _self.userId
+                    uid: _self.userId,
+                    isEssence: _self.filters.isEssence,
+                    minLikeCount: _self.filters.minLikeCount,
+                    maxLikeCount: _self.filters.maxLikeCount
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
                 httpGet('userVideoList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
@@ -113,22 +153,10 @@
                 this.page = val;
                 this.fetchList();
             },
-            handleLike(row){ //点赞
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", row.id);
-                paras.append("num", 100);
-                httpPost('postsLike', paras, _self, function (res) {
-                    _self.tableLoading = false;
-                    try {
-                        let { error, status,data } = res;
-                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+            handleLike(row) { //点赞
+                this.$emit('like', row);
             },
-            handleEssence(row){
+            handleEssence(row) {
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -144,7 +172,7 @@
                     }
                 })
             },
-            postsBarrage(row){ //查看弹幕
+            postsBarrage(row) { //查看弹幕
                 this.$emit('preview', row);
             },
             postsDel: function (row) { //软删除帖子
@@ -163,12 +191,12 @@
                     }
                 })
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.$emit('audio', row);
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
             },
             value(val) {
                 this.visible = val;

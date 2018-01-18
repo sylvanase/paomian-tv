@@ -1,7 +1,8 @@
 <template>
     <section>
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" :max-height="tableHeight" stripe border
+                  style="width: 100%;margin-top:10px;">
             <el-table-column prop="createTime" label="日期" width="175"></el-table-column>
             <el-table-column prop="vpId" label="帖子id" width="180"></el-table-column>
             <el-table-column label="内容" width="100">
@@ -38,13 +39,14 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
 
     export default {
         data() {
             return {
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowVideo: false, //显示、隐藏话题视频列表
@@ -59,6 +61,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 10 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10
@@ -68,7 +71,7 @@
                 httpGet('illegalList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
@@ -80,15 +83,15 @@
                     }
                 })
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.video.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            postsDel(row){ //删除帖子
+            postsDel(row) { //删除帖子
                 let _self = this;
                 let paras = new FormData();
                 paras.append("vpId", row.vpId);
@@ -97,7 +100,7 @@
                 httpPost('illegalStatus', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {

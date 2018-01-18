@@ -1,7 +1,8 @@
 <template>
     <el-dialog title="用户粉丝列表" :value="value" size="large" v-model="visible">
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;margin:-10px auto;">
             <el-table-column prop="id" label="uid" min-width="100" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
@@ -73,7 +74,8 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost} from '../../../api/api';
+    import {httpGet, httpDel, httpPost} from '../../../api/api';
+
     export default {
         name: 'vFan',
         props: ['value', 'userId'],
@@ -82,13 +84,14 @@
                 visible: false, //默认隐藏
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: true,
                 tableList: []
             }
         },
         computed: {
-            detail(){
-                if(!this.value){ //不显示的时候不请求详细
+            detail() {
+                if (!this.value) { //不显示的时候不请求详细
                     return;
                 }
                 this.tableLoading = true;
@@ -104,6 +107,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.body.clientHeight * 0.8 - 57 - 32 - 60;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -114,7 +118,7 @@
                 httpGet('userFansList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
@@ -166,12 +170,12 @@
                     }
                 })
             },
-            userDetail(row){ //查看用户详情
+            userDetail(row) { //查看用户详情
                 this.$emit('preview', row);
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
                 console.log(val);
             },
             value(val) {

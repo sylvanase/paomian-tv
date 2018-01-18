@@ -10,7 +10,8 @@
         </el-col>-->
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;margin-top: 10px;">
             <el-table-column prop="id" label="id" min-width="80"></el-table-column>
             <el-table-column prop="text" label="弹幕内容" min-width="150"></el-table-column>
             <el-table-column label="所属标签">
@@ -21,7 +22,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column label="操作" width="100" >
+            <el-table-column label="操作" width="100">
                 <template scope="scope">
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <!--<el-button v-if="scope.row.isDel == 0" type="danger" size="small" @click="topicDel(scope.row)">删除
@@ -40,7 +41,8 @@
 
         <!--新建/编辑弹幕-->
         <el-dialog :title="formTitle" v-model="formVisible">
-            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" style="margin-bottom: -20px;">
+            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData"
+                     style="margin-bottom: -20px;">
                 <el-form-item label="弹幕内容" prop="text">
                     <el-input v-model.trim="formData.text" auto-complete="off"></el-input>
                 </el-form-item>
@@ -56,7 +58,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
 
     export default {
         components: {
@@ -66,6 +68,7 @@
             return {
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formTitle: '',
@@ -89,6 +92,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 10 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10
@@ -98,16 +102,15 @@
                 httpGet('barrageList', paras, _self, function (res) {
                     _self.barrageList = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
-
             },
-            showForm (row){ //显示表单
+            showForm(row) { //显示表单
                 this.formVisible = true;
                 this.formData = {
                     id: '',
@@ -116,7 +119,7 @@
                 this.formTitle = '编辑弹幕';
                 this.formData = Object.assign({}, row);
             },
-            formSubmit(){ //提交表格
+            formSubmit() { //提交表格
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", _self.formData.id);
@@ -125,7 +128,7 @@
                 httpPost('barrageEdit', paras, _self, function (res) {
                     _self.formLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('提交成功');
                         _self.$refs['formData'].resetFields();
                         _self.formVisible = false;

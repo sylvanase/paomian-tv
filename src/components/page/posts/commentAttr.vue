@@ -1,29 +1,28 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
-            <el-form :inline="true">
+        <el-col :span="24" class="toolbar">
+            <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-button type="primary" @click="showForm('-1')">新增</el-button>
+                    <el-button type="primary" @click="showForm()">新增</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
-
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
-            <el-table-column prop="id" label="id" width="100"></el-table-column>
-            <el-table-column prop="name" label="标签名称"></el-table-column>
-            <el-table-column prop="createTime" label="创建时间"></el-table-column>
-            <el-table-column label="操作" width="150">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;margin-top: 10px;">
+            <el-table-column prop="id" label="id"></el-table-column>
+            <el-table-column prop="text" label="分类名称"></el-table-column>
+            <el-table-column prop="count" label="数量"></el-table-column>
+            <el-table-column label="操作" width="180">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.$index, scope.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                    </el-button>
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                    <el-button type="danger" size="small" @click="handleDel(scope.row)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
 
-        <!--工具条-->
+        <!--分页-->
         <el-col :span="24" class="mt-10">
             <el-pagination style="float:right;" @current-change="handleCurrentChange"
                            :page-size="10" :current-page="page"
@@ -31,11 +30,12 @@
             </el-pagination>
         </el-col>
 
-        <!--新建/编辑标签-->
-        <el-dialog :title="formTitle" v-model="formVisible">
-            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData" style="margin-bottom: -20px;">
-                <el-form-item label="标签名称" prop="name">
-                    <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
+        <!--新建/编辑-->
+        <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
+            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData"
+                     style="margin-bottom: -20px;">
+                <el-form-item label="分类名称" prop="name">
+                    <el-input v-model.trim="formData.name"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -43,12 +43,13 @@
                 <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
+
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
 
     export default {
         data() {
@@ -59,18 +60,18 @@
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 formTitle: '',
-                formVisible: false,//新增界面是否显示
+                formVisible: false,
                 formLoading: false,
                 formRules: {
                     name: [
-                        {required: true, message: '请输入标签名称', trigger: 'blur'},
-                        {min: 1, max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur'}
+                        {required: true, message: '请输入评论分类名称', trigger: 'blur'},
+                        {min: 1, max: 32, message: '长度在 1 到 32 个字符', trigger: 'blur'}
                     ]
                 },
-                //表单数据
                 formData: {
                     id: '',
-                    name: ''
+                    name: '',
+                    api: 'commentAttrAdd' // 默认新增接口
                 }
             }
         },
@@ -79,57 +80,63 @@
                 this.page = val;
                 this.fetchList();
             },
-            //获取列表
-            fetchList() {
+            fetchList() {    //获取列表
                 let _self = this;
                 _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
-                    size: 10,
-                    id: '',
-                    kw: ''
+                    size: 10
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
-                httpGet('contentTagList', paras, _self, function (res) {
+                httpGet('commentAttrList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
-                        _self.tableList = data.content.map(function (item) {
-                            item.createTime = util.timestampFormat(item.createTime);
-                            return item;
-                        });
+                        _self.tableList = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            showForm (index, row){ //显示表单
+            showForm(row) { //显示表单
                 this.formVisible = true;
-                if (index == -1) { //索引为-1时，新增操作
-                    this.formTitle = '新增标签';
+                if (row) {
+                    this.formTitle = '编辑分类';
                     this.formData = {
-                        id: '',
-                        name: ''
+                        id: row.id,
+                        name: row.text,
+                        api: 'commentAttrEdit'
                     };
-                } else {
-                    this.formTitle = '编辑标签';
-                    this.formData = Object.assign({}, row);
                 }
             },
-            formSubmit(){ //提交表格
-                this.$refs.formData.validate((valid) => {
+            resetFormData() { //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formData = {
+                    id: '',
+                    name: '',
+                    api: 'commentAttrAdd'
+                };
+                this.formTitle = '新增分类';
+                _self.$refs['formData'].resetFields();
+                _self.formLoading = false;
+            },
+            formSubmit() { //提交表格
+                let _self = this;
+                _self.$refs['formData'].validate((valid) => {
                     if (valid) {
-                        let _self = this;
-                        let paras = new FormData();
-                        paras.append("id", _self.formData.id);
-                        paras.append("name", _self.formData.name);
+                        let paras = {
+                            text: _self.formData.text
+                        };
+                        if (_self.formData.id) { // 编辑状态，需要传递id
+                            paras.id = _self.formData.id;
+                        }
                         _self.formLoading = true;
-                        httpPost('contentTagEdit', paras, _self, function (res) {
+                        httpPost(_self.formData.api, paras, _self, function (res) {
                             _self.formLoading = false;
                             try {
-                                let { error, status,data } = res;
+                                let {error, status, data} = res;
                                 _self.$message.success('提交成功');
                                 _self.$refs['formData'].resetFields();
                                 _self.formVisible = false;
@@ -138,21 +145,25 @@
                                 util.jsErrNotify(error);
                             }
                         })
+                    } else {
+                        return false;
                     }
                 });
+
             },
-            //删除表格数据
-            handleTableDel: function (index, row) {
-                this.$confirm('确认删除该记录吗?', '提示', {
+            handleDel(row) { //删除评论属性
+                let _self = this;
+                _self.$message.warning('等待接口');
+                return false;
+                _self.$confirm('确认删除该评论属性吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
-                    let _self = this;
-                    _self.tableLoading = true;
-                    httpDel('contentTagDel', {id: row.id}, _self, function (res) {
-                        _self.tableLoading = false;
+                    let paras = {
+                        id: row.id
+                    };
+                    httpGet('commentAttrDel', paras, _self, function (res) {
                         try {
                             _self.$message.success('删除成功');
-                            _self.fetchList();
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -164,9 +175,7 @@
             this.fetchList();
         }
     }
-
 </script>
 
-<style scoped>
-
+<style>
 </style>

@@ -1,7 +1,7 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch"
@@ -20,7 +20,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="playName" label="剧本名称"></el-table-column>
             <el-table-column prop="movieNames" label="相关电影">
@@ -31,13 +32,6 @@
             <el-table-column prop="playAttrs" label="剧本属性">
                 <template scope="scope">
                     {{ scope.row.playAttrs.join(' , ') }}
-                </template>
-            </el-table-column>
-            <el-table-column prop="status" label="状态" width="80">
-                <template scope="scope">
-                    <el-tag :type="scope.row.status == 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.status == 1 ? '在线' : '离线' }}
-                    </el-tag>
                 </template>
             </el-table-column>
             <el-table-column label="使用统计">
@@ -83,6 +77,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 videoVisible: false,  //播放视频界面 显示、隐藏
@@ -96,6 +91,7 @@
             },
             fetchList() { //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = new FormData();
                 paras.append('size', 10);
                 paras.append('offset', (_self.page - 1) * 10);
@@ -125,7 +121,7 @@
                 this.fetchList();
             },
             playVideo(row) { //播放视频
-                if(row.previewUrl == ''){
+                if (row.previewUrl == '') {
                     _self.$message.warning('本条数据视频链接为空');
                     return;
                 }

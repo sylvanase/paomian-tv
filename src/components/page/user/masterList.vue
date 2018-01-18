@@ -4,7 +4,8 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-date-picker v-model="filters.time" type="datetimerange" :picker-options="pickerOptions"
@@ -21,7 +22,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="uid" label="主账号id"></el-table-column>
             <el-table-column prop="userName" label="昵称"></el-table-column>
             <el-table-column prop="avatar" label="头像" width="136">
@@ -137,6 +139,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 masterData: '', //查询的主账号信息
@@ -164,6 +167,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -182,7 +186,7 @@
                 httpGet('userMasterList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content;
                     } catch (error) {
@@ -190,21 +194,21 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            setRange(val){ //格式化日期控件值
-                this.filters.start = val.substring(0,19);
+            setRange(val) { //格式化日期控件值
+                this.filters.start = val.substring(0, 19);
                 this.filters.end = val.substring(22);
             },
-            handelPrivilege(){ //显示置顶配置弹窗
+            handelPrivilege() { //显示置顶配置弹窗
                 this.configVisible = true;
                 this.configData = {
                     uid: ''
                 };
             },
-            configSubmit(){
+            configSubmit() {
                 this.$refs.configData.validate((valid) => {
                     let _self = this;
                     let paras = new FormData();
@@ -221,23 +225,23 @@
                     })
                 });
             },
-            showVideo (row){ //显示视频列表
+            showVideo(row) { //显示视频列表
                 this.isShowVideo = true;
                 this.masterData = row;
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            showBarrage (row){ //显示弹幕列表
+            showBarrage(row) { //显示弹幕列表
                 this.isShowBarrage = true;
                 this.masterData = row;
             },
-            showLike (row){ //显示赞列表
+            showLike(row) { //显示赞列表
                 this.isShowLike = true;
                 this.masterData = row;
             }

@@ -1,7 +1,22 @@
 <template>
     <section>
+        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+            <el-form :inline="true" :model="filters">
+                <el-form-item>
+                    <el-select v-model="filters.category" @change="fetchList" placeholder="请选择" style="width: 150px;">
+                        <el-option label="全部分类" value=""></el-option>
+                        <el-option v-for="item in catSelect" :key="item.id" :label="item.name"
+                                   :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="fetchList()">查询</el-button>
+                </el-form-item>
+            </el-form>
+        </el-col>
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="uid" width="200" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
@@ -93,10 +108,26 @@
         </el-dialog>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"></v-video>
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage" v-on:like="addLike"></v-video>
 
         <!--用户喜欢-->
         <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
+
+        <!--为帖子点赞-->
+        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
+            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
+                     style="margin-bottom: -20px;">
+                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
+                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
+                                     v-model="likeData.num"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
 
 
         <!-- 为帖子增加弹幕 -->
@@ -152,12 +183,25 @@
         components: {
             vVideo,
             vLike
-
         },
         data() {
+            let validateLike = (rule, value, callback) => {
+                if (value === '') {
+                    callback(new Error('请输入赞数量'));
+                } else {
+                    if (value > 100) {
+                        callback(new Error('数量不能超过1000!'));
+                    }
+                }
+            };
             return {
+                filters: { //搜索筛选条件
+                    category: '', // 分类
+                },
+                catSelect: '', // 用户分类列表
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 userId: '',
@@ -177,6 +221,17 @@
                         tag: ''
                     },
                     multipleBarrageIds: [] //添加的弹幕id集合
+                },
+                likeVisible: false,
+                likeData: { // 点赞
+                    loading: false,
+                    num: 0,
+                    id: ''
+                },
+                likeRules: {
+                    num: [
+                        {validator: validateLike, trigger: 'blur'},
+                    ]
                 }
             }
         },
@@ -187,6 +242,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10
@@ -202,6 +258,21 @@
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
                             return item;
                         });
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            catList(){
+                let _self = this;
+                let para = {
+                    offset: 0,
+                    size: 99999
+                };
+                httpGet('userCategory', para, _self, function (res) {
+                    try {
+                        let { error, status,data } = res;
+                        _self.catSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -318,10 +389,36 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            addLike(row) { // 显示增加赞数
+                this.likeVisible = true;
+                this.likeData.id = row.id;
+            },
+            likeSubmit() {
+                let _self = this;
+                let paras = new FormData();
+                paras.append("vpId", _self.likeData.id);
+                paras.append("num", _self.likeData.num);
+                httpPost('postsLike', paras, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+//                        _self.$message.success(data);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+                _self.$message.success('已发送点赞请求');
+                _self.likeVisible = false;
+            },
+            resetLike() {
+                this.likeData.id = '';
+                this.likeData.num = 0;
+                this.likeData.loading = false;
             }
         },
         mounted() {
             this.fetchList();
+            this.catList();
         }
     }
 </script>

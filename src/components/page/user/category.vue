@@ -4,29 +4,21 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="请搜索反馈内容" icon="circle-close"
-                              :on-icon-click="resetSearch"
-                              @keyup.enter.native="fetchList"></el-input>
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="fetchList()">查询</el-button>
+                    <el-button type="primary" @click="showForm()">新增</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight"  style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
-            <el-table-column prop="text" label="反馈内容"></el-table-column>
-            <el-table-column prop="nick" label="昵称"></el-table-column>
-            <el-table-column prop="uid" label="uid"></el-table-column>
-            <el-table-column prop="phone" label="手机号"></el-table-column>
-            <el-table-column prop="createTime" label="反馈时间" width="180"></el-table-column>
-            <el-table-column label="操作" width="110">
+            <el-table-column prop="name" label="分类名称"></el-table-column>
+            <el-table-column prop="countNum" label="数量"></el-table-column>
+            <el-table-column label="操作" width="250">
                 <template scope="scope">
-                    <el-button :disabled="scope.row.isReply == 1 ? true: false" size="small"
-                               @click="showForm(scope.row)">
-                        {{scope.row.isReply == 1 ? '已回复': '回复'}}
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                     </el-button>
                 </template>
             </el-table-column>
@@ -40,12 +32,11 @@
             </el-pagination>
         </el-col>
 
-        <!--回复反馈-->
+        <!--新建/编辑-->
         <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
-            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData"
-                     style="margin-bottom: -20px;">
-                <el-form-item label="回复内容" prop="content">
-                    <el-input type="textarea" maxlength="140" v-model.trim="formData.content"></el-input>
+            <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
+                <el-form-item label="分类名称" prop="text" style="margin-bottom: -20px;">
+                    <el-input v-model.trim="formData.text" auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -63,29 +54,29 @@
     export default {
         data() {
             return {
-                filters: { //搜索筛选条件
-                    kw: '',
+                filters: { //列表筛选条件
+                    type: '0'
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: '',
-                formTitle: '回复反馈',
+                formTitle: '新增用户分类',
                 formVisible: false,//新增界面是否显示
                 formLoading: false,
+                formSelect: false,
                 formRules: {
-                    content: [
-                        {required: true, message: '请输入回复内容', trigger: 'blur'},
-                        {min: 1, max: 140, message: '长度在 1 到 140 个字符', trigger: 'blur'}
+                    text: [
+                        {required: true, message: '请输入分类名称', trigger: 'blur'},
+                        {min: 1, max: 32, message: '长度在 1 到 32 个字符', trigger: 'blur'}
                     ]
                 },
+                //新增界面数据
                 formData: {
                     id: '',
-                    uid:'',
-                    content: '亲爱的面团儿，您期待已久的泡面调料已为您准备好啦！请移步直接拍-加点料-调料架分类内验收享用哦~感谢您对泡面的关注与支持！'
+                    text: '',
+                    api: 'userCatAdd' // 默认走编辑接口
                 }
             }
         },
@@ -94,48 +85,53 @@
                 this.page = val;
                 this.fetchList();
             },
-            fetchList() { //获取列表
+            //获取列表
+            fetchList() {
                 let _self = this;
                 _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
-                let paras = new FormData();
-                paras.append('size', 10);
-                paras.append('offset', (_self.page - 1) * 10);
-                paras.append('text', _self.filters.kw);
+                let paras = {
+                    offset: 0,
+                    size: 10
+                };
+                paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
-                httpPost('contentMaterialFeedbackList', paras, _self, function (res) {
+                httpGet('userCategory', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
                         _self.total = data.totalElements;
-                        _self.tableList = data.content.map(function (item) {
-                            item.createTime = util.timestampFormat(item.createTime);
-                            return item;
-                        });
+                        _self.tableList = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            resetSearch() {
-                this.filters.kw = '';
-                this.fetchList();
-            },
             showForm(row) { //显示表单
                 this.formVisible = true;
-                this.formTitle = '回复反馈："' + row.text + '"';
-                this.formData.id = row.id;
-                this.formData.uid = row.uid;
+                self.$message.warning('等待接口');
+                return;
+                if (row) {
+                    this.formTitle = '编辑用户分类';
+                    this.formSelect = true;
+                    this.formData = {
+                        id: row.id,
+                        text: row.text,
+                        api: 'userCatEdit'
+                    };
+                }
             },
             formSubmit() { //提交表格
                 let _self = this;
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
-                        let paras = new FormData();
-                        paras.append("id", this.formData.id);
-                        paras.append("uid", this.formData.uid);
-                        paras.append("content", this.formData.content);
+                        let paras = {
+                            text: _self.formData.text
+                        };
+                        if (_self.formData.id) { // 编辑状态，需要传递id
+                            paras.id = _self.formData.id;
+                        }
                         _self.formLoading = true;
-                        httpPost('contentFeedbackReply', paras, _self, function (res) {
+                        httpPost(_self.formData.api, paras, _self, function (res) {
                             _self.formLoading = false;
                             try {
                                 _self.$message.success('提交成功');
@@ -149,17 +145,36 @@
                     }
                 });
             },
-            resetFormData() {
+            resetFormData() { // 重置表单数据、验证等
                 let _self = this;
-                _self.formTitle = '回复反馈';
                 _self.formLoading = false;
+                _self.formTitle = '新增用户分类';
                 _self.formData = {
                     id: '',
-                    uid: '',
-                    content: '亲爱的面团儿，您期待已久的泡面调料已为您准备好啦！请移步直接拍-加点料-调料架分类内验收享用哦~感谢您对泡面的关注与支持！'
+                    text: '',
+                    api: 'userCatAdd'
                 };
+                _self.formSelect = false;
                 _self.$refs['formData'].resetFields();
             },
+            //删除表格数据
+            handleTableDel: function (index, row) {
+                let _self = this;
+                self.$message.warning('等待接口');
+                return;
+                let paras = {id: row.id};
+                _self.tableLoading = true;
+                httpDel('userCatDel', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('删除成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            }
         },
         mounted() {
             this.fetchList();

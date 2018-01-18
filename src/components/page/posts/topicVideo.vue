@@ -1,5 +1,25 @@
 <template>
     <el-dialog :title="title" :value="value" size="large" v-model="visible">
+        <!--顶部工具条-->
+        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+            <el-form :inline="true" :model="filters">
+                <el-form-item>
+                    <el-select v-model="filters.isEssence" @change="fetchList" style="width: 110px;">
+                        <el-option label="精华状态" value=""></el-option>
+                        <el-option label="非精" value="0"></el-option>
+                        <el-option label="精华" value="1"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-input type="number" v-model="filters.minLikeCount" min="0" max="5000" placeholder="最小赞数" style="width: 100px;"></el-input>
+                    <span> - </span>
+                    <el-input type="number" v-model="filters.maxLikeCount" min="0" max="5000" placeholder="最大赞数" style="width: 100px;"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="fetchList">查询</el-button>
+                </el-form-item>
+            </el-form>
+        </el-col>
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
             <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
@@ -11,6 +31,11 @@
             </el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
             <el-table-column prop="videoText" min-width="150" label="视频标题"></el-table-column>
+            <el-table-column label="喜欢">
+                <template scope="scope">
+                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.likeCount }}
+                </template>
+            </el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
             <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180">
                 <template scope="scope">
@@ -30,11 +55,6 @@
             <el-table-column label="弹幕数">
                 <template scope="scope">
                     {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.barrageCount }}
-                </template>
-            </el-table-column>
-            <el-table-column label="喜欢">
-                <template scope="scope">
-                    {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.likeCount }}
                 </template>
             </el-table-column>
             <el-table-column label="来源">
@@ -61,7 +81,7 @@
                     <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
                         {{ scope.row.isEssence == 1 ? '取消精华' : '加精' }}
                     </el-button>
-                    <el-button size="small" type="success" @click="handleLike(scope.row)">100个赞</el-button>
+                    <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
                     <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
                     <el-button type="info" size="small" @click="postsBarrage(scope.row)">加弹幕</el-button>
                     <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
@@ -90,6 +110,11 @@
         props: ['value', 'topicData'],
         data() {
             return {
+                filters: {
+                    isEssence: '',
+                    minLikeCount: '',
+                    maxLikeCount: ''
+                },
                 title: '',
                 visible: false, //默认隐藏
                 total: 0, //表格列表数据总数
@@ -119,7 +144,10 @@
                 let paras = {
                     offset: 0,
                     size: 10,
-                    id: _self.topicData.id
+                    id: _self.topicData.id,
+                    isEssence: _self.filters.isEssence,
+                    minLikeCount: _self.filters.minLikeCount,
+                    maxLikeCount: _self.filters.maxLikeCount
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
@@ -151,18 +179,7 @@
                 this.videoHtml = '';
             },
             handleLike(row){ //点赞
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", row.id);
-                paras.append("num", 100);
-                httpPost('postsLike', paras, _self, function (res) {
-                    try {
-                        let { error, status,data } = res;
-                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+                this.$emit('like', row);
             },
             handleEssence(row){
                 let _self = this;

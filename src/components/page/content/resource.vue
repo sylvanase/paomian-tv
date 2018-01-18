@@ -17,7 +17,7 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="资源名称"></el-table-column>
             <el-table-column prop="size" label="文件大小" width="150"></el-table-column>
@@ -82,6 +82,7 @@
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false, //显示、隐藏编辑页
@@ -101,6 +102,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -145,16 +147,25 @@
             },
             handleTableDel: function (index, row) { //删除表格数据
                 let _self = this;
-                _self.tableLoading = true;
-                httpDel('contentSourceDel', {id: row.id}, _self, function (res) {
-                    _self.tableLoading = false;
-                    try {
-                        _self.$message.success('删除成功');
-                        _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+
+
+
+                _self.$confirm('此操作将删除该资源, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    _self.tableLoading = true;
+                    httpDel('contentSourceDel', {id: row.id}, _self, function (res) {
+                        _self.tableLoading = false;
+                        try {
+                            _self.$message.success('删除成功');
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                }).catch(() => {});
             },
             playVideo(index, row){ //播放视频
                 this.videoVisible = true;

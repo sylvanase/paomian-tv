@@ -39,8 +39,9 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border style="width: 100%;">
-            <el-table-column prop="id" label="id"></el-table-column>
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border
+                  :max-height="tableHeight" style="width: 100%;">
+            <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="片段名称"></el-table-column>
             <el-table-column prop="showTypeName" label="片段类型" width="100"></el-table-column>
             <el-table-column label="片段属性">
@@ -67,10 +68,9 @@
             <el-table-column label="操作" width="210">
                 <template scope="scope">
                     <div class="mt-10">
+                        <el-button type="info" size="small" @click="playVideo(scope.row)">播放</el-button>
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                        </el-button>
-                        <el-button type="info" size="small" @click="playVideo(scope.$index, scope.row)">播放</el-button>
+                        <el-button type="danger" size="small" @click="handleTableDel(scope.row)">删除</el-button>
                     </div>
                     <div class="mt-10 mb-10">
                         <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
@@ -126,6 +126,7 @@
                 page: 1, //当前页，默认为第一页
                 attrSelect: '', //属性列表
                 catSelect: '', //分类列表
+                tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false, //显示、隐藏编辑页
@@ -142,6 +143,7 @@
             //获取列表
             fetchList() {
                 let _self = this;
+                _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     type: _self.filters.type,
                     attrId: _self.filters.attr,
@@ -223,7 +225,7 @@
                 this.matData = row;
             },
             //删除表格数据
-            handleTableDel: function (index, row) {
+            handleTableDel(row) {
                 let _self = this;
                 _self.tableLoading = true;
                 httpDel('contentMaterialDel', {id: row.id}, _self, function (res) {
@@ -237,7 +239,7 @@
                     }
                 })
             },
-            playVideo(index, row) { //播放视频
+            playVideo(row) { //播放视频
                 if (row.horiVideoUrl == null && row.vertVideoUrl == null) {
                     this.$message({
                         message: '视频链接均为空，请联系服务端同学',
@@ -266,9 +268,13 @@
                 };
                 httpGet('contentChoiceMaterial', para, _self, function (res) {
                     try {
-                        let {error, status, data} = res;
+                        _self.tableList.map(function (item) {
+                            if(item.id == row.id){
+                                item.isRecommend = Number(!item.isRecommend);
+                            }
+                            return item;
+                        });
                         _self.$message.success('操作成功');
-                        _self.fetchList();
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
