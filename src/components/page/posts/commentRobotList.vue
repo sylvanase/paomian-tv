@@ -4,7 +4,7 @@
         <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="用户ID/昵称" icon="circle-close"
+                    <el-input v-model="filters.kw" placeholder="评论人uid/昵称" icon="circle-close"
                               :on-icon-click="resetSearch"
                               @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
@@ -133,9 +133,10 @@
                     let paras = {
                         id: row.id
                     };
-                    httpGet('commentListDel', paras, _self, function (res) {
+                    httpGet('commentRobotDel', paras, _self, function (res) {
                         try {
                             _self.$message.success('删除成功');
+                            _self.fetchList();
                         } catch (error) {
                             util.jsErrNotify(error);
                         }

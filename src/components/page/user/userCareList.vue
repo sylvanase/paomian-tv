@@ -3,7 +3,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-select v-model="filters.category" @change="fetchList" placeholder="请选择" style="width: 150px;">
+                    <el-select v-model="filters.categoryId" @change="fetchList" placeholder="请选择" style="width: 150px;">
                         <el-option label="全部分类" value=""></el-option>
                         <el-option v-for="item in catSelect" :key="item.id" :label="item.name"
                                    :value="item.id">
@@ -16,7 +16,8 @@
             </el-form>
         </el-col>
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="uid" width="200" fixed></el-table-column>
             <el-table-column prop="avatarUrl" label="头像" width="136">
                 <template scope="scope">
@@ -87,6 +88,7 @@
                     <el-button :disabled="!scope.row.postCount" type="info" size="small" @click="showVideo(scope.row)">
                         查看帖子
                     </el-button>
+                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                     <el-button type="danger" size="small" @click="careUser(scope.row)">
                         取关
                     </el-button>
@@ -108,10 +110,14 @@
         </el-dialog>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage" v-on:like="addLike"></v-video>
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showComment"
+                 v-on:like="addLike"></v-video>
 
         <!--用户喜欢-->
-        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showComment"></v-like>
+
+        <!--编辑用户-->
+        <v-detail :userId="userId" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
         <!--为帖子点赞-->
         <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
@@ -129,60 +135,25 @@
             </div>
         </el-dialog>
 
-
-        <!-- 为帖子增加弹幕 -->
-        <el-dialog title="弹幕列表" v-model="isShowBarrage">
-            <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top: -20px;">
-                <el-form :inline="true" :model="barrage.filters">
-                    <el-form-item>
-                        <el-select v-model="barrage.filters.tag" @change="fetchBarrage" placeholder="请选择" style="width: 150px;">
-                            <el-option label="全部标签" value=""></el-option>
-                            <el-option v-for="item in barrage.tagList" :key="item.id" :label="item.name"
-                                       :value="item.id">
-                            </el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" @click="submitBarrage()">提交</el-button>
-                    </el-form-item>
-                    <el-form-item>
-                        <span>（点击弹幕内容，即可对其进行编辑操作）</span>
-                    </el-form-item>
-                </el-form>
-            </el-col>
-            <!--表格-->
-            <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border style="width: 100%;"
-                      @selection-change="handleSelectionChange" highlight-current-row>
-                <el-table-column type="selection" width="55"></el-table-column>
-                <el-table-column prop="id" label="id" width="150"></el-table-column>
-                <el-table-column prop="text" label="弹幕内容">
-                    <template scope="scope">
-                        <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容" @change="handleEdit(scope.$index, scope.row)"></el-input> <span>{{scope.row.text}}</span>
-                    </template>
-                </el-table-column>
-            </el-table>
-            <!--工具条-->
-            <el-col :span="24" class="mt-10" style="margin-bottom: 20px;">
-                <el-pagination style="float:right;" @current-change="barragePageChange"
-                               :page-size="10" :current-page="barrage.page"
-                               layout="total, prev, pager, next, jumper" :total="barrage.total">
-                </el-pagination>
-            </el-col>
-
-        </el-dialog>
+        <!--为帖子加评论-->
+        <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
     import vVideo from './videoList.vue'
     import vLike from './likeList.vue'
+    import vCommentAdd from '../posts/commentSource.vue'
+    import vDetail from './userDetail.vue'
 
     export default {
         components: {
             vVideo,
-            vLike
+            vLike,
+            vCommentAdd,
+            vDetail
         },
         data() {
             let validateLike = (rule, value, callback) => {
@@ -196,7 +167,7 @@
             };
             return {
                 filters: { //搜索筛选条件
-                    category: '', // 分类
+                    categoryId: ''
                 },
                 catSelect: '', // 用户分类列表
                 total: 0, //表格列表数据总数
@@ -205,23 +176,12 @@
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 userId: '',
+                isShowForm: false,
                 isShowLike: false, //显示、隐藏喜欢列表
                 isShowVideo: false, //显示、隐藏帖子列表
-                isShowBarrage: false, //显示、隐藏弹幕列表
+                isShowComment: false, //显示、隐藏评论列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
-                barrage: {
-                    vpId: '', //视频id
-                    tagList:[],
-                    total: 0, //表格列表数据总数
-                    page: 1, //当前页，默认为第一页
-                    tableLoading: false, //表格的loading符号
-                    tableList: [], //表格数据
-                    filters: { //搜索筛选条件
-                        tag: ''
-                    },
-                    multipleBarrageIds: [] //添加的弹幕id集合
-                },
                 likeVisible: false,
                 likeData: { // 点赞
                     loading: false,
@@ -245,14 +205,15 @@
                 _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
                 let paras = {
                     offset: 0,
-                    size: 10
+                    size: 10,
+                    userAttrId: _self.filters.categoryId
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
                 httpGet('userCareOperate', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
@@ -263,7 +224,7 @@
                     }
                 })
             },
-            catList(){
+            catList() {
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -271,32 +232,34 @@
                 };
                 httpGet('userCategory', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.catSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            showVideo (row){ //显示用户帖子列表
+            showVideo(row) { //显示用户帖子列表
                 this.isShowVideo = true;
                 this.userId = row.id;
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            showBarrage (row){ //显示弹幕列表
-                this.isShowBarrage = true;
-                this.fetchBarrage();
-                this.barrageTag();
-                this.barrage.vpId = row.id;
+            showForm(row) { //显示用户详情表单
+                this.isShowForm = true;
+                this.userId = row.id;
             },
-            showLike (row){ //显示用户喜欢的帖子列表
+            showComment(row) { //显示弹幕列表
+                this.isShowComment = true;
+                this.postsData = row
+            },
+            showLike(row) { //显示用户喜欢的帖子列表
                 this.isShowLike = true;
                 this.userId = row.id;
             },
@@ -309,82 +272,9 @@
                 paras.append("status", Number(!row.userCare));
                 httpPost('userCare', paras, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            /*
-             * 处理弹幕开始
-             * */
-            barragePageChange(val) { //翻页
-                this.barrage.page = val;
-                this.fetchBarrage();
-            },
-            fetchBarrage() {    //获取弹幕列表
-                let _self = this;
-                let paras = {
-                    offset: 0,
-                    size: 10,
-                    tagId: _self.barrage.filters.tag
-                };
-                paras.offset = (_self.barrage.page - 1) * paras.size;
-                _self.barrage.tableLoading = true;
-                httpGet('barrageList', paras, _self, function (res) {
-                    _self.barrage.tableLoading = false;
-                    try {
-                        let { error, status,data } = res;
-                        _self.barrage.tableList = data.content;
-                        _self.barrage.total = data.totalElements;
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            submitBarrage(){ //提交所选弹幕
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", this.barrage.vpId);
-                paras.append("barrageIds", this.barrage.multipleBarrageIds.join(','));
-                httpPost('postsBarrageAdd', paras, _self, function (res) {
-                    try {
-                        let { error, status,data } = res;
-                        _self.$message.success('增加弹幕成功');
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            barrageTag(){ //加载弹幕标签
-                let _self = this;
-                httpGet('barrageTag', '', _self, function (res) {
-                    try {
-                        let { error, status,data } = res;
-                        _self.barrage.tagList = data;
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            handleSelectionChange(val) { //选择弹幕更改时
-                //val为对象数组
-                this.barrage.multipleBarrageIds = []; //先清空数组
-                if (val.length !== 0) {
-                    for (var i = 0; i < val.length; i++) {
-                        this.barrage.multipleBarrageIds.push(val[i].id);
-                    }
-                }
-            },
-            handleEdit(index, row) {
-                let _self = this;
-                let paras = new FormData();
-                paras.append("id", row.id);
-                paras.append("text", row.text);
-                httpPost('barrageEdit', paras, _self, function (res) {
-                    try {
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -427,12 +317,15 @@
     .tb-edit .el-input {
         display: none
     }
+
     .tb-edit .current-row .el-input {
         display: block
     }
-    .tb-edit .current-row .el-input+span {
+
+    .tb-edit .current-row .el-input + span {
         display: none
     }
+
     .user-avatar {
         width: 100px;
         height: 100px;

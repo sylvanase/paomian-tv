@@ -1,7 +1,7 @@
 <template>
     <el-dialog :title="title" :value="value" size="large" v-model="visible">
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
+        <el-col :span="24" class="toolbar" style="margin-top:-20px;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-select v-model="filters.isEssence" @change="fetchList" style="width: 110px;">
@@ -11,9 +11,11 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-input type="number" v-model="filters.minLikeCount" min="0" max="5000" placeholder="最小赞数" style="width: 100px;"></el-input>
+                    <el-input type="number" v-model="filters.minLikeCount" min="0" max="5000" placeholder="最小赞数"
+                              style="width: 100px;"></el-input>
                     <span> - </span>
-                    <el-input type="number" v-model="filters.maxLikeCount" min="0" max="5000" placeholder="最大赞数" style="width: 100px;"></el-input>
+                    <el-input type="number" v-model="filters.maxLikeCount" min="0" max="5000" placeholder="最大赞数"
+                              style="width: 100px;"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="primary" @click="fetchList">查询</el-button>
@@ -21,11 +23,13 @@
             </el-form>
         </el-col>
         <!--表格-->
-        <el-table v-loading="tableLoading" :data="tableList" stripe border style="width: 100%;">
+        <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
+                  style="width: 100%;">
             <el-table-column prop="id" label="id" min-width="100" fixed></el-table-column>
             <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
-                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''" style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
+                    <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''"
+                         style="width: 100%;cursor: pointer;" :src="scope.row.coverUrl" alt="视频封面"/>
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
@@ -37,11 +41,11 @@
                 </template>
             </el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
-            <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180">
+            <!--<el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180">
                 <template scope="scope">
                     {{ scope.row.lastBarrageTime ? scope.row.lastBarrageTime : '无' }}
                 </template>
-            </el-table-column>
+            </el-table-column>-->
             <el-table-column label="观看量">
                 <template scope="scope">
                     {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.viewCount }}
@@ -78,12 +82,12 @@
             </el-table-column>
             <el-table-column label="操作" width="310" fixed="right">
                 <template scope="scope">
-                    <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                    <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
+                               @click="handleEssence(scope.row)">
                         {{ scope.row.isEssence == 1 ? '取消精华' : '加精' }}
                     </el-button>
                     <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
-                    <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
-                    <el-button type="info" size="small" @click="postsBarrage(scope.row)">加弹幕</el-button>
+                    <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
                     <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                @click="postsDel(scope.row)">
                         {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
@@ -104,7 +108,8 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
+
     export default {
         name: 'vVideo',
         props: ['value', 'topicData'],
@@ -122,11 +127,12 @@
                 tableLoading: true,
                 tableList: [],
                 videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: ''
+                videoHtml: '',
+                tableHeight: '100%'
             }
         },
         computed: {
-            detail(){
+            detail() {
                 this.tableLoading = true;
                 this.tableList = [];
                 this.title = "话题：'" + this.topicData.name + "'的视频列表";
@@ -141,6 +147,7 @@
             },
             fetchList() {    //获取列表
                 let _self = this;
+                _self.tableHeight = document.body.clientHeight * 0.8 - 57 - 32 - 60;
                 let paras = {
                     offset: 0,
                     size: 10,
@@ -154,11 +161,11 @@
                 httpGet('topicVideoList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
                             item.createTime = util.timestampFormat(item.createTime);
-                            if(item.lastBarrageTime){
+                            if (item.lastBarrageTime) {
                                 item.lastBarrageTime = util.timestampFormat(item.lastBarrageTime);
                             }
                             return item;
@@ -172,16 +179,16 @@
                 this.page = val;
                 this.fetchList();
             },
-            playVideo(row){ //播放视频
+            playVideo(row) { //播放视频
                 this.$emit('preview', row);
             },
-            videoClose(){
+            videoClose() {
                 this.videoHtml = '';
             },
-            handleLike(row){ //点赞
+            handleLike(row) { //点赞
                 this.$emit('like', row);
             },
-            handleEssence(row){
+            handleEssence(row) {
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -190,7 +197,7 @@
                 httpPost('postsEssence', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {
@@ -198,7 +205,7 @@
                     }
                 })
             },
-            postsBarrage(row){ //查看弹幕
+            postsBarrage(row) { //查看弹幕
                 this.$emit('barrage', row);
             },
             postsDel: function (row) { //软删除帖子
@@ -210,7 +217,7 @@
                 httpPost('postsStatus', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
                     } catch (error) {
@@ -220,7 +227,7 @@
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
                 console.log(val);
             },
             value(val) {

@@ -41,7 +41,7 @@
         <!--表格-->
         <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border
                   :max-height="tableHeight" style="width: 100%;">
-            <el-table-column prop="id" label="id" width="100"></el-table-column>
+            <el-table-column prop="id" label="id" width="80"></el-table-column>
             <el-table-column prop="name" label="片段名称"></el-table-column>
             <el-table-column prop="showTypeName" label="片段类型" width="100"></el-table-column>
             <el-table-column label="片段属性">
@@ -65,11 +65,12 @@
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="210">
+            <el-table-column label="操作" width="310">
                 <template scope="scope">
                     <div class="mt-10">
                         <el-button type="info" size="small" @click="playVideo(scope.row)">播放</el-button>
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
                         <el-button type="danger" size="small" @click="handleTableDel(scope.row)">删除</el-button>
                     </div>
                     <div class="mt-10 mb-10">
@@ -101,6 +102,10 @@
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
             <div style="text-align: center;" v-html="videoHtml"></div>
         </el-dialog>
+
+        <!--为片段加评论-->
+        <v-comment-add :typeData="typeData" :type="3" v-model="isShowComment"></v-comment-add>
+
     </section>
 </template>
 
@@ -108,10 +113,12 @@
     import util from '../../../api/util'
     import {httpGet, httpDel, httpPost} from '../../../api/api';
     import vDetail from './materialDetail.vue'
+    import vCommentAdd from './commentSource.vue'
 
     export default {
         components: {
-            vDetail
+            vDetail,
+            vCommentAdd
         },
         data() {
             return {
@@ -132,7 +139,9 @@
                 isShowForm: false, //显示、隐藏编辑页
                 matData: {},
                 videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: ''
+                videoHtml: '',
+                isShowComment: false, //显示、隐藏评论库列表
+                typeData: {}
             }
         },
         methods: {
@@ -302,6 +311,11 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            showComment(row) { // 显示剧本对应的评论库
+                let _self = this;
+                _self.typeData = row;
+                _self.isShowComment = true;
             }
         },
         mounted() {

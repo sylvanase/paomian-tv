@@ -88,10 +88,6 @@
                     ]
                 },
                 formLoading: false
-
-                // commentRobotReplyAdd
-                // 回复自己 id=1&uid=1&vpId=131223&vpUid=1213&replyUid=1&text=够了
-                // 用户回复 id=1&uid=1&vpId=131223&vpUid=1213&replyUid=1&text=不错哦&innerId=3&innerUid=1213
             }
         },
         computed: {
@@ -183,10 +179,12 @@
                     vpId: _self.formData.vpId,
                     vpUid: _self.formData.vpUid,
                     replyUid: _self.formData.replyUid,
-                    text: _self.formData.text,
-                    innerId: _self.formData.innerId,
-                    innerUid: _self.formData.innerUid
+                    text: _self.formData.text
                 };
+                if (_self.formData.innerId) {
+                    paras.innerId = _self.formData.innerId;
+                    paras.innerUid = _self.formData.innerUid;
+                }
                 _self.$refs['formData'].validate((valid) => {
                     if (valid) {
                         _self.formLoading = true;

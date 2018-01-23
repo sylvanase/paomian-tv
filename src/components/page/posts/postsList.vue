@@ -73,7 +73,7 @@
             </el-table-column>
             <el-table-column prop="videoInfoPo.likeCount" label="喜欢"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
-            <el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180"></el-table-column>
+            <!--<el-table-column prop="lastBarrageTime" label="最后评论时间" min-width="180"></el-table-column>-->
             <el-table-column label="精华" width="80">
                 <template scope="scope">
                     <el-tag :type="scope.row.isEssence == 1 ? 'success' : 'danger'"
@@ -291,14 +291,14 @@
             showForm(row, type) { //显示详情表单
                 let _self = this;
                 _self.postsData = row;
-                if(type == 'detail'){
+                if (type == 'detail') {
                     _self.isShowForm = true;
                 }
-                if(type == 'comment'){
+                if (type == 'comment') {
                     _self.isShowComment = true;
                 }
 
-                if(type == 'postsComment'){
+                if (type == 'postsComment') {
                     _self.isShowPostsComment = true;
                 }
             },

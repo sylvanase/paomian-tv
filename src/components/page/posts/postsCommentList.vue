@@ -1,15 +1,16 @@
 <template>
-    <el-dialog title="视频弹幕列表" size="large" :value="value" v-model="visible">
+    <el-dialog title="视频评论列表" size="large" :value="value" v-model="visible">
         <!--表格-->
         <el-table v-loading="tableLoading" class="tb-edit" :data="tableList" stripe border style="width: 100%;">
             <el-table-column prop="id" label="id" width="150"></el-table-column>
-            <el-table-column prop="username" label="发送人" width="180">
-            </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="180">
-            </el-table-column>
-            <el-table-column prop="text" label="弹幕内容">
+            <el-table-column prop="username" label="评论人" width="180"></el-table-column>
+            <el-table-column prop="text" label="评论内容"></el-table-column>
+            <el-table-column prop="createTime" label="评论时间" width="180"></el-table-column>
+            <el-table-column prop="replyCount" label="被回复数" width="120"></el-table-column>
+            <el-table-column prop="likeCount" label="被点赞数" width="120"></el-table-column>
+            <el-table-column label="操作">
                 <template scope="scope">
-                    <div v-html="scope.row.text"></div>
+                    <el-button type="danger" size="small" @click="handleDel(scope.row)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -27,7 +28,7 @@
     import util from '../../../api/util'
     import { httpGet} from '../../../api/api';
     export default {
-        name: 'vBarrageList',
+        name: 'vCommentList',
         props: ['value', 'postsData'],
         data() {
             return {
@@ -65,7 +66,7 @@
                 };
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
-                httpGet('postsBarrageList', paras, _self, function (res) {
+                httpGet('postsCommentList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let { error, status,data } = res;
@@ -74,16 +75,32 @@
                             if(item.createTime){
                                 item.createTime = util.timestampFormat(item.createTime);
                             }
-                            item.text = item.text.replace(/http:\/\/([^\s]*).gif/g,'<img src="http://$1.gif">');
-                            item.text = item.text.replace(/http:\/\/([^\s]*).jpg/g,'<img src="http://$1.jpg">');
-                            item.text = item.text.replace(/http:\/\/([^\s]*).png/g,'<img src="http://$1.png">');
-                            item.text = item.text.replace(/http:\/\/([^\s]*).jpeg/g,'<img src="http://$1.jpeg">');
                             return item;
                         });
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            handleTableDel: function (row) {
+                let _self = this;
+                _self.$confirm('确认删除该评论吗?', '提示', {
+                    type: 'warning'
+                }).then(() => {
+                    let paras = {
+                        id: row.id
+                    };
+                    _self.tableLoading = true;
+                    httpGet('commentRobotDel', paras, _self, function (res) {
+                        _self.tableLoading = false;
+                        try {
+                            _self.$message.success('删除成功');
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                });
             }
         },
         watch: {

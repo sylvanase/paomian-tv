@@ -6,7 +6,7 @@
                     <el-form :inline="true">
                         <el-form-item>
                             <el-input v-model="launch.filters.id" placeholder="bannerID" icon="circle-close"
-                                      :on-icon-click="resetSearch" @keyup.enter.native="launchList"></el-input>
+                                      :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker v-model="launch.filters.time" type="datetimerange" placeholder="选择时间范围"
@@ -14,7 +14,7 @@
                             </el-date-picker>
                         </el-form-item>-->
                         <el-form-item>
-                            <el-button type="primary" @click="launchList">查询</el-button>
+                            <el-button type="primary" @click="fetchList">查询</el-button>
                         </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="showForm()">新增</el-button>
@@ -64,14 +64,14 @@
                     <el-form :inline="true">
                         <el-form-item>
                             <el-input v-model="topic.filters.id" placeholder="bannerID" icon="circle-close"
-                                      :on-icon-click="resetSearch" @keyup.enter.native="topicList"></el-input>
+                                      :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
                             </el-date-picker>
                         </el-form-item>-->
                         <el-form-item>
-                            <el-button type="primary" @click="topicList">查询</el-button>
+                            <el-button type="primary" @click="fetchList">查询</el-button>
                         </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="showForm()">新增</el-button>
@@ -114,14 +114,14 @@
                     <el-form :inline="true">
                         <el-form-item>
                             <el-input v-model="square.filters.id" placeholder="bannerID" icon="circle-close"
-                                      :on-icon-click="resetSearch" @keyup.enter.native="squareList"></el-input>
+                                      :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                         </el-form-item>
                         <!--<el-form-item>
                             <el-date-picker type="datetimerange" placeholder="选择时间范围" align="center" @change="setRange">
                             </el-date-picker>
                         </el-form-item>-->
                         <el-form-item>
-                            <el-button type="primary" @click="squareList">查询</el-button>
+                            <el-button type="primary" @click="fetchList">查询</el-button>
                         </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="showForm()">新增</el-button>
@@ -158,18 +158,67 @@
                     </el-pagination>
                 </el-col>
             </el-tab-pane>
+            <el-tab-pane label="营销弹窗" name="pop">
+                <el-col :span="24" class="toolbar">
+                    <el-form :inline="true">
+                        <el-form-item>
+                            <el-input v-model="pop.filters.id" placeholder="ID" icon="circle-close"
+                                      :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="fetchList">查询</el-button>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="showForm()">新增</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+                <!--表格-->
+                <el-table v-loading="pop.loading" :data="pop.list" stripe border :max-height="pop.height"
+                          style="width: 100%;">
+                    <el-table-column prop="id" label="id" width="80"></el-table-column>
+                    <el-table-column prop="imageUrl" label="弹窗图" width="240">
+                        <template scope="scope">
+                            <img v-if="scope.row.imageUrl !== ''"
+                                 style="width: 100%;vertical-align: middle;margin: 5px 0;"
+                                 :src="scope.row.imageUrl" alt=""/>
+                            <span v-else>图片路径缺失</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="appLink" label="外链"></el-table-column>
+                    <el-table-column prop="startTime" label="开始时间" width="175"></el-table-column>
+                    <el-table-column prop="endTime" label="停止时间" width="175"></el-table-column>
+                    <el-table-column label="操作" width="140">
+                        <template scope="scope">
+                            <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="small" @click="bannerDel(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <!--分页-->
+                <el-col :span="24" class="mt-10">
+                    <el-pagination style="float:right;" @current-change="handleCurrentChange"
+                                   :page-size="pop.size" :current-page="pop.page"
+                                   layout="total, prev, pager, next, jumper" :total="pop.total">
+                    </el-pagination>
+                </el-col>
+            </el-tab-pane>
         </el-tabs>
 
         <!--开机页编辑-->
         <v-launch-detail :launchData="launch.formData" v-model="launch.showForm"
-                         v-on:refresh="launchList"></v-launch-detail>
+                         v-on:refresh="fetchList"></v-launch-detail>
 
         <!--话题页编辑-->
-        <v-topic-detail :topicData="topic.formData" v-model="topic.showForm" v-on:refresh="topicList"></v-topic-detail>
+        <v-topic-detail :topicData="topic.formData" v-model="topic.showForm" v-on:refresh="fetchList"></v-topic-detail>
 
         <!--广场页编辑-->
         <v-square-detail :squareData="square.formData" v-model="square.showForm"
-                         v-on:refresh="squareList"></v-square-detail>
+                         v-on:refresh="fetchList"></v-square-detail>
+
+        <!--营销弹窗编辑-->
+        <v-pop-detail :popData="pop.formData" v-model="pop.showForm"
+                      v-on:refresh="fetchList"></v-pop-detail>
 
     </section>
 </template>
@@ -181,16 +230,19 @@
     import vLaunchDetail from './launchDetail.vue'
     import vTopicDetail from './topicDetail.vue'
     import vSquareDetail from './squareDetail.vue'
+    import vPopDetail from './popDetail.vue'
 
     export default {
         components: {
             vLaunchDetail,
             vTopicDetail,
-            vSquareDetail
+            vSquareDetail,
+            vPopDetail
         },
         data() {
             return {
                 activeName: 'launch', //默认显示第一页
+                tabArg: ['launch', 'topic', 'personal', 'square', 'pop'],
                 launch: { // 开机页数据
                     loading: false,
                     list: [],
@@ -254,6 +306,22 @@
                     },
                     formData: {},
                     showForm: false
+                },
+                pop: { // 营销弹窗数据
+                    loading: false,
+                    height: '100%',
+                    list: [],
+                    total: 0,
+                    page: 1,
+                    size: 10,
+                    filters: {
+                        id: '',
+                        start: '',
+                        end: '',
+                        time: ''
+                    },
+                    formData: {},
+                    showForm: false
                 }
             }
         },
@@ -261,80 +329,26 @@
             tabChange(tab) {
                 const _self = this;
                 let _name = tab.name;
-                _self.launch.page = 1; // 将所有tab下的page重置为1
-                _self.topic.page = 1;
-                _self.personal.page = 1;
-                _self.square.page = 1;
-                _self.launch.filters = {
+                _self[_name].page = 1;
+                _self[_name].filters = {
                     id: '',
                     start: '',
                     end: '',
                     time: ''
                 };
-                _self.topic.filters = {
-                    id: '',
-                    start: '',
-                    end: '',
-                    time: ''
-                };
-                _self.personal.filters = {
-                    id: '',
-                    start: '',
-                    end: '',
-                    time: ''
-                };
-                _self.square.filters = {
-                    id: '',
-                    start: '',
-                    end: '',
-                    time: ''
-                };
-                if (_name == 'launch') {
-                    _self.launchList();
-                }
-                if (_name == 'topic') {
-                    _self.topicList();
-                }
-                if (_name == 'personal') {
-                    _self.personalList();
-                }
-                if (_name == 'square') {
-                    _self.squareList();
-                }
+                _self.fetchList();
             },
-            resetSearch() {
+            resetSearch() { // 重置查询条件
                 const _self = this;
                 let _name = _self.activeName;
                 _self[_name].filters.id = '';
-                if (_name == 'launch') {
-                    _self.launchList();
-                }
-                if (_name == 'topic') {
-                    _self.topicList();
-                }
-                if (_name == 'personal') {
-                    _self.personalList();
-                }
-                if (_name == 'square') {
-                    _self.squareList();
-                }
+                _self.fetchList();
             },
             handleCurrentChange(val) { //翻页
                 const _self = this;
                 let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
                 _self[_name].page = val; // 将所有tab下的page重置为1
-                if (_name == 'launch') {
-                    _self.launchList();
-                }
-                if (_name == 'topic') {
-                    _self.topicList();
-                }
-                if (_name == 'personal') {
-                    _self.personalList();
-                }
-                if (_name == 'square') {
-                    _self.squareList();
-                }
+                _self.fetchList();
             },
             setRange(val) { //格式化日期控件值
                 const _self = this;
@@ -342,22 +356,24 @@
                 _self[_name].filters.start = val.substring(0, 19);
                 _self[_name].filters.end = val.substring(22);
             },
-            launchList() {    //获取开机页列表
-                let _self = this;
-                _self.launch.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
+            fetchList() {    // 获取表格数据
+                const _self = this;
+                let _name = _self.activeName; // 获取当前tab的name，根据name进行后续操作
+                if (_name == 'personal') { //个人中心暂无数据
+                    return;
+                }
+                _self[_name].height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
                 let paras = new FormData();
-                paras.append('size', _self.launch.size);
-                paras.append('offset', (_self.launch.page - 1) * _self.launch.size);
-                paras.append('id', _self.launch.filters.id);
-                /*paras.append('startTime', _self.launch.filters.start);
-                paras.append('endTime', _self.launch.filters.end);*/
-                _self.launch.loading = true;
-                httpPost('launchBannerList', paras, _self, function (res) {
-                    _self.launch.loading = false;
+                paras.append('size', _self[_name].size);
+                paras.append('offset', (_self[_name].page - 1) * _self[_name].size);
+                paras.append('id', _self[_name].filters.id);
+                _self[_name].loading = true;
+                httpPost(_name + 'BannerList', paras, _self, function (res) {
+                    _self[_name].loading = false;
                     try {
                         let {error, status, data} = res;
-                        _self.launch.total = data.totalElements;
-                        _self.launch.list = data.content.map(function (item) { //格式化显示时间
+                        _self[_name].total = data.totalElements;
+                        _self[_name].list = data.content.map(function (item) { //格式化显示时间
                             item.startTime = util.timestampFormat(item.startTime);
                             item.endTime = util.timestampFormat(item.endTime);
                             return item;
@@ -366,66 +382,7 @@
                         util.jsErrNotify(error);
                     }
                 }, function (res) {
-                    _self.launch.loading = false;
-                    _self.$message.error(res.data.error);
-                })
-            },
-            topicList() {    // 获取话题页列表
-                let _self = this;
-                _self.topic.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
-                let paras = new FormData();
-                paras.append('size', _self.topic.size);
-                paras.append('offset', (_self.topic.page - 1) * _self.topic.size);
-                paras.append('id', _self.topic.filters.id);
-                /*paras.append('startTime', _self.topic.filters.start);
-                paras.append('endTime', _self.topic.filters.end);*/
-                _self.topic.loading = true;
-                httpPost('topicBannerList', paras, _self, function (res) {
-                    _self.topic.loading = false;
-                    try {
-                        let {error, status, data} = res;
-                        _self.topic.total = data.totalElements;
-                        _self.topic.list = data.content.map(function (item) { //格式化显示时间
-                            item.startTime = util.timestampFormat(item.startTime);
-                            item.endTime = util.timestampFormat(item.endTime);
-                            return item;
-                        });
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                }, function (res) {
-                    _self.topic.loading = false;
-                    _self.$message.error(res.data.error);
-                })
-            },
-            personalList() {    // 获取个人页列表
-                console.log('personal')
-            },
-            squareList() {    // 获取广场页列表
-                let _self = this;
-                _self.square.height = document.getElementById('container').clientHeight - 77 - 42 - 15 - 42;
-                let paras = new FormData();
-                paras.append('size', _self.square.size);
-                paras.append('offset', (_self.square.page - 1) * _self.square.size);
-                paras.append('id', _self.square.filters.id);
-                /*paras.append('startTime', _self.square.filters.start);
-                paras.append('endTime', _self.square.filters.end);*/
-                _self.square.loading = true;
-                httpPost('squareBannerList', paras, _self, function (res) {
-                    _self.square.loading = false;
-                    try {
-                        let {error, status, data} = res;
-                        _self.square.total = data.totalElements;
-                        _self.square.list = data.content.map(function (item) { //格式化显示时间
-                            item.startTime = util.timestampFormat(item.startTime);
-                            item.endTime = util.timestampFormat(item.endTime);
-                            return item;
-                        });
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                }, function (res) {
-                    _self.square.loading = false;
+                    _self[_name].loading = false;
                     _self.$message.error(res.data.error);
                 })
             },
@@ -445,18 +402,7 @@
                 httpGet(_name + 'BannerDel', paras, _self, function (res) {
                     _self[_name].tableLoading = false;
                     try {
-                        if (_name == 'launch') {
-                            _self.launchList();
-                        }
-                        if (_name == 'topic') {
-                            _self.topicList();
-                        }
-                        if (_name == 'personal') {
-                            _self.personalList();
-                        }
-                        if (_name == 'square') {
-                            _self.squareList();
-                        }
+                        _self.fetchList();
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -464,7 +410,7 @@
             }
         },
         mounted() {
-            this.launchList();
+            this.fetchList();
         }
     }
 </script>

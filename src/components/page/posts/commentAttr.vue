@@ -59,7 +59,7 @@
                 tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                formTitle: '',
+                formTitle: '新增评论分类',
                 formVisible: false,
                 formLoading: false,
                 formRules: {
@@ -103,7 +103,7 @@
             showForm(row) { //显示表单
                 this.formVisible = true;
                 if (row) {
-                    this.formTitle = '编辑分类';
+                    this.formTitle = '编辑评论分类';
                     this.formData = {
                         id: row.id,
                         name: row.text,
@@ -118,7 +118,7 @@
                     name: '',
                     api: 'commentAttrAdd'
                 };
-                this.formTitle = '新增分类';
+                _self.formTitle = '新增评论分类';
                 _self.$refs['formData'].resetFields();
                 _self.formLoading = false;
             },
@@ -127,13 +127,13 @@
                 _self.$refs['formData'].validate((valid) => {
                     if (valid) {
                         let paras = {
-                            text: _self.formData.text
+                            text: _self.formData.name
                         };
                         if (_self.formData.id) { // 编辑状态，需要传递id
                             paras.id = _self.formData.id;
                         }
                         _self.formLoading = true;
-                        httpPost(_self.formData.api, paras, _self, function (res) {
+                        httpGet(_self.formData.api, paras, _self, function (res) {
                             _self.formLoading = false;
                             try {
                                 let {error, status, data} = res;
@@ -153,9 +153,7 @@
             },
             handleDel(row) { //删除评论属性
                 let _self = this;
-                _self.$message.warning('等待接口');
-                return false;
-                _self.$confirm('确认删除该评论属性吗?', '提示', {
+                _self.$confirm('确认删除该评论分类吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
                     let paras = {
@@ -164,6 +162,7 @@
                     httpGet('commentAttrDel', paras, _self, function (res) {
                         try {
                             _self.$message.success('删除成功');
+                            _self.fetchList();
                         } catch (error) {
                             util.jsErrNotify(error);
                         }

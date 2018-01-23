@@ -4,7 +4,8 @@
         <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                    <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close" :on-icon-click="resetSearch"
+                              @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
                     <el-select v-model="filters.type" @change="fetchList" placeholder="请选择" style="width: 150px;">
@@ -38,7 +39,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border
+                  :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="音乐名称"></el-table-column>
             <el-table-column prop="duration" label="时长" width="130">
@@ -60,15 +62,16 @@
             </el-table-column>
             <el-table-column label="使用统计">
                 <template scope="scope">
-                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount : '0'}}人
+                    {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
+                    '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="200">
+            <el-table-column label="操作" width="280">
                 <template scope="scope">
                     <el-button size="small" type="info" @click="playMusic(scope.row)">预览</el-button>
                     <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
-                    </el-button>
+                    <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
+                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除</el-button>
                 </template>
             </el-table-column>
         </el-table>
@@ -89,17 +92,23 @@
         <!--音乐编辑-->
         <v-detail :musData="musData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
+        <!--为片段加评论-->
+        <v-comment-add :typeData="typeData" :type="4" v-model="isShowComment"></v-comment-add>
+
+
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpDel, httpPost} from '../../../api/api';
+    import {httpGet, httpDel, httpPost} from '../../../api/api';
     import vDetail from './musicDetail.vue'
+    import vCommentAdd from './commentSource.vue'
 
     export default {
         components: {
-            vDetail
+            vDetail,
+            vCommentAdd
         },
         data() {
             return {
@@ -117,11 +126,13 @@
                 tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                musicTitle:'音乐播放',
+                musicTitle: '音乐播放',
                 musicVisible: false,  //播放音乐界面 显示、隐藏
                 musicHtml: '',
                 isShowForm: false, //显示、隐藏编辑页
-                musData: {}
+                musData: {},
+                isShowComment: false, //显示、隐藏评论库列表
+                typeData: {}
             }
         },
         methods: {
@@ -152,7 +163,7 @@
                 httpGet('contentMusicList', para, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) {
                             item.duration = util.fileDuration(item.duration);
@@ -163,11 +174,11 @@
                     }
                 })
             },
-            resetSearch(){
+            resetSearch() {
                 this.filters.kw = '';
                 this.fetchList();
             },
-            attrList(){
+            attrList() {
                 let _self = this;
                 let para = {
                     type: '0',
@@ -177,14 +188,14 @@
                 };
                 httpGet('contentAttrList', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.attrSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            catList(){
+            catList() {
                 let _self = this;
                 let para = {
                     type: '0',
@@ -194,22 +205,22 @@
                 };
                 httpGet('contentCatList', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.catSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            playMusic(row){ //播放音乐
+            playMusic(row) { //播放音乐
                 this.musicVisible = true;
                 this.musicTitle = row.name;
-                this.musicHtml = '<audio controls="controls" src="'+ row.musicUrl +'" autoplay="autoplay" preload="auto"></audio>';
+                this.musicHtml = '<audio controls="controls" src="' + row.musicUrl + '" autoplay="autoplay" preload="auto"></audio>';
             },
-            musicClose(){
+            musicClose() {
                 this.musicHtml = '';
             },
-            showForm (row){ //显示表单
+            showForm(row) { //显示表单
                 this.isShowForm = true;
                 this.musData = row;
             },
@@ -220,7 +231,7 @@
                 httpDel('contentMusicDel', {id: row.id}, _self, function (res) {
                     _self.tableLoading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.$message.success('删除成功');
                         _self.fetchList();
                     } catch (error) {
@@ -228,7 +239,11 @@
                     }
                 })
             },
-
+            showComment(row) { // 显示剧本对应的评论库
+                let _self = this;
+                _self.typeData = row;
+                _self.isShowComment = true;
+            }
         },
         mounted() {
             this.fetchList();

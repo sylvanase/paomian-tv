@@ -75,7 +75,7 @@
                 tableHeight: '100%',
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
-                formTitle: '',
+                formTitle: '新增评论',
                 formVisible: false,
                 formLoading: false,
                 formRules: {
@@ -87,6 +87,7 @@
                 formData: {
                     id: '',
                     text: '',
+                    api: 'commentAdd', // 默认调新增接口
                     attrIds: []
                 },
                 attrList: []
@@ -129,31 +130,37 @@
                     _self.formData = {
                         id: row.id,
                         text: row.text,
-                        attrIds: attrArg
+                        attrIds: attrArg,
+                        api: 'commentEdit'
                     };
                 }
             },
             formSubmit() { //提交表格
                 let _self = this;
-                _self.$message.warning('等待后端提供接口');
-                return;
-                let paras = new FormData();
-                paras.append("id", _self.formData.id);
-                paras.append("text", _self.formData.text);
-                paras.append("text", _self.formData.text);
-                _self.formLoading = true;
-                httpPost('commentEdit', paras, _self, function (res) {
-                    _self.formLoading = false;
-                    try {
-                        let {error, status, data} = res;
-                        _self.$message.success('提交成功');
-                        _self.$refs['formData'].resetFields();
-                        _self.formVisible = false;
-                        _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
+                _self.$refs['formData'].validate((valid) => {
+                    if (valid) {
+                        let paras = new FormData();
+                        if (_self.formData.id) {
+                            paras.append("id", _self.formData.id);
+                        }
+                        paras.append("text", _self.formData.text);
+                        paras.append("attrIds", _self.formData.attrIds);
+                        _self.formLoading = true;
+                        httpPost(_self.formData.api, paras, _self, function (res) {
+                            _self.formLoading = false;
+                            try {
+                                _self.$message.success('提交成功');
+                                _self.$refs['formData'].resetFields();
+                                _self.formVisible = false;
+                                _self.fetchList();
+                            } catch (error) {
+                                util.jsErrNotify(error);
+                            }
+                        })
+                    } else {
+                        return false;
                     }
-                })
+                });
             },
             resetFormData() { //关闭表格弹窗，重置表格数据
                 let _self = this;
@@ -161,7 +168,8 @@
                 _self.formData = {
                     id: '',
                     text: '',
-                    attrIds: []
+                    attrIds: [],
+                    api: 'commentAdd'
                 };
                 _self.$refs['formData'].resetFields();
                 _self.formLoading = false;
@@ -183,9 +191,6 @@
             },
             handleDel(row) { //删除评论
                 let _self = this;
-                _self.$message.warning('等待数据验证接口');
-                return;
-
                 _self.$confirm('确认删除该评论吗?', '提示', {
                     type: 'warning'
                 }).then(() => {
@@ -195,6 +200,7 @@
                     httpGet('commentListDel', paras, _self, function (res) {
                         try {
                             _self.$message.success('删除成功');
+                            _self.fetchList();
                         } catch (error) {
                             util.jsErrNotify(error);
                         }

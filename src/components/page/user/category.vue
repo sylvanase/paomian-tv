@@ -35,8 +35,8 @@
         <!--新建/编辑-->
         <el-dialog :title="formTitle" v-model="formVisible" @close="resetFormData">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
-                <el-form-item label="分类名称" prop="text" style="margin-bottom: -20px;">
-                    <el-input v-model.trim="formData.text" auto-complete="off"></el-input>
+                <el-form-item label="分类名称" prop="name" style="margin-bottom: -20px;">
+                    <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -67,7 +67,7 @@
                 formLoading: false,
                 formSelect: false,
                 formRules: {
-                    text: [
+                    name: [
                         {required: true, message: '请输入分类名称', trigger: 'blur'},
                         {min: 1, max: 32, message: '长度在 1 到 32 个字符', trigger: 'blur'}
                     ]
@@ -75,7 +75,7 @@
                 //新增界面数据
                 formData: {
                     id: '',
-                    text: '',
+                    name: '',
                     api: 'userCatAdd' // 默认走编辑接口
                 }
             }
@@ -108,14 +108,12 @@
             },
             showForm(row) { //显示表单
                 this.formVisible = true;
-                self.$message.warning('等待接口');
-                return;
                 if (row) {
                     this.formTitle = '编辑用户分类';
                     this.formSelect = true;
                     this.formData = {
                         id: row.id,
-                        text: row.text,
+                        name: row.name,
                         api: 'userCatEdit'
                     };
                 }
@@ -125,13 +123,13 @@
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
                         let paras = {
-                            text: _self.formData.text
+                            text: _self.formData.name
                         };
                         if (_self.formData.id) { // 编辑状态，需要传递id
                             paras.id = _self.formData.id;
                         }
                         _self.formLoading = true;
-                        httpPost(_self.formData.api, paras, _self, function (res) {
+                        httpGet(_self.formData.api, paras, _self, function (res) {
                             _self.formLoading = false;
                             try {
                                 _self.$message.success('提交成功');
@@ -151,7 +149,7 @@
                 _self.formTitle = '新增用户分类';
                 _self.formData = {
                     id: '',
-                    text: '',
+                    name: '',
                     api: 'userCatAdd'
                 };
                 _self.formSelect = false;
@@ -160,20 +158,21 @@
             //删除表格数据
             handleTableDel: function (index, row) {
                 let _self = this;
-                self.$message.warning('等待接口');
-                return;
-                let paras = {id: row.id};
-                _self.tableLoading = true;
-                httpDel('userCatDel', paras, _self, function (res) {
-                    _self.tableLoading = false;
-                    try {
-                        let {error, status, data} = res;
-                        _self.$message.success('删除成功');
-                        _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+                _self.$confirm('确认删除该用户分类吗?', '提示', {
+                    type: 'warning'
+                }).then(() => {
+                    let paras = {id: row.id};
+                    _self.tableLoading = true;
+                    httpGet('userCatDel', paras, _self, function (res) {
+                        _self.tableLoading = false;
+                        try {
+                            _self.$message.success('删除成功');
+                            _self.fetchList();
+                        } catch (error) {
+                            util.jsErrNotify(error);
+                        }
+                    })
+                });
             }
         },
         mounted() {

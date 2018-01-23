@@ -130,7 +130,9 @@ let api = { //接口地址
     postsBarrageAdd: '/video/video_post/add_barrage', //帖子增加弹幕
     postsEssence: '/video/update_essence', //帖子加精
     postsStatus: '/video/update_status', //帖子隐藏、恢复
-    postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表
+    // postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表 弹幕暂时废除
+    postsCommentList: '/video/video_post/barrage_list', //帖子的评论列表
+
     postsCheckList: '/video/check_result_list', // 鉴黄列表
     postsBlocked: '/video/vpid_blocked', // 封禁视频
     postsUnblock: '/video/vpid_relieve', // 解封视频
@@ -138,12 +140,14 @@ let api = { //接口地址
     commentList: '/comment/list', // 评论库列表
     commentListDel: '/comment/delete', // 评论库删除
     commentListSearch: '/comment/add/list', // 为帖子增加评论时，所调用的评论库列表，带有查询参数
-    commentEdit: '/comment/edit', // 评论库新增、编辑
+    commentAdd: '/comment/content/add', // 评论库新增
+    commentEdit: '/comment/edit', // 评论库编辑
     commentAttrList: '/comment/attr/list', // 评论库分类
     commentAttrAdd: '/comment/attr/add', // 新增评论分类
     commentAttrEdit: '/comment/attr/edit', // 编辑评论分类
     commentAttrDel: '/comment/attr/delete', // 评论库分类删除
     commentRobotList: '/comment/robot/list', // 机器人评论库列表
+    commentRobotDel: '/comment/robot/delete', // 机器人评论库删除
     commentRobotReplyList: '/comment/robot/reply/list', // 机器人评论库列表
     commentRobotReplyAdd: '/comment/robot/reply/add', // 机器人回复评论
 
@@ -156,6 +160,7 @@ let api = { //接口地址
     topConfigDetail: '/topic/top_all', //话题置顶配置详细
     topConfigHandel: '/topic/top_config', //话题置顶配置更改
     topicPosts: '/video/video_post/for_topic_list', //话题详情中查询帖子
+    topicRecommend: '/topic/recommend/operation', // 推荐话题
 
     illegalList: '/video/illegal_report_list', //举报帖子
     illegalStatus: '/video/update_illegal_report_status', //隐藏举报帖子
@@ -180,6 +185,11 @@ let api = { //接口地址
     squareBannerAdd: '/ad/square/add', // 新增广场页banner
     squareBannerUpdate: '/ad/square/update', // 新增广场页banner
     squareBannerDel: '/ad/square/delete', // 删除广场页banner
+    popBannerList: '/ad/popupWindow/list', // 营销弹窗list
+    popBannerDel: '/ad/popupWindow/delete', // 营销弹窗删除
+    popBannerAdd: '/ad/popupWindow/add', // 新增营销弹窗
+    popBannerEdit: '/ad/popupWindow/edit', // 编辑营销弹窗
+
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传

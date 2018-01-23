@@ -1,7 +1,7 @@
 <template>
     <section>
         <!--顶部工具条-->
-        <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top:-10px;">
+        <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
                     <el-input v-model="filters.kw" placeholder="ID/昵称" icon="circle-close" :on-icon-click="resetSearch"
@@ -70,8 +70,12 @@
                     </router-link>
                 </template>
             </el-table-column>
+            <el-table-column label="用户分类" min-width="150">
+                <template scope="scope">
+                    {{ scope.row.userAttrNames ? scope.row.userAttrNames.join(' , ') : '无' }}
+                </template>
+            </el-table-column>
             <el-table-column prop="createTime" label="注册时间" min-width="120"></el-table-column>
-
             <el-table-column prop="fansCount" label="粉丝" sortable width="120">
                 <template scope="scope">
                     <el-button v-if="scope.row.fansCount" size="small" @click="showFan(scope.row)">{{
@@ -214,17 +218,16 @@
                                    :value="item.cityId+''"></el-option>
                     </el-select>
                 </el-form-item>
-                <!--<el-form-item label="用户分类" prop="catIds">
+                <el-form-item label="用户分类" prop="catIds">
                     <template>
-                        <el-select style="width: 50%;" v-model="formData.catIds" multiple filterable remote
-                                   loading-text="搜索中" placeholder="输入关键词搜索分类" :remote-method="handleCat"
-                                   :loading="searchCat.loading">
-                            <el-option v-for="item in searchCat.list" :key="item.id" :label="item.name"
+                        <el-select style="width: 50%;" filterable v-model="formData.catIds" multiple
+                                   placeholder="选择用户分类">
+                            <el-option v-for="item in catList" :key="item.id" :label="item.name"
                                        :value="item.id">
                             </el-option>
                         </el-select>
                     </template>
-                </el-form-item>-->
+                </el-form-item>
                 <template v-if="formData.imei.length > 0" v-for="item in formData.imei">
                     <el-form-item label="设备类型">
                         <span>{{ item.name }}</span>
@@ -281,8 +284,8 @@
             </div>
         </el-dialog>
 
-        <!-- 为帖子增加弹幕 -->
-        <el-dialog title="弹幕列表" v-model="isShowBarrage">
+        <!-- 为帖子增加弹幕 功能暂时废除 -->
+        <!--<el-dialog title="弹幕列表" v-model="isShowBarrage">
             <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top: -20px;">
                 <el-form :inline="true" :model="barrage.filters">
                     <el-form-item>
@@ -302,7 +305,7 @@
                     </el-form-item>
                 </el-form>
             </el-col>
-            <!--表格-->
+            &lt;!&ndash;表格&ndash;&gt;
             <el-table v-loading="tableLoading" class="tb-edit" :data="barrage.tableList" stripe border
                       style="width: 100%;"
                       @selection-change="handleSelectionChange" highlight-current-row>
@@ -316,7 +319,7 @@
                     </template>
                 </el-table-column>
             </el-table>
-            <!--工具条-->
+            &lt;!&ndash;工具条&ndash;&gt;
             <el-col :span="24" class="mt-10" style="margin-bottom: 20px;">
                 <el-pagination style="float:right;" @current-change="barragePageChange"
                                :page-size="10" :current-page="barrage.page"
@@ -324,7 +327,7 @@
                 </el-pagination>
             </el-col>
 
-        </el-dialog>
+        </el-dialog>-->
 
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
@@ -370,13 +373,15 @@
         <v-follow :userId="userId" v-model="isShowFollow" v-on:preview="showForm"></v-follow>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showComment"
                  v-on:like="addLike"></v-video>
 
         <!--用户喜欢-->
-        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showComment"
                 v-on:like="addLike"></v-like>
 
+        <!--为帖子加评论-->
+        <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
     </section>
 </template>
 
@@ -388,14 +393,15 @@
     import vFollow from './followList.vue'
     import vVideo from './videoList.vue'
     import vLike from './likeList.vue'
+    import vCommentAdd from '../posts/commentSource.vue'
 
     export default {
         components: {
-            //vDetail,
             vFan,
             vFollow,
             vVideo,
-            vLike
+            vLike,
+            vCommentAdd
         },
         data() {
             let validateNum = (rule, value, callback) => {
@@ -456,31 +462,16 @@
                 regionList: [],
                 cityList: [],
                 cityFilterList: [],
-                searchCat: { //搜索用户分类
-                    loading: false,
-                    list: []
-                },
+                catList: [],
                 userData: {},
                 userId: '', //用户id
                 isShowFan: false, //显示、隐藏粉丝列表
                 isShowFollow: false, //显示、隐藏关注列表
                 isShowVideo: false, //显示、隐藏帖子列表
                 isShowLike: false, //显示、隐藏喜欢列表
-                isShowBarrage: false, //显示、隐藏弹幕列表
+                isShowComment: false, //显示、隐藏评论库列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
-                barrage: {
-                    vpId: '', //视频id
-                    tagList: [],
-                    total: 0, //表格列表数据总数
-                    page: 1, //当前页，默认为第一页
-                    tableLoading: false, //表格的loading符号
-                    tableList: [], //表格数据
-                    filters: { //搜索筛选条件
-                        tag: ''
-                    },
-                    multipleBarrageIds: [] //添加的弹幕id集合
-                },
                 fanVisible: false,
                 fanData: { // 为用户增加粉丝
                     title: '',
@@ -504,7 +495,8 @@
                     num: [
                         {validator: validateLike, trigger: 'blur'},
                     ]
-                }
+                },
+                postsData: {}
             }
         },
         methods: {
@@ -572,8 +564,7 @@
                     httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
                         _self.showLoading = false;
                         try {
-                            let {error, status, data} = res;
-                            _self.searchCat.list = [];
+                            let {data} = res;
                             _self.formData = {
                                 id: data.id,
                                 name: data.username,
@@ -589,18 +580,8 @@
                                 wechat: data.wxBind,
                                 weibo: data.wbBind,
                                 count: 0,
-//                                catIds: data.catIds
+                                catIds: data.userAttrIds
                             };
-                            /*if (_self.formData.catIds.length > 0) {
-                                let array = _self.formData.catIds;
-                                let arrayName = _self.formData.catNames;
-                                for (var k = 0, length = array.length; k < length; k++) {
-                                    _self.searchCat.list.push({
-                                        name: arrayName[k],
-                                        id: array[k]
-                                    });
-                                }
-                            }*/
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -622,7 +603,8 @@
                     qq: '',
                     wechat: '',
                     weibo: '',
-                    count: 0
+                    count: 0,
+                    catIds: []
                 };
                 this.showLoading = false;
                 this.formLoading = false;
@@ -652,11 +634,12 @@
             videoClose() {
                 this.videoHtml = '';
             },
-            showBarrage(row) { //显示弹幕列表
-                this.isShowBarrage = true;
-                this.fetchBarrage();
+            showComment(row) { //显示弹幕列表
+                this.isShowComment = true;
+                this.postsData = row
+                /*this.fetchBarrage();
                 this.barrageTag();
-                this.barrage.vpId = row.id;
+                this.barrage.vpId = row.id;*/
             },
             //软删除用户
             userDel: function (row) {
@@ -721,7 +704,7 @@
                     })
                 }
             },
-            fetchCityFilter: function () { //根据省id获取城市列表
+            fetchCityFilter() { //根据省id获取城市列表
                 let _self = this;
                 _self.filters.city = '0';
                 httpGet('cityList', {regionId: _self.filters.region}, _self, function (res) {
@@ -733,19 +716,16 @@
                     }
                 })
             },
-            handleAttr(query) { //搜索用户分类
+            fetchCat() {
                 let _self = this;
-                let para = {
+                let paras = {
                     offset: 0,
-                    size: 30,
-                    kw: query
+                    size: 9999
                 };
-                _self.searchCat.loading = true;
-                httpGet('userCategory', para, _self, function (res) {
-                    _self.searchCat.loading = false;
+                httpGet('userCategory', paras, _self, function (res) {
                     try {
                         let {data} = res;
-                        _self.searchCat.list = data.content;
+                        _self.catList = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -759,6 +739,7 @@
                 paras.append("username", _self.formData.name);
                 paras.append("regionId", _self.formData.regionId);
                 paras.append("cityId", _self.formData.cityId);
+                paras.append("userAttrIds", _self.formData.catIds);
                 _self.formLoading = true;
                 httpPost('userEdit', paras, _self, function (res) {
                     _self.formLoading = false;
@@ -834,6 +815,7 @@
                     httpGet('userMobileUnbind', paras, _self, function (res) {
                         try {
                             _self.$message.success('解绑成功');
+                            _self.userData.phone = '';
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -868,7 +850,7 @@
             /*
              * 处理弹幕开始
              * */
-            barragePageChange(val) { //翻页
+            /*barragePageChange(val) { //翻页
                 this.barrage.page = val;
                 this.fetchBarrage();
             },
@@ -938,7 +920,7 @@
                         util.jsErrNotify(error);
                     }
                 })
-            },
+            },*/
             addFan(row) { // 显示增加粉丝弹窗
                 this.fanVisible = true;
                 this.fanData.id = row.id;
@@ -1001,6 +983,7 @@
             }
             this.fetchList();
             this.fetchRegion();
+            this.fetchCat();
         }
     }
 </script>

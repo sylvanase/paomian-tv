@@ -31,7 +31,8 @@
         </el-col>
 
         <!--表格-->
-        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
+        <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border
+                  :max-height="tableHeight" style="width: 100%;">
             <el-table-column type="expand">
                 <template scope="props">
                     <el-form label-position="left" class="table-expand">
@@ -73,18 +74,24 @@
             </el-table-column>
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="剧本名称"></el-table-column>
-            <el-table-column label="使用统计">
+            <el-table-column label="使用统计" width="200">
                 <template scope="scope">
                     {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="260">
+            <el-table-column label="剧本属性">
+                <template scope="scope">
+                    {{ scope.row.playAttrNames.join(' , ') }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="310">
                 <template scope="scope">
                     <div class="mt-10">
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                         <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
                         <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
+                        <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
                     </div>
                     <div class="mt-10 mb-10">
                         <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
@@ -120,6 +127,10 @@
         <el-dialog title="剧本预览" v-model="videoVisible" @close="videoClose()">
             <div style="text-align: center;" v-html="videoHtml"></div>
         </el-dialog>
+
+        <!--为剧本加评论-->
+        <v-comment-add :typeData="typeData" :type="2" v-model="isShowComment"></v-comment-add>
+
     </section>
 </template>
 
@@ -129,11 +140,13 @@
     import Ks3 from '../../../../static/js/ksyun/ks3jssdk.js'
     import vDetail from './playDetail.vue'
     import vScriptDetail from './scriptDetail.vue'
+    import vCommentAdd from './commentSource.vue'
 
     export default {
         components: {
             vDetail,
-            vScriptDetail
+            vScriptDetail,
+            vCommentAdd
         },
         data() {
             return {
@@ -157,7 +170,9 @@
                     playId: '' // 剧本id
                 },
                 videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: ''
+                videoHtml: '',
+                isShowComment: false, //显示、隐藏评论库列表
+                typeData: {}
             }
         },
         methods: {
@@ -207,7 +222,7 @@
                 this.filters.kw = '';
                 this.fetchList();
             },
-            attrList(){
+            attrList() {
                 let _self = this;
                 let para = {
                     type: '2',
@@ -217,7 +232,7 @@
                 };
                 httpGet('contentAttrList', para, _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.attrSelect = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
@@ -253,7 +268,8 @@
                             util.jsErrNotify(error);
                         }
                     })
-                }).catch(() => {});
+                }).catch(() => {
+                });
             },
             handleTableLine(index, row) {
                 let _self = this;
@@ -335,6 +351,11 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            showComment(row) { // 显示剧本对应的评论库
+                let _self = this;
+                _self.typeData = row;
+                _self.isShowComment = true;
             }
         },
         mounted() {

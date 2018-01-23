@@ -22,11 +22,11 @@
                     {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="弹幕" width="120">
+            <!--<el-table-column label="弹幕" width="120">
                 <template scope="scope">
                     {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageCount : '0' }}次/{{ scope.row.videoInfoPo ? scope.row.videoInfoPo.barrageUserCount : '0'}}人
                 </template>
-            </el-table-column>
+            </el-table-column>-->
             <el-table-column label="操作" width="180" fixed="right">
                 <template scope="scope">
                     <div>
@@ -37,7 +37,7 @@
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
-                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">弹幕</el-button>
+                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                    @click="postsDel(scope.row)">
                             {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
