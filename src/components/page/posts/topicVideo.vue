@@ -40,6 +40,7 @@
                     {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.likeCount }}
                 </template>
             </el-table-column>
+            <el-table-column prop="replyCount" label="评论数"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
             <!--<el-table-column prop="lastBarrageTime" label="最后弹幕时间" min-width="180">
                 <template scope="scope">
@@ -80,18 +81,23 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="310" fixed="right">
+            <el-table-column label="操作" width="230" fixed="right">
                 <template scope="scope">
-                    <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
-                               @click="handleEssence(scope.row)">
-                        {{ scope.row.isEssence == 1 ? '取消精华' : '加精' }}
-                    </el-button>
-                    <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
-                    <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
-                    <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
-                               @click="postsDel(scope.row)">
-                        {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
-                    </el-button>
+                    <div>
+                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleEssence(scope.row)">
+                            {{ scope.row.isEssence == 1 ? '取消精华' : '加精' }}
+                        </el-button>
+                        <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
+                        <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
+                    </div>
+                    <div class="mt-10">
+                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
+                        <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                                   @click="postsDel(scope.row)">
+                            {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -133,6 +139,9 @@
         },
         computed: {
             detail() {
+                if(!this.visible){ // 弹窗不显示，不进行请求
+                    return false;
+                }
                 this.tableLoading = true;
                 this.tableList = [];
                 this.title = "话题：'" + this.topicData.name + "'的视频列表";
@@ -220,6 +229,21 @@
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            noRecommend(row){ // 将帖子加入不推荐队列
+                let _self = this;
+                let paras = {
+                    id: row.id
+                };
+                httpGet('postsNoRecommend', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

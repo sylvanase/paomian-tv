@@ -43,7 +43,7 @@
                     <el-button type="primary" @click="fetchList">查询</el-button>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="showForm('-1')">新增</el-button>
+                    <el-button type="primary" @click="showForm('','detail')">新增</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -62,8 +62,8 @@
             </el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150">
                 <template scope="scope">
-                    <router-link :to="{ name: '用户列表', params: { uid: scope.row.uid }}">{{ scope.row.username }}
-                    </router-link>
+                    <!--<router-link target="_blank" :to="{ name: '用户列表', params: { uid: scope.row.uid }}">{{ scope.row.username }}</router-link>-->
+                    <router-link target="_blank" :to="{ name: '用户列表', query: { uid: scope.row.uid }}">{{ scope.row.username }}</router-link>
                 </template>
             </el-table-column>
             <el-table-column prop="videoText" min-width="200" label="帖子描述">
@@ -72,6 +72,7 @@
                 </template>
             </el-table-column>
             <el-table-column prop="videoInfoPo.likeCount" label="喜欢"></el-table-column>
+            <el-table-column prop="videoInfoPo.commentCount" label="评论数"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
             <!--<el-table-column prop="lastBarrageTime" label="最后评论时间" min-width="180"></el-table-column>-->
             <el-table-column label="精华" width="80">
@@ -96,7 +97,6 @@
                     {{ scope.row.videoInfoPo.viewUserCount == null ? '0' : scope.row.videoInfoPo.viewUserCount }}
                 </template>
             </el-table-column>
-            <el-table-column prop="videoInfoPo.barrageCount" label="弹幕数"></el-table-column>
             <el-table-column label="显示">
                 <template scope="scope">
                     <el-tag :type="scope.row.isDel == 0 ? 'success' : 'danger'"
@@ -104,27 +104,28 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="250" fixed="right">
+            <el-table-column label="操作" width="300" fixed="right">
                 <template scope="scope">
                     <div>
                         <el-button size="small" @click="showForm(scope.row, 'detail')">编辑</el-button>
                         <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success"
-                                   @click="addLike(scope.row)">点赞
+                                   @click="showAddLike(scope.row)">点赞
                         </el-button>
                         <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info"
                                    @click="showForm(scope.row, 'comment')">加评论
                         </el-button>
+                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
                     </div>
                     <div class="mt-10">
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
                                    @click="handleEssence(scope.row)">
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
+                        <el-button size="small" @click="showForm(scope.row, 'postsComment')">帖子评论</el-button>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                    @click="postsDel(scope.row)">
                             {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
                         </el-button>
-                        <el-button size="small" @click="showForm(scope.row, 'postsComment')">帖子评论</el-button>
                     </div>
                 </template>
             </el-table-column>
@@ -136,22 +137,6 @@
                            layout="total, prev, pager, next, jumper" :total="total">
             </el-pagination>
         </el-col>
-
-        <!--为帖子点赞-->
-        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
-            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
-                     style="margin-bottom: -20px;">
-                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
-                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
-                                     v-model="likeData.num"></el-input-number>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
-                </el-button>
-            </div>
-        </el-dialog>
 
         <!--帖子编辑-->
         <v-detail :postsData="postsData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
@@ -170,6 +155,9 @@
         <!--帖子弹幕列表-->
         <!--<v-barrage-list :postsData="postsData" v-model="isShowPostsBarrage" v-on:refresh="fetchList"></v-barrage-list>-->
 
+        <!--为帖子点赞-->
+        <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
+
         <!--帖子评论列表-->
         <v-comment-list :postsData="postsData" v-model="isShowPostsComment" v-on:refresh="fetchList"></v-comment-list>
     </section>
@@ -181,12 +169,14 @@
     import vDetail from './postsDetail.vue'
     import vCommentAdd from './commentSource.vue'
     import vCommentList from './postsCommentList.vue'
+    import vLikeAdd from './likeAdd.vue'
 
     export default {
         components: {
             vDetail,
             vCommentAdd,
-            vCommentList
+            vCommentList,
+            vLikeAdd
         },
         data() {
             let validateNum = (rule, value, callback) => {
@@ -222,17 +212,8 @@
                 isShowVideo: false, //显示、隐藏话题视频列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
-                likeVisible: false,
-                likeData: { // 点赞
-                    loading: false,
-                    num: 0,
-                    id: ''
-                },
-                likeRules: {
-                    num: [
-                        {validator: validateNum, trigger: 'blur'},
-                    ]
-                }
+                likeVisible: false, // 显示、隐藏点赞界面
+                addLikeId: ''  // 点赞的帖子id
             }
         },
         methods: {
@@ -297,7 +278,6 @@
                 if (type == 'comment') {
                     _self.isShowComment = true;
                 }
-
                 if (type == 'postsComment') {
                     _self.isShowPostsComment = true;
                 }
@@ -310,30 +290,9 @@
             videoClose() {
                 this.videoHtml = '';
             },
-            addLike(row) { // 显示增加赞数
+            showAddLike(row) {
                 this.likeVisible = true;
-                this.likeData.id = row.id;
-            },
-            likeSubmit() {
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", _self.likeData.id);
-                paras.append("num", _self.likeData.num);
-                httpPost('postsLike', paras, _self, function (res) {
-                    try {
-                        let {error, status, data} = res;
-//                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-                _self.$message.success('已发送点赞请求');
-                _self.likeVisible = false;
-            },
-            resetLike() {
-                this.likeData.id = '';
-                this.likeData.num = 0;
-                this.likeData.loading = false;
+                this.addLikeId = row.id
             },
             handleEssence(row) {
                 let _self = this;
@@ -358,7 +317,7 @@
             setEnd(val) {
                 this.filters.end = val;
             },
-            postsDel: function (row) { //软删除帖子
+            postsDel (row) { //软删除帖子
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -370,6 +329,21 @@
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            noRecommend(row){ // 将帖子加入不推荐队列
+                let _self = this;
+                let paras = {
+                    id: row.id
+                };
+                httpGet('postsNoRecommend', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

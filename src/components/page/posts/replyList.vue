@@ -6,7 +6,7 @@
                 <li v-for="item in tableList">
                     <el-row :gutter="15">
                         <el-col :span="3">
-                            <img v-if="item.cover" :src="item.cover" alt="头像">
+                            <img v-if="item.avatarUrl" :src="item.avatarUrl" alt="头像">
                             <img v-else src="../../../../static/img/TV.png" alt="用户头像"/>
                         </el-col>
                         <el-col :span="17">
@@ -17,6 +17,7 @@
                             </div>
                             <div v-else>
                                 <span class="name">{{ item.username }}</span>
+                                <span class="time">{{ item.createTime }}</span>
                             </div>
                             <div class="reply-text">
                                 {{ item.text }}
@@ -36,7 +37,7 @@
                            layout="total, prev, pager, next, jumper" :total="total">
             </el-pagination>
         </el-col>
-        <div class="mt-10">
+        <div class="mt-10" style="clear: both;">
             <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData"
                      style="margin-bottom: -20px;">
                 <el-form-item label="评论内容" prop="text">
@@ -128,7 +129,7 @@
                         let {error, status, data} = res;
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) { //格式化显示时间
-                            item.createTime = util.timestampFormat(item.createTime, 'YYYY-MM-DD');
+                            item.createTime = util.timestampFormat(item.createTime);
                             return item;
                         });
                     } catch (error) {

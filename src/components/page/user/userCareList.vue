@@ -3,7 +3,7 @@
         <el-col :span="24" class="toolbar" style="padding-bottom: 0;">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-select v-model="filters.categoryId" @change="fetchList" placeholder="请选择" style="width: 150px;">
+                    <el-select v-model="filters.categoryId" @change="fetchList" placeholder="请选择" style="width: 200px;">
                         <el-option label="全部分类" value=""></el-option>
                         <el-option v-for="item in catSelect" :key="item.id" :label="item.name"
                                    :value="item.id">
@@ -26,6 +26,11 @@
                 </template>
             </el-table-column>
             <el-table-column prop="username" min-width="150" label="昵称"></el-table-column>
+            <el-table-column label="用户分类" min-width="150">
+                <template scope="scope">
+                    {{ scope.row.userAttrNames ? scope.row.userAttrNames.join(' , ') : '无' }}
+                </template>
+            </el-table-column>
             <el-table-column prop="createTime" label="注册时间" min-width="120"></el-table-column>
             <el-table-column prop="sex" label="性别" width="80">
                 <template scope="scope">
@@ -83,7 +88,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" fixed="right" width="170">
+            <el-table-column label="操作" fixed="right" width="230">
                 <template scope="scope">
                     <el-button :disabled="!scope.row.postCount" type="info" size="small" @click="showVideo(scope.row)">
                         查看帖子
@@ -117,7 +122,7 @@
         <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showComment"></v-like>
 
         <!--编辑用户-->
-        <v-detail :userId="userId" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
+        <v-detail :userId="userId" :category="catSelect" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
         <!--为帖子点赞-->
         <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
@@ -169,7 +174,7 @@
                 filters: { //搜索筛选条件
                     categoryId: ''
                 },
-                catSelect: '', // 用户分类列表
+                catSelect: [], // 用户分类列表
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 tableHeight: '100%',

@@ -72,7 +72,7 @@
                             try {
                                 let { error, status,data } = res;
                                 let user = [params];
-                                sessionStorage.setItem('user', JSON.stringify(user));
+                                localStorage.setItem('user', JSON.stringify(user));
                                 _self.$router.push({path: '/movie'}); //登录成功跳转内容管理电影列表页
                             } catch (error) {
                                 util.jsErrNotify(error);

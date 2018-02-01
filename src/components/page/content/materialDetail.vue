@@ -48,7 +48,7 @@
                 <template>
                     <el-select style="width: 50%;" clearable v-model="formData.horiVideoId" filterable remote
                                loading-text="搜索中" placeholder="输入关键词搜索视频资源" :remote-method="handleSource"
-                               :loading="searchSource.loading" :disabled="horDisable">
+                               :loading="searchSource.loading" :disabled="horDisable" @change="horiChange">
                         <el-option v-for="item in searchSource.list" :key="item.id" :label="item.name"
                                    :value="item.id">
                         </el-option>
@@ -99,7 +99,8 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
+
     export default {
         name: 'vDetail',
         props: ['value', 'matData'],
@@ -160,13 +161,16 @@
             }
         },
         computed: {
-            detail(val){ //返回详情
+            detail(val) { //返回详情
                 let _self = this;
+                if (!_self.value) { // 弹窗不显示，不进行请求
+                    return false;
+                }
                 if (_self.matData.id) {
                     _self.formTitle = '编辑片段';
                     httpGet('contentMaterialDetail', {id: _self.matData.id}, _self, function (res) {
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.formData = Object.assign({}, data);
                             if (data.keyword != '') {
                                 _self.formData.keyword = data.keyword.split(' ');
@@ -234,7 +238,7 @@
             }
         },
         methods: {
-            formSubmit(){ //提交表单
+            formSubmit() { //提交表单
                 let _self = this;
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
@@ -288,7 +292,7 @@
                     }
                 });
             },
-            handleMovie(query){ //搜索相关电影操作
+            handleMovie(query) { //搜索相关电影操作
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -305,14 +309,14 @@
                 httpGet('contentMovieList', para, _self, function (res) {
                     _self.searchMovie.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchMovie.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleAttr(query){ //搜索属性
+            handleAttr(query) { //搜索属性
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -330,14 +334,14 @@
                 httpGet('contentAttrList', para, _self, function (res) {
                     _self.searchAttr.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchAttr.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleCat(query){ //搜索分类
+            handleCat(query) { //搜索分类
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -355,14 +359,14 @@
                 httpGet('contentCatList', para, _self, function (res) {
                     _self.searchCat.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchCat.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleSource(query){ //搜索视频资源
+            handleSource(query) { //搜索视频资源
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -379,14 +383,14 @@
                 httpGet('contentSourceList', para, _self, function (res) {
                     _self.searchSource.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchSource.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleTag(query){ //搜索标签
+            handleTag(query) { //搜索标签
                 let _self = this;
                 let para = {
                     offset: 0,
@@ -403,14 +407,14 @@
                 httpGet('contentTagList', para, _self, function (res) {
                     _self.searchTag.loading = false;
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.searchTag.list = data.content;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            handleType(){ //更改片段类型，重置横竖屏内容
+            handleType() { //更改片段类型，重置横竖屏内容
                 if (this.formData.showType == '0') { //横竖屏
                     this.horDisable = false;
                     this.vertDisable = false;
@@ -421,6 +425,18 @@
                 } else if (this.formData.showType == '2') { //竖屏类型，横屏不可用
                     this.horDisable = true;
                     this.vertDisable = false;
+                }
+            },
+            horiChange(val) { // 新增时，更换横屏片段资源时，将名称自动填到片段名称中
+                if(val == ''){
+                    return false;
+                }
+                if (this.formData.id == '') {
+                    let obj = {};
+                    obj = this.searchSource.list.find((item) => {
+                        return item.id === val;
+                    });
+                    this.formData.name = obj.name;
                 }
             },
             /*
@@ -448,7 +464,7 @@
             change() {
                 this.visible = false;
             },
-            resetFormData(){ //关闭表格弹窗，重置表格数据
+            resetFormData() { //关闭表格弹窗，重置表格数据
                 let _self = this;
                 _self.formLoading = false;
                 _self.formTitle = '新增片段';
@@ -482,7 +498,7 @@
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
             },
             value(val) {
                 this.visible = val;

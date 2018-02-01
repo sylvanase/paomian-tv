@@ -157,7 +157,10 @@
         computed: {
             detail() { //返回详情
                 let _self = this;
-                if (_self.playData.id) {
+                if(!_self.value){ // 弹窗不显示，不进行请求
+                    return false;
+                }
+                if (_self.playData.id && _self.visible) {
                     _self.formTitle = '编辑剧本';
                     httpGet('contentPlayDetail', {id: _self.playData.id}, _self, function (res) {
                         try {

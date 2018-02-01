@@ -11,6 +11,7 @@
             </el-table-column>
             <el-table-column prop="username" label="发帖人" width="200"></el-table-column>
             <el-table-column prop="videoText" width="200" label="视频简介"></el-table-column>
+            <el-table-column prop="replyCount" label="评论数"></el-table-column>
             <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
             <el-table-column label="观看" width="120">
                 <template scope="scope">

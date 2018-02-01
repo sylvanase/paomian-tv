@@ -180,110 +180,6 @@
             </el-pagination>
         </el-col>
 
-        <el-dialog title="用户详情" v-model="isShowForm" @close="resetFormData">
-            <el-form :model="formData" label-width="80px" ref="formData" v-loading="showLoading">
-                <el-form-item label="用户头像" prop="coverId">
-                    <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
-                        <div class="el-upload el-upload--text">
-                            <i v-show="avatarLoading" class="el-icon-loading avatar-uploader-icon"></i>
-                            <i v-show="!formData.coverImgUrl && !avatarLoading"
-                               class="el-icon-plus avatar-uploader-icon"></i>
-                            <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl"
-                                 class="avatar">
-                            <input type="file" id="cover" class="el-upload__input" @change="fileChange">
-                        </div>
-                    </div>
-                    <el-button type="danger" size="small" @click="resetCoverImg">删除</el-button>
-                </el-form-item>
-                <el-form-item label="uid">
-                    {{ formData.id }}
-                </el-form-item>
-                <el-form-item label="注册时间">
-                    {{ formData.time }}
-                </el-form-item>
-                <el-form-item label="昵称" prop="name">
-                    <el-input disabled="true" v-model.trim="formData.name" style="width: 200px;"
-                              auto-complete="off"></el-input>
-                </el-form-item>
-                <el-form-item label="地址">
-                    <el-select v-model="formData.regionId" @change="fetchCity" style="width: 200px;margin-right: 10px;"
-                               filterable placeholder="请选择地区">
-                        <el-option label="无" value="0"></el-option>
-                        <el-option v-for="item in regionList" :key="item.regionId" :label="item.regionName"
-                                   :value="item.regionId+''"></el-option>
-                    </el-select>
-                    <el-select v-model="formData.cityId" style="width: 200px;" filterable placeholder="请选择城市">
-                        <el-option label="无" value="0"></el-option>
-                        <el-option v-for="item in cityList" :key="item.cityId" :label="item.cityName"
-                                   :value="item.cityId+''"></el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="用户分类" prop="catIds">
-                    <template>
-                        <el-select style="width: 50%;" filterable v-model="formData.catIds" multiple
-                                   placeholder="选择用户分类">
-                            <el-option v-for="item in catList" :key="item.id" :label="item.name"
-                                       :value="item.id">
-                            </el-option>
-                        </el-select>
-                    </template>
-                </el-form-item>
-                <template v-if="formData.imei.length > 0" v-for="item in formData.imei">
-                    <el-form-item label="设备类型">
-                        <span>{{ item.name }}</span>
-                    </el-form-item>
-                    <el-form-item label="设备号">
-                        <span>{{ item.uuid }}</span>
-                    </el-form-item>
-                </template>
-                <el-form-item label="手机号" prop="phone">
-                    <el-input style="width: 200px;" v-model.trim="formData.phone" auto-complete="off"></el-input>
-                    <el-button class="ml-10" size="small" @click.native="phoneUpdate">更换</el-button>
-                    <el-button class="ml-10" size="small" @click.native="phoneUnbind">解绑</el-button>
-                </el-form-item>
-                <el-form-item label="QQ">
-                    <template v-if="formData.qq">
-                        <el-tag type="success" style="margin-right: 10px;">已绑定</el-tag>
-                        <el-button type="danger" :plain="true" class="ml-10" size="small"
-                                   @click.native="unbindThird('0')">
-                            解绑
-                        </el-button>
-                    </template>
-                    <template v-else>
-                        <el-tag :type="danger">未绑定</el-tag>
-                    </template>
-                </el-form-item>
-                <el-form-item label="微信" prop="wechat">
-                    <template v-if="formData.wechat">
-                        <el-tag type="success" style="margin-right: 10px;">已绑定</el-tag>
-                        <el-button type="danger" :plain="true" class="ml-10" size="small"
-                                   @click.native="unbindThird('1')">
-                            解绑
-                        </el-button>
-                    </template>
-                    <template v-else>
-                        <el-tag :type="danger" close-transition>未绑定</el-tag>
-                    </template>
-                </el-form-item>
-                <el-form-item label="微博" style="margin-bottom: -20px;">
-                    <template v-if="formData.weibo">
-                        <el-tag type="success" style="margin-right: 10px;">已绑定</el-tag>
-                        <el-button type="danger" :plain="true" class="ml-10" size="small"
-                                   @click.native="unbindThird('2')">
-                            解绑
-                        </el-button>
-                    </template>
-                    <template v-else>
-                        <el-tag :type="danger" close-transition>未绑定</el-tag>
-                    </template>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="isShowForm = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
-            </div>
-        </el-dialog>
-
         <!-- 为帖子增加弹幕 功能暂时废除 -->
         <!--<el-dialog title="弹幕列表" v-model="isShowBarrage">
             <el-col :span="24" class="toolbar" style="padding-bottom: 0;margin-top: -20px;">
@@ -349,23 +245,6 @@
             </div>
         </el-dialog>
 
-
-        <!--为帖子点赞-->
-        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
-            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
-                     style="margin-bottom: -20px;">
-                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
-                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
-                                     v-model="likeData.num"></el-input-number>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
-                </el-button>
-            </div>
-        </el-dialog>
-
         <!--用户粉丝-->
         <v-fan :userId="userId" v-model="isShowFan" v-on:preview="showForm"></v-fan>
 
@@ -374,26 +253,33 @@
 
         <!--用户发帖-->
         <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showComment"
-                 v-on:like="addLike"></v-video>
+                 v-on:like="showAddLike"></v-video>
 
         <!--用户喜欢-->
         <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showComment"
-                v-on:like="addLike"></v-like>
+                v-on:like="showAddLike"></v-like>
+
+        <!--编辑用户-->
+        <v-detail :userId="userDetail" :category="catList" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
         <!--为帖子加评论-->
         <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
+
+        <!--为帖子点赞-->
+        <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
     </section>
 </template>
 
 <script type="es6">
     import util from '../../../api/util'
     import {httpGet, httpPost, httpDel} from '../../../api/api';
-    //import vDetail from './userDetail.vue'
+    import vDetail from './userDetail.vue'
     import vFan from './fansList.vue'
     import vFollow from './followList.vue'
     import vVideo from './videoList.vue'
     import vLike from './likeList.vue'
     import vCommentAdd from '../posts/commentSource.vue'
+    import vLikeAdd from '../posts/likeAdd.vue'
 
     export default {
         components: {
@@ -401,7 +287,9 @@
             vFollow,
             vVideo,
             vLike,
-            vCommentAdd
+            vDetail,
+            vCommentAdd,
+            vLikeAdd
         },
         data() {
             let validateNum = (rule, value, callback) => {
@@ -410,15 +298,6 @@
                 } else {
                     if (value > 100) {
                         callback(new Error('数量不能超过100!'));
-                    }
-                }
-            };
-            let validateLike = (rule, value, callback) => {
-                if (value === '') {
-                    callback(new Error('请输入赞数量'));
-                } else {
-                    if (value > 100) {
-                        callback(new Error('数量不能超过1000!'));
                     }
                 }
             };
@@ -439,37 +318,18 @@
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 isShowForm: false,
-                formLoading: false,
-                showLoading: true,
-                avatarLoading: false,
-                formData: {
-                    id: '',
-                    name: '',
-                    coverId: '',
-                    coverImgUrl: '',
-                    time: '',
-                    regionId: '0',
-                    cityId: '0',
-                    os: '',
-                    imei: [],
-                    phone: '',
-                    qq: '',
-                    wechat: '',
-                    weibo: '',
-                    count: 0,
-                    catIds: []
-                },
+                userDetail: '',
                 regionList: [],
-                cityList: [],
                 cityFilterList: [],
                 catList: [],
-                userData: {},
                 userId: '', //用户id
                 isShowFan: false, //显示、隐藏粉丝列表
                 isShowFollow: false, //显示、隐藏关注列表
                 isShowVideo: false, //显示、隐藏帖子列表
                 isShowLike: false, //显示、隐藏喜欢列表
                 isShowComment: false, //显示、隐藏评论库列表
+                likeVisible: false, // 显示、隐藏点赞界面
+                addLikeId: '', // 点赞的帖子id
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
                 fanVisible: false,
@@ -484,17 +344,6 @@
                         {validator: validateNum, trigger: 'blur'},
                         /*{ min: 6, max: 20, message: '密码长度在6到20个字符'}*/
                     ],
-                },
-                likeVisible: false,
-                likeData: { // 点赞
-                    loading: false,
-                    num: 0,
-                    id: ''
-                },
-                likeRules: {
-                    num: [
-                        {validator: validateLike, trigger: 'blur'},
-                    ]
                 },
                 postsData: {}
             }
@@ -556,60 +405,10 @@
                 this.filters.end = val;
             },
             showForm(row) { //显示用户详情表单
-                let _self = this;
-                _self.isShowForm = true;
-                _self.userData = row;
-                _self.showLoading = true;
-                if (_self.userData.id) {
-                    httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
-                        _self.showLoading = false;
-                        try {
-                            let {data} = res;
-                            _self.formData = {
-                                id: data.id,
-                                name: data.username,
-                                coverId: data.avatarUrl,
-                                coverImgUrl: data.fullUrl,
-                                time: util.timestampFormat(data.createTime),
-                                regionId: data.countryId + '',
-                                cityId: data.cityId + '',
-                                os: '',
-                                imei: data.userDevicePoList,
-                                phone: data.phone,
-                                qq: data.qqBind,
-                                wechat: data.wxBind,
-                                weibo: data.wbBind,
-                                count: 0,
-                                catIds: data.userAttrIds
-                            };
-                        } catch (error) {
-                            util.jsErrNotify(error);
-                        }
-                    })
-                }
+                this.isShowForm = true;
+                this.userDetail = row.id;
             },
-            resetFormData() { //关闭表格弹窗，重置表格数据
-                this.formData = {
-                    id: '',
-                    name: '',
-                    coverId: '',
-                    coverImgUrl: '',
-                    time: '',
-                    regionId: '0',
-                    cityId: '0',
-                    os: '',
-                    imei: [],
-                    phone: '',
-                    qq: '',
-                    wechat: '',
-                    weibo: '',
-                    count: 0,
-                    catIds: []
-                };
-                this.showLoading = false;
-                this.formLoading = false;
-                document.getElementById('cover').value = '';
-            },
+
             showFan(row) { //显示用户粉丝列表
                 this.isShowFan = true;
                 this.userId = row.id;
@@ -634,15 +433,18 @@
             videoClose() {
                 this.videoHtml = '';
             },
-            showComment(row) { //显示弹幕列表
+            showComment(row) { //显示评论列表
                 this.isShowComment = true;
                 this.postsData = row
                 /*this.fetchBarrage();
                 this.barrageTag();
                 this.barrage.vpId = row.id;*/
             },
-            //软删除用户
-            userDel: function (row) {
+            showAddLike(row) {
+                this.likeVisible = true;
+                this.addLikeId = row.id
+            },
+            userDel(row) { // 删除用户
                 let _self = this;
                 let paras = new FormData();
                 paras.append("uid", row.id);
@@ -659,8 +461,7 @@
                     }
                 })
             },
-            //运营关注用户
-            careUser: function (row) {
+            careUser(row) { // 关注用户
                 let _self = this;
                 let paras = new FormData();
                 paras.append("uid", row.id);
@@ -687,23 +488,6 @@
                     }
                 })
             },
-            fetchCity: function (id) { //根据省id获取城市列表
-                let _self = this;
-                _self.formData.count = _self.formData.count + 1;
-                if (id) {
-                    httpGet('cityList', {regionId: id}, _self, function (res) {
-                        try {
-                            let {error, status, data} = res;
-                            _self.cityList = data;
-                            if (_self.formData.count > 1) {
-                                _self.formData.cityId = '0';
-                            }
-                        } catch (error) {
-                            util.jsErrNotify(error);
-                        }
-                    })
-                }
-            },
             fetchCityFilter() { //根据省id获取城市列表
                 let _self = this;
                 _self.filters.city = '0';
@@ -716,7 +500,7 @@
                     }
                 })
             },
-            fetchCat() {
+            fetchCat() { // 获取用户分类
                 let _self = this;
                 let paras = {
                     offset: 0,
@@ -731,122 +515,7 @@
                     }
                 })
             },
-            formSubmit() { //提交表单
-                let _self = this;
-                let paras = new FormData();
-                paras.append("avatar", _self.formData.coverId);
-                paras.append("uid", _self.formData.id);
-                paras.append("username", _self.formData.name);
-                paras.append("regionId", _self.formData.regionId);
-                paras.append("cityId", _self.formData.cityId);
-                paras.append("userAttrIds", _self.formData.catIds);
-                _self.formLoading = true;
-                httpPost('userEdit', paras, _self, function (res) {
-                    _self.formLoading = false;
-                    try {
-                        _self.$message.success('提交成功');
-                        _self.isShowForm = false;
-                        _self.fetchList();
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            /*
-             * 封面选择相关操作
-             * */
-            chooseFile() { //触发选择文件
-                let fileDom = document.getElementById('cover');
-                fileDom.click();
-            },
-            fileChange() { // 文件变更后操作
-                let fileDom = document.getElementById('cover');
-                let _self = this;
-                if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
-                    const _verify = util.imgFileCheck(fileDom);
-                    if (_verify) { //文件校验通过，进行上传操作
-                        let paras = new FormData();
-                        paras.append("imageFile", fileDom.files[0]);
-                        _self.avatarLoading = true;
-                        httpPost('avatarUpload', paras, _self, function (res) {
-                            _self.avatarLoading = false;
-                            try {
-                                let {error, status, data} = res;
-                                _self.formData.coverId = data.url;
-                                _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
-                            } catch (error) {
-                                util.jsErrNotify(error);
-                            }
-                        }, function (res) { // 上传失败回调
-                            _self.avatarLoading = false;
-                            fileDom.value = '';
-                            _self.$message.error('上传失败，请重新选择文件');
-                        })
-                    }
-                }
-            },
-            resetCoverImg() { //删除封面
-                this.formData.coverImgUrl = '';
-                this.formData.coverId = '';
-                document.getElementById('cover').value = '';
-            },
-            phoneUpdate() { //更换手机号
-                let _self = this;
-                let paras = new FormData();
-                paras.append("uid", _self.userData.id);
-                paras.append("mobile", _self.formData.phone);
-                httpPost('userPhoneUpdate', paras, _self, function (res) {
-                    try {
-                        _self.$message.success('更换成功');
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-            },
-            phoneUnbind() { //用户手机解锁
-                this.$confirm('确认将该用户手机解绑吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    let _self = this;
-                    let paras = {
-                        uid: _self.userData.id,
-                        mobile: _self.userData.phone
-                    };
-                    httpGet('userMobileUnbind', paras, _self, function (res) {
-                        try {
-                            _self.$message.success('解绑成功');
-                            _self.userData.phone = '';
-                        } catch (error) {
-                            util.jsErrNotify(error);
-                        }
-                    })
-                });
-            },
-            unbindThird(type) { //第三方账号解绑
-                this.$confirm('确认解绑吗?', '提示', {
-                    type: 'warning'
-                }).then(() => {
-                    let _self = this;
-                    let paras = {
-                        uid: _self.userData.id,
-                        snsType: type
-                    };
-                    httpDel('userUnbind', paras, _self, function (res) {
-                        try {
-                            _self.$message.success('解绑成功');
-                            if (type == 0) {
-                                _self.formData.qq = '';
-                            } else if (type == 1) {
-                                _self.formData.wechat = '';
-                            } else if (type == 2) {
-                                _self.formData.weibo = '';
-                            }
-                        } catch (error) {
-                            util.jsErrNotify(error);
-                        }
-                    })
-                });
-            },
+
             /*
              * 处理弹幕开始
              * */
@@ -950,36 +619,12 @@
                 this.fanData.id = '';
                 this.fanData.num = 0;
                 this.fanData.loading = false;
-            },
-            addLike(row) { // 显示增加赞数
-                this.likeVisible = true;
-                this.likeData.id = row.id;
-            },
-            likeSubmit() {
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", _self.likeData.id);
-                paras.append("num", _self.likeData.num);
-                httpPost('postsLike', paras, _self, function (res) {
-                    try {
-                        let {error, status, data} = res;
-//                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-                _self.$message.success('已发送点赞请求');
-                _self.likeVisible = false;
-            },
-            resetLike() {
-                this.likeData.id = '';
-                this.likeData.num = 0;
-                this.likeData.loading = false;
             }
         },
         mounted() {
-            if (this.$route.params.uid) {
-                this.filters.kw = this.$route.params.uid;
+            if (this.$route.query.uid) {
+//                this.filters.kw = this.$route.params.uid;
+                this.filters.kw = this.$route.query.uid;
             }
             this.fetchList();
             this.fetchRegion();

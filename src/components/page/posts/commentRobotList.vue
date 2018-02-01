@@ -21,6 +21,7 @@
             <el-table-column prop="username" label="评论人" width="150"></el-table-column>
             <el-table-column prop="uid" label="uid" width="150"></el-table-column>
             <el-table-column prop="createTime" label="评论时间" min-width="180"></el-table-column>
+            <el-table-column prop="latestReplyTime" label="最近回复时间" min-width="180"></el-table-column>
             <el-table-column prop="vpId" label="视频id" min-width="150"></el-table-column>
             <el-table-column prop="replyCount" label="被回复数" min-width="120">
                 <template scope="scope">
@@ -114,6 +115,7 @@
                         _self.total = data.totalElements;
                         _self.tableList = data.content.map(function (item) {
                             item.createTime = util.timestampFormat(item.createTime);
+                            item.latestReplyTime = item.latestReplyTime == null ? '' : util.timestampFormat(item.latestReplyTime);
                             return item;
                         });
                     } catch (error) {

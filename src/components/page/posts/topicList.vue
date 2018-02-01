@@ -101,7 +101,7 @@
 
         <!--视频列表-->
         <v-video :topicData="topicData" v-model="isShowVideo" v-on:preview="playVideo"
-                 v-on:refresh="fetchList" v-on:barrage="showComment" v-on:like="addLike"></v-video>
+                 v-on:refresh="fetchList" v-on:barrage="showComment" v-on:like="showAddLike"></v-video>
 
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
@@ -134,20 +134,7 @@
         </el-dialog>
 
         <!--为帖子点赞-->
-        <el-dialog title="点赞" v-model="likeVisible" @close="resetLike" size="tiny">
-            <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
-                     style="margin-bottom: -20px;">
-                <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
-                    <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
-                                     v-model="likeData.num"></el-input-number>
-                </el-form-item>
-            </el-form>
-            <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="likeVisible = false">取消</el-button>
-                <el-button size="small" type="primary" @click.native="likeSubmit" :loading="likeData.loading">提交
-                </el-button>
-            </div>
-        </el-dialog>
+        <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
 
         <!--为帖子加评论-->
         <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
@@ -160,24 +147,16 @@
     import vDetail from './topicDetail.vue'
     import vVideo from './topicVideo.vue'
     import vCommentAdd from './commentSource.vue'
-
+    import vLikeAdd from './likeAdd.vue'
 
     export default {
         components: {
             vDetail,
             vVideo,
-            vCommentAdd
+            vCommentAdd,
+            vLikeAdd
         },
         data() {
-            let validateLike = (rule, value, callback) => {
-                if (value === '') {
-                    callback(new Error('请输入赞数量'));
-                } else {
-                    if (value > 100) {
-                        callback(new Error('数量不能超过1000!'));
-                    }
-                }
-            };
             return {
                 filters: {
                     kw: '',
@@ -203,17 +182,8 @@
                     third: ''
                 },
                 isShowComment: false, //显示、隐藏评论列表
-                likeVisible: false,
-                likeData: { // 点赞
-                    loading: false,
-                    num: 0,
-                    id: ''
-                },
-                likeRules: {
-                    num: [
-                        {validator: validateLike, trigger: 'blur'},
-                    ]
-                },
+                likeVisible: false, // 显示、隐藏点赞界面
+                addLikeId: '',  // 点赞的帖子id
                 postsData: {}
             }
         },
@@ -319,7 +289,7 @@
             videoClose() {
                 this.videoHtml = '';
             },
-            topicDel: function (row) { // 话题删除、恢复
+            topicDel (row) { // 话题删除、恢复
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -335,7 +305,7 @@
                     }
                 })
             },
-            topicTop: function (row) { // 话题置顶
+            topicTop (row) { // 话题置顶
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -372,30 +342,9 @@
                 this.isShowComment = true;
                 this.postsData = row;
             },
-            addLike(row) { // 显示增加赞数
+            showAddLike(row) {
                 this.likeVisible = true;
-                this.likeData.id = row.id;
-            },
-            likeSubmit() {
-                let _self = this;
-                let paras = new FormData();
-                paras.append("vpId", _self.likeData.id);
-                paras.append("num", _self.likeData.num);
-                httpPost('postsLike', paras, _self, function (res) {
-                    try {
-                        let {error, status, data} = res;
-//                        _self.$message.success(data);
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
-                _self.$message.success('已发送点赞请求');
-                _self.likeVisible = false;
-            },
-            resetLike() {
-                this.likeData.id = '';
-                this.likeData.num = 0;
-                this.likeData.loading = false;
+                this.addLikeId = row.id
             }
         },
         mounted() {

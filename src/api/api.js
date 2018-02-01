@@ -133,6 +133,7 @@ let api = { //接口地址
     // postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表 弹幕暂时废除
     postsCommentList: '/video/video_post/barrage_list', //帖子的评论列表
 
+    postsNoRecommend: '/video/noRecommend/add', // 不推荐该视频
     postsCheckList: '/video/check_result_list', // 鉴黄列表
     postsBlocked: '/video/vpid_blocked', // 封禁视频
     postsUnblock: '/video/vpid_relieve', // 解封视频
@@ -203,8 +204,7 @@ let api = { //接口地址
 
 function specialCodeHandle(vm, res, callback) { // 服务器端特殊的返回code统一处理
     if (res.data.status == 403) { //403表示登录过期，需要重新登录
-        console.log('session过期，跳转到登录页');
-        sessionStorage.removeItem('user');
+        localStorage.removeItem('user');
         vm.$router.push('/login');
         return false;
     }

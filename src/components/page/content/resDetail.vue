@@ -53,6 +53,9 @@
         computed: {
             detail(){ //返回详情
                 let _self = this;
+                if(!_self.value){ // 弹窗不显示，不进行请求
+                    return false;
+                }
                 if (_self.resData.id) {
                     _self.formTitle = '编辑视频资源';
                     this.formData = {

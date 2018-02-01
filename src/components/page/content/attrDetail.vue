@@ -65,6 +65,9 @@
         },
         computed: {
             detail(){ //返回详情
+                if(!this.value){ // 弹窗不显示，不进行请求
+                    return false;
+                }
                 if (this.attrData.id) {
                     this.formTitle = '编辑属性';
                     this.formSelect = true;

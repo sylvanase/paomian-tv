@@ -86,10 +86,13 @@
         <v-detail :userData="userData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
         <!--用户发帖-->
-        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showBarrage"></v-video>
+        <v-video :userId="userId" v-model="isShowVideo" v-on:audio="playVideo" v-on:preview="showComment"></v-video>
 
         <!--用户喜欢-->
-        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showBarrage"></v-like>
+        <v-like :userId="userId" v-model="isShowLike" v-on:audio="playVideo" v-on:preview="showComment"></v-like>
+
+        <!--为帖子加评论-->
+        <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
 
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
@@ -104,12 +107,14 @@
     import vDetail from './robotDetail.vue'
     import vVideo from './videoList.vue'
     import vLike from './likeList.vue'
+    import vCommentAdd from '../posts/commentSource.vue'
 
     export default {
         components: {
             vDetail,
             vVideo,
-            vLike
+            vLike,
+            vCommentAdd
         },
         data() {
             return {
@@ -127,7 +132,9 @@
                 isShowVideo: false, //显示、隐藏帖子列表
                 isShowLike: false, //显示、隐藏喜欢列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
-                videoHtml: ''
+                videoHtml: '',
+                postsData: {},
+                isShowComment: false //显示、隐藏评论库列表
             }
         },
         methods: {
@@ -198,6 +205,10 @@
             showLike(row) { //显示用户喜欢的帖子列表
                 this.isShowLike = true;
                 this.userId = row.id;
+            },
+            showComment(row) { //显示评论列表
+                this.isShowComment = true;
+                this.postsData = row
             },
             playVideo(row) { //播放视频
                 this.videoVisible = true;

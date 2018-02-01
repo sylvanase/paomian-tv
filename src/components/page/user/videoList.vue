@@ -35,6 +35,7 @@
                 </template>
             </el-table-column>
             <el-table-column prop="videoText" width="200" label="视频简介"></el-table-column>
+            <el-table-column prop="replyCount" label="评论数"></el-table-column>
             <el-table-column label="喜欢" width="120">
                 <template scope="scope">
                     {{ scope.row.videoInfoPo ? scope.row.videoInfoPo.likeCount : '0' }}次/{{ scope.row.videoInfoPo ?
@@ -54,7 +55,7 @@
                 </template>
             </el-table-column>-->
             <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
-            <el-table-column label="操作" width="180" fixed="right">
+            <el-table-column label="操作" width="230" fixed="right">
                 <template scope="scope">
                     <div>
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
@@ -62,6 +63,7 @@
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
                         <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
+                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
@@ -193,6 +195,21 @@
             },
             playVideo(row) { //播放视频
                 this.$emit('audio', row);
+            },
+            noRecommend(row){ // 将帖子加入不推荐队列
+                let _self = this;
+                let paras = {
+                    id: row.id
+                };
+                httpGet('postsNoRecommend', paras, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         watch: {

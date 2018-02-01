@@ -4,8 +4,9 @@
             <el-form-item label="头像" prop="coverId">
                 <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
                     <div class="el-upload el-upload--text">
-                        <i v-show="avatarLoading"class="el-icon-loading avatar-uploader-icon"></i>
-                        <i v-show="!formData.coverImgUrl && !avatarLoading" class="el-icon-plus avatar-uploader-icon"></i>
+                        <i v-show="avatarLoading" class="el-icon-loading avatar-uploader-icon"></i>
+                        <i v-show="!formData.coverImgUrl && !avatarLoading"
+                           class="el-icon-plus avatar-uploader-icon"></i>
                         <img v-show="formData.coverImgUrl && !avatarLoading" :src="formData.coverImgUrl" class="avatar">
                         <input type="file" id="cover" class="el-upload__input" @change="fileChange">
                     </div>
@@ -56,7 +57,8 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import { httpGet, httpPost } from '../../../api/api';
+    import {httpGet, httpPost} from '../../../api/api';
+
     export default {
         name: 'vDetail',
         props: ['value', 'userData'],
@@ -74,7 +76,7 @@
                         {required: true, message: '请输入手机号', trigger: 'blur'},
                         {min: 11, max: 11, message: '手机号必须为11位', trigger: 'blur'}
                     ],
-                    signature:[
+                    signature: [
                         {min: 0, max: 60, message: '签名不得超过60个字符', trigger: 'blur'}
                     ]
                 },
@@ -97,15 +99,18 @@
             }
         },
         computed: {
-            detail(){ //返回马甲号详情
+            detail() { //返回马甲号详情
                 let _self = this;
+                if (!_self.visible) {
+                    return false;
+                }
                 _self.fetchRegion();
                 if (_self.userData.id) {
                     _self.showLoading = true;
                     httpGet('userDetail', {uid: _self.userData.id}, _self, function (res) {
                         _self.showLoading = false;
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.formData = {
                                 id: data.id,
                                 name: data.username,
@@ -127,11 +132,11 @@
             }
         },
         methods: {
-            chooseFile(){ //触发选择文件
+            chooseFile() { //触发选择文件
                 let fileDom = document.getElementById('cover');
                 fileDom.click();
             },
-            fileChange(){ // 文件变更后操作
+            fileChange() { // 文件变更后操作
                 let fileDom = document.getElementById('cover');
                 let _self = this;
                 if (fileDom.value) { // 如果文件不为空，进行校验和上传操作
@@ -143,13 +148,13 @@
                         httpPost('avatarUpload', paras, _self, function (res) {
                             _self.avatarLoading = false;
                             try {
-                                let { error, status,data } = res;
+                                let {error, status, data} = res;
                                 _self.formData.coverId = data.url;
                                 _self.formData.coverImgUrl = URL.createObjectURL(fileDom.files[0]);
                             } catch (error) {
                                 util.jsErrNotify(error);
                             }
-                        },function (res) { // 上传失败回调
+                        }, function (res) { // 上传失败回调
                             _self.avatarLoading = false;
                             fileDom.value = '';
                             _self.$message.error('上传失败，请重新选择文件');
@@ -160,7 +165,7 @@
             change() {
                 this.visible = false;
             },
-            resetFormData(){ //关闭表格弹窗，重置表格数据
+            resetFormData() { //关闭表格弹窗，重置表格数据
                 let _self = this;
                 _self.formLoading = false;
                 _self.showLoading = false;
@@ -184,22 +189,22 @@
                 let _self = this;
                 httpGet('regionList', '', _self, function (res) {
                     try {
-                        let { error, status,data } = res;
+                        let {error, status, data} = res;
                         _self.regionList = data;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
             },
-            fetchCity(id){ //根据省id获取城市列表
+            fetchCity(id) { //根据省id获取城市列表
                 let _self = this;
                 _self.formData.count = _self.formData.count + 1;
                 if (id) {
                     httpGet('cityList', {regionId: id}, _self, function (res) {
                         try {
-                            let { error, status,data } = res;
+                            let {error, status, data} = res;
                             _self.cityList = data;
-                            if(_self.formData.count > 1){
+                            if (_self.formData.count > 1) {
                                 _self.formData.cityId = '0';
                             }
                         } catch (error) {
@@ -208,7 +213,7 @@
                     })
                 }
             },
-            formSubmit(){ //提交表单
+            formSubmit() { //提交表单
                 this.$refs.formData.validate((valid) => {
                     if (valid) {
                         let _self = this;
@@ -222,11 +227,11 @@
                         paras.append("signature", _self.formData.signature);
                         paras.append("regionId", _self.formData.regionId);
                         paras.append("cityId", _self.formData.cityId);
-                        paras.append("birthday", _self.formData.date ? _self.formData.date:'');
+                        paras.append("birthday", _self.formData.date ? _self.formData.date : '');
                         httpPost('robotEdit', paras, _self, function (res) {
                             _self.formLoading = false;
                             try {
-                                let { error, status,data } = res;
+                                let {error, status, data} = res;
                                 _self.$message.success('提交成功');
                                 _self.visible = false;
                                 _self.$emit('refresh');
@@ -239,17 +244,17 @@
                     }
                 });
             },
-            resetCoverImg(){ //删除封面
+            resetCoverImg() { //删除封面
                 this.formData.coverImgUrl = '';
                 this.formData.coverId = '';
                 document.getElementById('cover').value = '';
             },
-            formatBirth(val){ //格式化日期控件值
+            formatBirth(val) { //格式化日期控件值
                 this.formData.date = val;
             }
         },
         watch: {
-            detail(val){ //监测详情变化
+            detail(val) { //监测详情变化
                 console.log(val);
             },
             value(val) {

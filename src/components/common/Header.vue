@@ -92,7 +92,7 @@
             },
             pwdSubmit: function () { // 提交修改密码请求
                 let _self = this;
-                let user = sessionStorage.getItem('user');
+                let user = localStorage.getItem('user');
                 user = JSON.parse(user);
                 _self.$refs['pwdData'].validate((valid) => {
                     if (valid) {
@@ -137,7 +137,7 @@
                 _self.$confirm('确认退出吗?', '提示', {}).then(() => {
                     httpGet('logout', '', _self, function (res) {
                         try {
-                            sessionStorage.removeItem('user');
+                            localStorage.removeItem('user');
                             _self.$router.push({path: '/login'});
                         } catch (error) {
                             util.jsErrNotify(error);
@@ -147,7 +147,7 @@
             }
         },
         mounted() { //获取session
-            var user = sessionStorage.getItem('user');
+            var user = localStorage.getItem('user');
             if (user) {
                 user = JSON.parse(user);
                 this.sysUserName = user[0].username || '系统管理员';

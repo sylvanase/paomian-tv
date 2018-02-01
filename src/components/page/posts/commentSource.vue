@@ -29,10 +29,10 @@
                           @selection-change="handleSelectionChange" highlight-current-row>
                     <el-table-column type="selection" width="55"></el-table-column>
                     <el-table-column prop="id" label="id" width="150"></el-table-column>
-                    <el-table-column prop="text" label="评论内容(点击即可进行编辑操作)">
+                    <el-table-column prop="text" label="评论内容(点击进行编辑操作)">
                         <template scope="scope">
                             <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
-                                      @change="handleEdit(scope.row)"></el-input>
+                             @change="handleEdit(scope.row)" v-on:focus="handleFocus(scope.row)" v-on:blur="handleBlur(scope.row)"></el-input>
                             <span>{{scope.row.text}}</span>
                         </template>
                     </el-table-column>
@@ -53,8 +53,9 @@
                     </el-form-item>
                     <el-form-item label="关联剧本" prop="playIds">
                         <template>
-                            <el-select style="width: 50%;" filterable v-model="formData.playIds" multiple
-                                       placeholder="选择关联剧本">
+                            <el-select style="width: 50%;" filterable :remote-method="fetchPlayList"
+                                       :loading="playloading" remote v-model="formData.playIds" multiple
+                                       placeholder="搜索关联剧本">
                                 <el-option v-for="item in playList" :key="item.id" :label="item.name"
                                            :value="item.id">
                                 </el-option>
@@ -63,8 +64,9 @@
                     </el-form-item>
                     <el-form-item label="关联片段" prop="materialIds">
                         <template>
-                            <el-select style="width: 50%;" filterable v-model="formData.materialIds" multiple
-                                       placeholder="选择关联片段">
+                            <el-select style="width: 50%;" filterable :remote-method="fetchMaterialList"
+                                       :loading="materialloading" remote v-model="formData.materialIds" multiple
+                                       placeholder="搜索关联片段">
                                 <el-option v-for="item in materialList" :key="item.id" :label="item.name"
                                            :value="item.id">
                                 </el-option>
@@ -73,8 +75,9 @@
                     </el-form-item>
                     <el-form-item label="关联音乐" prop="musicIds">
                         <template>
-                            <el-select style="width: 50%;" filterable v-model="formData.musicIds" multiple
-                                       placeholder="选择关联音乐">
+                            <el-select style="width: 50%;" filterable :remote-method="fetchMusicList"
+                                       :loading="musicloading" remote v-model="formData.musicIds" multiple
+                                       placeholder="搜索关联音乐">
                                 <el-option v-for="item in musicList" :key="item.id" :label="item.name"
                                            :value="item.id">
                                 </el-option>
@@ -125,9 +128,13 @@
                     materialIds: [],
                     musicIds: []
                 },
+                playloading: false,
                 playList: [],
+                materialloading: false,
                 materialList: [],
-                musicList: []
+                musicloading: false,
+                musicList: [],
+                oldRowText: ''
             }
         },
         computed: {
@@ -138,9 +145,6 @@
                 this.tableLoading = true;
                 this.tableList = [];
                 this.fetchList();
-                this.fetchPlayList();
-                this.fetchMaterialList();
-                this.fetchMusicList();
             }
         },
         methods: {
@@ -150,6 +154,15 @@
                 if (_name == 'list') {
                     _self.fetchList();
                 } else {
+                    if (_self.playList.length == 0) {
+                        _self.fetchPlayList();
+                    }
+                    if (_self.materialList.length == 0) {
+                        _self.fetchMaterialList();
+                    }
+                    if (_self.musicList.length == 0) {
+                        _self.fetchMusicList();
+                    }
                     _self.resetForm(); // 重置新增评论表单
                 }
             },
@@ -197,6 +210,8 @@
                 httpPost('postsBarrageAdd', paras, _self, function (res) {
                     try {
                         _self.$message.success('增加评论成功');
+                        _self.visible = false;
+                        _self.$emit('refresh');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -224,13 +239,31 @@
                     }
                 })
             },
-            fetchPlayList() { // 获取剧本数据
+            handleFocus(row){ // 存储row的原始数据
+                this.oldRowText = row.text;
+            },
+            handleBlur(row){ // 如果text的值为空，恢复原始值
+                if(row.text == ''){
+                    row.text = this.oldRowText;
+                    this.handleEdit(row);
+                }
+            },
+            fetchPlayList(query) { // 获取剧本数据
                 let _self = this;
-                let para = {
+                _self.playloading = true;
+                let paras = {
                     offset: 0,
-                    size: 9999
+                    size: 30,
+                    id: '',
+                    kw: ''
                 };
-                httpGet('contentPlayList', para, _self, function (res) {
+                if (isNaN(query)) { //输入不为数字，值传入kw
+                    paras.kw = query;
+                } else {
+                    paras.id = query;
+                }
+                httpGet('contentPlayList', paras, _self, function (res) {
+                    _self.playloading = false;
                     try {
                         let {data} = res;
                         _self.playList = data.content;
@@ -239,13 +272,22 @@
                     }
                 })
             },
-            fetchMaterialList() { // 获取片段数据
+            fetchMaterialList(query) { // 获取片段数据
                 let _self = this;
-                let para = {
+                _self.materialloading = true;
+                let paras = {
                     offset: 0,
-                    size: 9999
+                    size: 30,
+                    id: '',
+                    kw: ''
                 };
-                httpGet('contentMaterialList', para, _self, function (res) {
+                if (isNaN(query)) { //输入不为数字，值传入kw
+                    paras.kw = query;
+                } else {
+                    paras.id = query;
+                }
+                httpGet('contentMaterialList', paras, _self, function (res) {
+                    _self.materialloading = false;
                     try {
                         let {data} = res;
                         _self.materialList = data.content;
@@ -254,13 +296,22 @@
                     }
                 })
             },
-            fetchMusicList() { // 获取音乐数据
+            fetchMusicList(query) { // 获取音乐数据
                 let _self = this;
-                let para = {
+                _self.musicloading = true;
+                let paras = {
                     offset: 0,
-                    size: 9999
+                    size: 30,
+                    id: '',
+                    kw: ''
                 };
-                httpGet('contentMusicList', para, _self, function (res) {
+                if (isNaN(query)) { //输入不为数字，值传入kw
+                    paras.kw = query;
+                } else {
+                    paras.id = query;
+                }
+                httpGet('contentMusicList', paras, _self, function (res) {
+                    _self.musicloading = false;
                     try {
                         let {data} = res;
                         _self.musicList = data.content;

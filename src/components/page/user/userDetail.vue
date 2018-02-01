@@ -98,7 +98,7 @@
             </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
-            <el-button size="small" @click.native="isShowForm = false">取消</el-button>
+            <el-button size="small" @click.native="change">取消</el-button>
             <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
         </div>
     </el-dialog>
@@ -112,7 +112,7 @@
 
     export default {
         name: 'vDetail',
-        props: ['value', 'userId'],
+        props: ['value', 'userId', 'category'],
         data() {
             return {
                 visible: false, //默认隐藏
@@ -136,14 +136,19 @@
                     count: 0,
                     catIds: []
                 },
+                catList: [],
                 regionList: [],
                 cityList: []
             }
         },
         computed: {
-            detail() { //返回马甲号详情
+            detail() { // 返回用户详情
                 let _self = this;
+                if(!_self.visible){
+                    return false;
+                }
                 _self.fetchRegion();
+                _self.catList = _self.category;
                 if (_self.userId) {
                     httpGet('userDetail', {uid: _self.userId}, _self, function (res) {
                         _self.showLoading = false;
@@ -235,6 +240,7 @@
                         try {
                             _self.$message.success('解绑成功');
                             _self.userData.phone = '';
+                            _self.formData.phone = '';
                         } catch (error) {
                             util.jsErrNotify(error);
                         }

@@ -15,15 +15,21 @@ Vue.use(ElementUI);
 
 router.beforeEach((to, from, next) => { //拦截导航完成跳转或取消，to：即将进入的路由对象，form：离开的路由，next：function
     if (to.path == '/login') { //如果即将进入login页，移除session
-        sessionStorage.removeItem('user');
+        localStorage.removeItem('user');
     }
-    let user = JSON.parse(sessionStorage.getItem('user')); //获取session
+    let user = JSON.parse(localStorage.getItem('user')); //获取session
     if (!user && to.path != '/login') { //session为空，且跳转的路由不是登录页，则跳转到login
         next({
             path: '/login'
         })
     } else { //正常跳转到路由
-        next()
+        if (to.path == '/') { // 如果路由地址为空，跳转到登录页
+            next({
+                path: '/login'
+            })
+        } else {
+            next()
+        }
     }
 });
 

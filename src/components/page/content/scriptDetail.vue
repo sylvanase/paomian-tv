@@ -258,7 +258,7 @@
         },
         computed: {
             detail(){ //返回详情
-                if(!this.visible){ // 隐藏时不进行后续操作
+                if(!this.value){ // 隐藏时不进行后续操作
                     return;
                 }
                 let _self = this;
