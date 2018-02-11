@@ -1,9 +1,23 @@
 <template>
-    <el-dialog title="评论库列表" :value="value" v-model="visible">
+    <el-dialog title="评论库列表" :value="value" v-model="visible" @close="resetFormData">
         <el-tabs v-model="activeName" @tab-click="changeTab" style="margin-top: -30px;">
             <el-tab-pane label="列表" name="list">
-                <el-col :span="24" class="toolbar" style="margin-top: 0;">
+                <el-row :gutter="20" style="margin-top: 0;">
+                    <el-col v-if="relationData.play !== null" :span="12">
+                        关联剧本：{{ relationData.play }}
+                    </el-col>
+                    <el-col v-if="relationData.music !== null" :span="12">
+                        关联音乐：{{ relationData.music }}
+                    </el-col>
+                    <el-col v-if="relationData.materials.length > 0" :span="24">
+                        关联片段：{{ relationData.materials.join(' , ') }}
+                    </el-col>
+                </el-row>
+                <el-col :span="24" class="toolbar">
                     <el-form :inline="true" :model="filters">
+                        <el-form-item>
+                            <el-button type="primary" @click="submit()">提交</el-button>
+                        </el-form-item>
                         <el-form-item>
                             <el-input v-model="filters.kw" placeholder="ID/名称" icon="circle-close"
                                       :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
@@ -19,9 +33,6 @@
                         <el-form-item>
                             <el-button type="primary" @click="fetchList()">查询</el-button>
                         </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary" @click="submit()">提交</el-button>
-                        </el-form-item>
                     </el-form>
                 </el-col>
                 <!--表格-->
@@ -32,7 +43,8 @@
                     <el-table-column prop="text" label="评论内容(点击进行编辑操作)">
                         <template scope="scope">
                             <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
-                             @change="handleEdit(scope.row)" v-on:focus="handleFocus(scope.row)" v-on:blur="handleBlur(scope.row)"></el-input>
+                                      @change="handleEdit(scope.row)" v-on:focus="handleFocus(scope.row)"
+                                      v-on:blur="handleBlur(scope.row)"></el-input>
                             <span>{{scope.row.text}}</span>
                         </template>
                     </el-table-column>
@@ -47,7 +59,7 @@
             </el-tab-pane>
             <el-tab-pane label="新增评论" name="add">
                 <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData"
-                         style="margin-bottom: -20px;">
+                         style="margin-top:20px;margin-bottom: -20px;">
                     <el-form-item label="评论内容" prop="text">
                         <el-input type="textarea" :rows="2" v-model.trim="formData.text" maxlength="128"></el-input>
                     </el-form-item>
@@ -106,6 +118,11 @@
                 visible: false, //默认隐藏
                 showLoading: false,
                 activeName: 'list',
+                relationData: {
+                    play: '',
+                    music: '',
+                    materials: []
+                }, // 关联关系
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 filters: { //搜索筛选条件
@@ -134,17 +151,29 @@
                 materialList: [],
                 musicloading: false,
                 musicList: [],
-                oldRowText: ''
+                oldRowText: '',
+                initNum: 0
             }
         },
         computed: {
             detail() { //返回详情
-                if (!this.value) { //不显示的时候不请求详细
+                let _self = this;
+                if (!_self.value) { //不显示的时候不请求详细
                     return;
                 }
-                this.tableLoading = true;
-                this.tableList = [];
-                this.fetchList();
+                if (_self.initNum == 0) {
+                    _self.tableList = [];
+                    _self.filters = {
+                        type: '1',
+                        kw: ''
+                    };
+                    _self.total = 0;
+                    _self.page = 1;
+                    _self.multipleCommentIds = [];
+                    _self.fetchList();
+                    _self.initNum = 1;
+                    _self.fetchRelation();
+                }
             }
         },
         methods: {
@@ -202,6 +231,20 @@
                     }
                 })
             },
+            fetchRelation() { // 获取帖子关系
+                let _self = this;
+                httpGet('postsCommentRelation', {id: _self.postsData.id}, _self, function (res) {
+                    _self.tableLoading = false;
+                    try {
+                        let {error, status, data} = res;
+                        _self.relationData.play = data.relatedPlay;
+                        _self.relationData.music = data.relatedMusic;
+                        _self.relationData.materials = data.relatedMaterials;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
             submit() { //提交所选评论
                 let _self = this;
                 let paras = new FormData();
@@ -239,11 +282,11 @@
                     }
                 })
             },
-            handleFocus(row){ // 存储row的原始数据
+            handleFocus(row) { // 存储row的原始数据
                 this.oldRowText = row.text;
             },
-            handleBlur(row){ // 如果text的值为空，恢复原始值
-                if(row.text == ''){
+            handleBlur(row) { // 如果text的值为空，恢复原始值
+                if (row.text == '') {
                     row.text = this.oldRowText;
                     this.handleEdit(row);
                 }
@@ -353,6 +396,26 @@
                         return false;
                     }
                 });
+            },
+            resetFormData() { //关闭表格弹窗，重置表格数据
+                let _self = this;
+                _self.formLoading = false;
+                _self.showLoading = false;
+                _self.formData = {
+                    text: '',
+                    playIds: [],
+                    materialIds: [],
+                    musicIds: []
+                };
+                _self.playloading = false;
+                _self.playList = [];
+                _self.materialloading = false;
+                _self.materialList = [];
+                _self.musicloading = false;
+                _self.musicList = [];
+                _self.oldRowText = '';
+                _self.initNum = 0;
+                _self.$refs['formData'].resetFields();
             }
         },
         watch: {

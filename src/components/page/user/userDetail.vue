@@ -108,7 +108,7 @@
 
 <script type="es6">
     import util from '../../../api/util'
-    import {httpGet, httpPost} from '../../../api/api';
+    import {httpGet, httpPost, httpDel} from '../../../api/api';
 
     export default {
         name: 'vDetail',
@@ -217,7 +217,7 @@
             phoneUpdate() { //更换手机号
                 let _self = this;
                 let paras = new FormData();
-                paras.append("uid", _self.userData.id);
+                paras.append("uid", _self.userId);
                 paras.append("mobile", _self.formData.phone);
                 httpPost('userPhoneUpdate', paras, _self, function (res) {
                     try {
@@ -233,13 +233,12 @@
                 }).then(() => {
                     let _self = this;
                     let paras = {
-                        uid: _self.userData.id,
-                        mobile: _self.userData.phone
+                        uid: _self.userId,
+                        mobile: _self.formData.phone
                     };
                     httpGet('userMobileUnbind', paras, _self, function (res) {
                         try {
                             _self.$message.success('解绑成功');
-                            _self.userData.phone = '';
                             _self.formData.phone = '';
                         } catch (error) {
                             util.jsErrNotify(error);
@@ -253,7 +252,7 @@
                 }).then(() => {
                     let _self = this;
                     let paras = {
-                        uid: _self.userData.id,
+                        uid: _self.userId,
                         snsType: type
                     };
                     httpDel('userUnbind', paras, _self, function (res) {

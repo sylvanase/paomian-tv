@@ -132,6 +132,7 @@ let api = { //接口地址
     postsStatus: '/video/update_status', //帖子隐藏、恢复
     // postsBarrageList: '/video/video_post/barrage_list', //帖子的弹幕列表 弹幕暂时废除
     postsCommentList: '/video/video_post/barrage_list', //帖子的评论列表
+    postsCommentRelation: '/video/relation/list', //帖子的评论关系
 
     postsNoRecommend: '/video/noRecommend/add', // 不推荐该视频
     postsCheckList: '/video/check_result_list', // 鉴黄列表
