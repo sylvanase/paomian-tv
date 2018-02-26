@@ -42,6 +42,10 @@ export default new Router({
                     component: resolve => require(['../components/page/content/music.vue'], resolve),
                     name: '音乐'
                 }, {
+                    path: '/recMusic',
+                    component: resolve => require(['../components/page/content/recMusic.vue'], resolve),
+                    name: '推荐音乐'
+                }, {
                     path: '/material',
                     component: resolve => require(['../components/page/content/material.vue'], resolve),
                     name: '片段'

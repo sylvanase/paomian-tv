@@ -66,12 +66,25 @@
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="280">
+            <el-table-column label="操作" width="250">
                 <template scope="scope">
-                    <el-button size="small" type="info" @click="playMusic(scope.row)">预览</el-button>
-                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
-                    <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除</el-button>
+                    <div class="mt-10">
+                        <el-button size="small" type="info" @click="playMusic(scope.row)">预览</el-button>
+                        <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
+                    </div>
+                    <div class="mt-10 mb-10">
+                        <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleRecommend(scope.row)">
+                            {{ scope.row.isRecommend == 1 ? '取消推荐' : '推荐' }}
+                        </el-button>
+                        <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleTop(scope.row)">
+                            {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
+                        </el-button>
+                        <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
+                        </el-button>
+                    </div>
                 </template>
             </el-table-column>
         </el-table>
@@ -243,7 +256,47 @@
                 let _self = this;
                 _self.typeData = row;
                 _self.isShowComment = true;
-            }
+            },
+            handleRecommend(row) { // 推荐、取消推荐
+                let _self = this;
+                let para = {
+                    operation: Number(!row.isRecommend),
+                    id: row.id
+                };
+                httpGet('contentMusicRec', para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        row.isRecommend = Number(!row.isRecommend);
+//                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            handleTop(row) {
+                let _self = this;
+                let para = {
+                    size: 10,
+                    id: row.id
+                };
+                let _api = null;
+                if (row.isTop == 1) { // 该条目现在为已置顶状态
+                    _api = 'contentMusicCancelTop';
+                } else {
+                    _api = 'contentMusicTop';
+                    para.offset = (_self.page - 1) * para.size;
+                }
+                httpGet(_api, para, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
         },
         mounted() {
             this.fetchList();

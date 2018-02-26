@@ -48,8 +48,8 @@ let api = { //接口地址
     contentPlayScriptEdit: '/content/play/script_edit', //剧本素材编辑
     contentPlayScriptDel: '/content/play/script_delete', //剧本素材删除
 
-    contentTopPlay: 'content/play/stick', //置顶剧本
-    contentCancelTopPlay: 'content/play/cancelStick', //取消置顶剧本
+    contentTopPlay: '/content/play/stick', //置顶剧本
+    contentCancelTopPlay: '/content/play/cancelStick', //取消置顶剧本
     contentRecPlay: '/content/play/recommendOperation', //推荐剧本
     contentRecPlayList: '/content/recommendPlay/list', //推荐剧本列表
 
@@ -76,6 +76,11 @@ let api = { //接口地址
     contentMusicDel: '/content/music/delete',
     contentMusicEdit: '/content/music/edit',
     contentMusicDetail: '/content/music/detail',
+    contentMusicRec: '/content/music/recommendOperation', // 推荐、取消推荐音乐
+    contentMusicTop: '/content/music/stick', //置顶音乐
+    contentMusicCancelTop: '/content/music/cancelStick', //取消置顶音乐
+    contentRecMusicList: '/content/music/recommend/list', //推荐音乐列表
+
 
     contentMaterialList: '/content/material/list', //内容素材列表
     contentMaterialDel: '/content/material/delete',

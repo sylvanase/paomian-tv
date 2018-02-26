@@ -296,7 +296,8 @@
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
-                        _self.fetchList();
+//                        _self.fetchList();
+                        row.isRecommend = Number(!row.isRecommend);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
