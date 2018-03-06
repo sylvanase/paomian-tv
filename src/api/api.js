@@ -140,6 +140,7 @@ let api = { //接口地址
     postsCommentRelation: '/video/relation/list', //帖子的评论关系
 
     postsNoRecommend: '/video/noRecommend/add', // 不推荐该视频
+    postsNoRecommendDel: '/video/noRecommend/delete', // 取消不推荐该视频
     postsCheckList: '/video/check_result_list', // 鉴黄列表
     postsBlocked: '/video/vpid_blocked', // 封禁视频
     postsUnblock: '/video/vpid_relieve', // 解封视频
@@ -157,6 +158,7 @@ let api = { //接口地址
     commentRobotDel: '/comment/robot/delete', // 机器人评论库删除
     commentRobotReplyList: '/comment/robot/reply/list', // 机器人评论库列表
     commentRobotReplyAdd: '/comment/robot/reply/add', // 机器人回复评论
+    commentLikeAdd: '/comment/add/like', // 评论点赞
 
 
     topicList: '/topic/list', //话题列表
@@ -184,19 +186,32 @@ let api = { //接口地址
     launchBannerAdd: '/ad/launch/add', // 新增开机页banner
     launchBannerUpdate: '/ad/launch/update', // 新增开机页banner
     launchBannerDel: '/ad/launch/delete', // 删除开机页banner
+
     topicBannerList: '/ad/banner/list', // 话题页list
     topicBannerAdd: '/ad/banner/add', // 新增话题页banner
     topicBannerUpdate: '/ad/banner/update', // 新增话题页banner
     topicBannerDel: '/ad/banner/delete', // 删除话题页banner
+
     squareBannerList: '/ad/square/list', // 广场页list
     squareBannerAdd: '/ad/square/add', // 新增广场页banner
     squareBannerUpdate: '/ad/square/update', // 新增广场页banner
     squareBannerDel: '/ad/square/delete', // 删除广场页banner
+
     popBannerList: '/ad/popupWindow/list', // 营销弹窗list
     popBannerDel: '/ad/popupWindow/delete', // 营销弹窗删除
     popBannerAdd: '/ad/popupWindow/add', // 新增营销弹窗
     popBannerEdit: '/ad/popupWindow/edit', // 编辑营销弹窗
 
+    linkList: '/link/list', // 推广链接
+    linkAdd: '/link/add', // 推广链接新增
+    linkEdit: '/link/edit', // 推广链接编辑
+    linkDel: '/link/delete', // 推广链接删除
+
+    materialBannerList:'/page/material/list', // 页面素材列表
+    materialOnline:'/page/material/operation', // 页面素材上下线
+    materialBannerDel:'/page/material/delete', // 页面素材删除
+
+    noticeSend: '/notice/send', // 发送站内消息
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传

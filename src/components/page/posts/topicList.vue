@@ -39,6 +39,14 @@
             <el-table-column prop="id" label="id" min-width="80" fixed></el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
             <el-table-column prop="name" label="标题" min-width="200"></el-table-column>
+            <el-table-column label="话题类型" width="120">
+                <template scope="scope">
+                    <template v-if="scope.row.topicType == 0">普通</template>
+                    <template v-if="scope.row.topicType == 1">单个剧本</template>
+                    <template v-if="scope.row.topicType == 2">多个剧本</template>
+                    <template v-if="scope.row.topicType == 3">音乐片段</template>
+                </template>
+            </el-table-column>
             <el-table-column label="样片">
                 <template scope="scope">
                     <el-button size="small" @click="playVideo(scope.row)">播放</el-button>

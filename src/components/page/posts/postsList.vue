@@ -4,12 +4,16 @@
         <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
-                    <el-input v-model="filters.kw" placeholder="帖子ID/关键字" icon="circle-close"
+                    <el-input v-model="filters.kw" placeholder="ID/关键字" icon="circle-close"
                               :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-input type="number" v-model="filters.uid" placeholder="用户ID" icon="circle-close"
-                              :on-icon-click="resetSearchUser" @keyup.enter.native="fetchList"></el-input>
+                    <el-select v-model="filters.type" style="width: 110px;">
+                        <el-option label="按帖子搜" value="0"></el-option>
+                        <el-option label="按用户搜" value="1"></el-option>
+                        <el-option label="按剧本搜" value="2"></el-option>
+                        <el-option label="按音乐搜" value="3"></el-option>
+                    </el-select>
                 </el-form-item>
                 <el-form-item>
                     <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
@@ -63,7 +67,9 @@
             <el-table-column prop="username" label="发帖人" min-width="150">
                 <template scope="scope">
                     <!--<router-link target="_blank" :to="{ name: '用户列表', params: { uid: scope.row.uid }}">{{ scope.row.username }}</router-link>-->
-                    <router-link target="_blank" :to="{ name: '用户列表', query: { uid: scope.row.uid }}">{{ scope.row.username }}</router-link>
+                    <router-link target="_blank" :to="{ name: '用户列表', query: { uid: scope.row.uid }}">{{
+                        scope.row.username }}
+                    </router-link>
                 </template>
             </el-table-column>
             <el-table-column prop="videoText" min-width="200" label="帖子描述">
@@ -104,7 +110,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="300" fixed="right">
+            <el-table-column label="操作" width="320" fixed="right">
                 <template scope="scope">
                     <div>
                         <el-button size="small" @click="showForm(scope.row, 'detail')">编辑</el-button>
@@ -114,7 +120,11 @@
                         <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info"
                                    @click="showForm(scope.row, 'comment')">加评论
                         </el-button>
-                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
+                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'"
+                                   @click="noRecommend(scope.row)">
+                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                            {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                        </el-button>
                     </div>
                     <div class="mt-10">
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
@@ -158,8 +168,11 @@
         <!--为帖子点赞-->
         <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
 
+        <!--为评论点赞-->
+        <v-comment-like :commentId="commentId" v-model="comLikeVisible"></v-comment-like>
+
         <!--帖子评论列表-->
-        <v-comment-list :postsData="postsData" v-model="isShowPostsComment" v-on:refresh="fetchList"></v-comment-list>
+        <v-comment-list :postsData="postsData" v-model="isShowPostsComment" v-on:like="showCommentLike" v-on:refresh="fetchList"></v-comment-list>
     </section>
 </template>
 
@@ -170,13 +183,15 @@
     import vCommentAdd from './commentSource.vue'
     import vCommentList from './postsCommentList.vue'
     import vLikeAdd from './likeAdd.vue'
+    import vCommentLike from './commentLike.vue' // 为评论点赞
 
     export default {
         components: {
             vDetail,
             vCommentAdd,
             vCommentList,
-            vLikeAdd
+            vLikeAdd,
+            vCommentLike
         },
         data() {
             let validateNum = (rule, value, callback) => {
@@ -191,7 +206,8 @@
             return {
                 filters: {
                     kw: '',
-                    uid: '',
+                    id: '',
+                    type: '0', // 默认按帖子搜
                     start: '',
                     end: '',
                     isDel: '',
@@ -213,7 +229,9 @@
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
                 likeVisible: false, // 显示、隐藏点赞界面
-                addLikeId: ''  // 点赞的帖子id
+                addLikeId: '',  // 点赞的帖子id
+                comLikeVisible: false, // 显示、隐藏评论点赞界面
+                commentId: '' // 需要点赞的评论id
             }
         },
         methods: {
@@ -226,8 +244,8 @@
                 _self.tableHeight = document.getElementById('container').clientHeight - 124 - 42 - 15;
                 let paras = {
                     offset: 0,
+                    type: _self.filters.type,
                     size: 10,
-                    uid: _self.filters.uid,
                     startTime: _self.filters.start,
                     endTime: _self.filters.end,
                     del: _self.filters.isDel,
@@ -263,10 +281,6 @@
             },
             resetSearch() {
                 this.filters.kw = '';
-                this.fetchList();
-            },
-            resetSearchUser() {
-                this.filters.uid = '';
                 this.fetchList();
             },
             showForm(row, type) { //显示详情表单
@@ -317,7 +331,7 @@
             setEnd(val) {
                 this.filters.end = val;
             },
-            postsDel (row) { //软删除帖子
+            postsDel(row) { //软删除帖子
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -334,12 +348,16 @@
                     }
                 })
             },
-            noRecommend(row){ // 将帖子加入不推荐队列
+            noRecommend(row) { // 将帖子加入不推荐队列
                 let _self = this;
                 let paras = {
                     id: row.id
                 };
-                httpGet('postsNoRecommend', paras, _self, function (res) {
+                let _api = 'postsNoRecommend'; // 默认是加入不推荐的api
+                if (row.isNoRecommend == 1) {
+                    _api = 'postsNoRecommendDel';
+                }
+                httpGet(_api, paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
@@ -348,6 +366,10 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            showCommentLike(row) {
+                this.comLikeVisible = true;
+                this.commentId = row.id
             }
         },
         mounted() {

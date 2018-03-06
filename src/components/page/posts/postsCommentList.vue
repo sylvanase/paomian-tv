@@ -10,6 +10,7 @@
             <el-table-column prop="likeCount" label="被点赞数" width="120"></el-table-column>
             <el-table-column label="操作">
                 <template scope="scope">
+                    <el-button type="success" size="small" @click="handleLike(scope.row)">点赞</el-button>
                     <el-button type="danger" size="small" @click="handleTableDel(scope.row)">删除</el-button>
                 </template>
             </el-table-column>
@@ -101,7 +102,10 @@
                         }
                     })
                 });
-            }
+            },
+            handleLike(row) { //点赞
+                this.$emit('like', row);
+            },
         },
         watch: {
             detail(val){ //监测详情变化

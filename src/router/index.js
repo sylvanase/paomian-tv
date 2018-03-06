@@ -154,6 +154,14 @@ export default new Router({
                     path: '/banner',
                     component: resolve => require(['../components/page/marketing/bannerList.vue'], resolve),
                     name: 'banner设置'
+                },{
+                    path: '/link',
+                    component: resolve => require(['../components/page/marketing/linkList.vue'], resolve),
+                    name: '推广链接'
+                },{
+                    path: '/award',
+                    component: resolve => require(['../components/page/marketing/awardNotice.vue'], resolve),
+                    name: '发奖管理'
                 }
             ]
         }, {

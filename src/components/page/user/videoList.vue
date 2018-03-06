@@ -54,7 +54,7 @@
                     scope.row.videoInfoPo.barrageUserCount : '0'}}人
                 </template>
             </el-table-column>-->
-            <el-table-column prop="createTime" label="发布时间" width="175"></el-table-column>
+            <el-table-column prop="createTime" label="发布时间" width="200"></el-table-column>
             <el-table-column label="操作" width="230" fixed="right">
                 <template scope="scope">
                     <div>
@@ -63,7 +63,11 @@
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
                         <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
-                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
+                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'"
+                                   @click="noRecommend(scope.row)">
+                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                            {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                        </el-button>
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
@@ -201,7 +205,11 @@
                 let paras = {
                     id: row.id
                 };
-                httpGet('postsNoRecommend', paras, _self, function (res) {
+                let _api = 'postsNoRecommend'; // 默认是加入不推荐的api
+                if (row.isNoRecommend == 1) {
+                    _api = 'postsNoRecommendDel';
+                }
+                httpGet(_api, paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;

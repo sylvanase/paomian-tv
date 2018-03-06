@@ -108,7 +108,7 @@
                     </el-pagination>
                 </el-col>
             </el-tab-pane>
-            <el-tab-pane label="个人中心" name="personal">个人中心，暂无内容</el-tab-pane>
+            <!--<el-tab-pane label="个人中心" name="personal">个人中心，暂无内容</el-tab-pane>-->
             <el-tab-pane label="广场" name="square">
                 <el-col :span="24" class="toolbar">
                     <el-form :inline="true">
@@ -203,6 +203,63 @@
                     </el-pagination>
                 </el-col>
             </el-tab-pane>
+            <el-tab-pane label="页面素材配置" name="material">
+                <el-col :span="24" class="toolbar">
+                    <el-form :inline="true">
+                        <el-form-item>
+                            <el-input v-model="material.filters.id" placeholder="ID" icon="circle-close"
+                                      :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-select v-model="filters.type" @change="fetchList" placeholder="请选择"
+                                       style="width: 200px;">
+                                <el-option label="全部" value=""></el-option>
+                                <el-option label="拍摄按钮" value="1"></el-option>
+                                <el-option label="个人中心拍摄引导" value="2"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="fetchList">查询</el-button>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="showForm()">新增</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+
+                <el-table v-loading="material.loading" :data="material.list" stripe border :max-height="material.height"
+                          style="width: 100%;">
+                    <el-table-column prop="id" label="id" width="80"></el-table-column>
+                    <el-table-column prop="imageUrl" label="素材预览" width="240">
+                        <template scope="scope">
+                            <img v-if="scope.row.imageUrl !== ''"
+                                 style="width: 100%;vertical-align: middle;margin: 5px 0;"
+                                 :src="scope.row.imageUrl" alt=""/>
+                            <span v-else>图片路径缺失</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态"></el-table-column>
+                    <el-table-column prop="type" label="类型"></el-table-column>
+                    <el-table-column prop="startTime" label="开始时间" width="175"></el-table-column>
+                    <el-table-column prop="endTime" label="停止时间" width="175"></el-table-column>
+                    <el-table-column label="操作" width="140">
+                        <template scope="scope">
+                            <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="small" @click="bannerDel(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                <!--分页-->
+                <el-col :span="24" class="mt-10">
+                    <el-pagination style="float:right;" @current-change="handleCurrentChange"
+                                   :page-size="pop.size" :current-page="pop.page"
+                                   layout="total, prev, pager, next, jumper" :total="pop.total">
+                    </el-pagination>
+                </el-col>
+            </el-tab-pane>
+            <el-tab-pane label="悬浮窗管理" name="window">
+
+            </el-tab-pane>
         </el-tabs>
 
         <!--开机页编辑-->
@@ -242,7 +299,7 @@
         data() {
             return {
                 activeName: 'launch', //默认显示第一页
-                tabArg: ['launch', 'topic', 'personal', 'square', 'pop'],
+                tabArg: ['launch', 'topic', 'personal', 'square', 'pop', 'material', 'window'],
                 launch: { // 开机页数据
                     loading: false,
                     list: [],
@@ -322,6 +379,34 @@
                     },
                     formData: {},
                     showForm: false
+                },
+                material: { // 页面素材配置数据
+                    loading: false,
+                    height: '100%',
+                    list: [],
+                    total: 0,
+                    page: 1,
+                    size: 10,
+                    filters: {
+                        id: '',
+                        type: ''
+                    },
+                    formData: {},
+                    showForm: false
+                },
+                window: { // 悬浮窗数据
+                    loading: false,
+                    height: '100%',
+                    list: [],
+                    total: 0,
+                    page: 1,
+                    size: 10,
+                    filters: {
+                        id: '',
+                        type: ''
+                    },
+                    formData: {},
+                    showForm: false
                 }
             }
         },
@@ -330,12 +415,20 @@
                 const _self = this;
                 let _name = tab.name;
                 _self[_name].page = 1;
-                _self[_name].filters = {
-                    id: '',
-                    start: '',
-                    end: '',
-                    time: ''
-                };
+                if (_name == 'material') { // 页面素材配置
+                    _self[_name].filters = {
+                        id: '',
+                        type: ''
+                    };
+                    _self.materialList();
+                } else {
+                    _self[_name].filters = {
+                        id: '',
+                        start: '',
+                        end: '',
+                        time: ''
+                    };
+                }
                 _self.fetchList();
             },
             resetSearch() { // 重置查询条件

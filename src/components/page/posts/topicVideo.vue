@@ -81,7 +81,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="230" fixed="right">
+            <el-table-column label="操作" width="250" fixed="right">
                 <template scope="scope">
                     <div>
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
@@ -92,7 +92,11 @@
                         <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
                     </div>
                     <div class="mt-10">
-                        <el-button size="small" type="danger" @click="noRecommend(scope.row)">不推荐</el-button>
+                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ?'danger' : 'warning'"
+                                   @click="noRecommend(scope.row)">
+                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                            {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                        </el-button>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                    @click="postsDel(scope.row)">
                             {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
@@ -239,7 +243,11 @@
                 let paras = {
                     id: row.id
                 };
-                httpGet('postsNoRecommend', paras, _self, function (res) {
+                let _api = 'postsNoRecommend'; // 默认是加入不推荐的api
+                if (row.isNoRecommend == 1) {
+                    _api = 'postsNoRecommendDel';
+                }
+                httpGet(_api, paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
