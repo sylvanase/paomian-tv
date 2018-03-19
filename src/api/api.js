@@ -88,6 +88,8 @@ let api = { //接口地址
     contentMaterialDetail: '/content/material/detail',
     contentChoiceMaterialList: '/content/choiceMaterial/list', //精选片段列表
     contentChoiceMaterial: '/content/material/choiceOperation',
+    contentPreMaterialList: '/content/material/pre/list', //前置片段列表
+    contentPreMaterial: '/content/material/pre/operation', //设置、取消片段前置
     contentTopMaterial: '/content/material/stick', // 片段置顶
     contentCancelTopMaterial: '/content/material/cancelStick', // 取消片段置顶
     contentMaterialFeedbackList: '/content/material/feedback/list', // 片段反馈
@@ -170,6 +172,9 @@ let api = { //接口地址
     topConfigHandel: '/topic/top_config', //话题置顶配置更改
     topicPosts: '/video/video_post/for_topic_list', //话题详情中查询帖子
     topicRecommend: '/topic/recommend/operation', // 推荐话题
+    topSquareConfig: '/topic/squareTop/add', // 广场话题置顶配置更改
+    topSquareConfigDetail: '/topic/squareTop/list', // 广场话题置顶配置数据
+
 
     illegalList: '/video/illegal_report_list', //举报帖子
     illegalStatus: '/video/update_illegal_report_status', //隐藏举报帖子
@@ -210,8 +215,25 @@ let api = { //接口地址
     materialBannerList:'/page/material/list', // 页面素材列表
     materialOnline:'/page/material/operation', // 页面素材上下线
     materialBannerDel:'/page/material/delete', // 页面素材删除
+    materialBannerAdd:'/page/material/add', // 页面素材新增
+    materialBannerUpdate:'/page/material/update', // 页面素材时间更新
+
+    windowBannerList:'/float/window/list', // 悬浮窗列表
+    windowOnline:'/float/window/operation', // 悬浮窗上下线
+    windowBannerDel:'/float/window/delete', // 悬浮窗删除
+    windowBannerAdd:'/float/window/add', // 悬浮窗新增
+    windowBannerUpdate:'/float/window/update', // 悬浮窗时间更新
 
     noticeSend: '/notice/send', // 发送站内消息
+
+    awardList: '/award/list', // 发奖记录
+    awardSend: '/award/send', // 给用户发奖
+
+    adList: '/adPlace/list', // 广告位列表
+    adOpen: '/adPlace/operate', // 广告位开启、关闭
+    adContentList: '/adPlace/content/list', // 广告位内容列表
+    adContentDel: '/adPlace/content/delete', // 广告位内容删除
+    adContentAdd: '/adPlace/content/add', // 广告位内容新增
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传

@@ -65,7 +65,7 @@
                     '0'}}人
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="310">
+            <el-table-column label="操作" width="280">
                 <template scope="scope">
                     <div class="mt-10">
                         <el-button type="info" size="small" @click="playVideo(scope.row)">播放</el-button>
@@ -81,6 +81,10 @@
                         <el-button :type="scope.row.isTop == 1 ? 'danger' : 'success'" size="small"
                                    @click="handleTop(scope.row)">
                             {{ scope.row.isTop == 1 ? '取消置顶' : '置顶' }}
+                        </el-button>
+                        <el-button :type="scope.row.isPre == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handlePre(scope.row)">
+                            {{ scope.row.isPre == 1 ? '取消前置' : '前置' }}
                         </el-button>
                     </div>
                 </template>
@@ -307,6 +311,26 @@
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            handlePre(row) { // 前置片段
+                let _self = this;
+                let para = {
+                    operation: Number(!row.isPre),
+                    id: row.id
+                };
+                httpGet('contentPreMaterial', para, _self, function (res) {
+                    try {
+                        _self.tableList.map(function (item) {
+                            if(item.id == row.id){
+                                item.isPre = Number(!item.isPre);
+                            }
+                            return item;
+                        });
+                        _self.$message.success('操作成功');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

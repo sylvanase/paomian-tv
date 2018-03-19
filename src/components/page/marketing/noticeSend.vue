@@ -38,6 +38,8 @@
                 if (!_self.formData.allUser) { // 没有勾选全部用户，uid不可为空
                     if (value == '') {
                         callback(new Error('请输入用户uid'));
+                    } else {
+                        callback();
                     }
                 } else {
                     callback();
@@ -78,7 +80,9 @@
                 paras.append("body", _self.formData.desc);
                 paras.append("link", _self.formData.link);
                 paras.append("isSpecific", Number(!_self.formData.allUser));
+                console.log(1);
                 _self.$refs.formData.validate((valid) => {
+                    console.log(2);
                     if (valid) {
                         _self.formLoading = true;
                         httpPost('noticeSend', paras, _self, function (res) {

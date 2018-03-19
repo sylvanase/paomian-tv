@@ -63,18 +63,18 @@
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
                         <el-button size="small" type="success" @click="handleLike(scope.row)">点赞</el-button>
-                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'"
-                                   @click="noRecommend(scope.row)">
-                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
-                            {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                        <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
+                                   @click="postsDel(scope.row)">
+                            {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
                         </el-button>
                     </div>
                     <div class="mt-10">
                         <!--<el-button type="info" size="small" @click="highlight(scope.row)">评论</el-button>-->
                         <el-button type="info" size="small" @click="postsBarrage(scope.row)">加评论</el-button>
-                        <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
-                                   @click="postsDel(scope.row)">
-                            {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
+                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'"
+                                   @click="noRecommend(scope.row)">
+                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                            {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
                         </el-button>
                     </div>
                 </template>
@@ -214,6 +214,7 @@
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
+                        row.isNoRecommend = Number(!row.isNoRecommend);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

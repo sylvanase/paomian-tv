@@ -30,6 +30,9 @@
                 <el-form-item>
                     <el-button type="primary" @click="showForm('-1')">新增</el-button>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="squareConfig">广场置顶配置</el-button>
+                </el-form-item>
             </el-form>
         </el-col>
 
@@ -65,6 +68,13 @@
             <el-table-column prop="userCount" label="参与人数" min-width="100"></el-table-column>
             <el-table-column prop="viewCount" label="浏览量"></el-table-column>
             <el-table-column prop="actionUserCount" label="互动人数" min-width="100"></el-table-column>
+            <el-table-column prop="isSquareTop" label="广场置顶" width="100">
+                <template scope="scope">
+                    <el-tag :type="scope.row.isSquareTop == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.isSquareTop == 1 ? '是' : '否' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
             <el-table-column prop="status" label="置顶" width="80">
                 <template scope="scope">
                     <el-tag :type="scope.row.top == 1 ? 'success' : 'danger'"
@@ -141,6 +151,28 @@
             </div>
         </el-dialog>
 
+
+        <!--广场置顶配置-->
+        <el-dialog title="广场置顶配置" v-model="squareConfigVisible" size="tiny">
+            <el-form :model="squareConfigData" label-width="80px" ref="squareConfigData">
+                <el-form-item label="top1" prop="first">
+                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="squareConfigData.first"
+                              type="number"
+                              auto-complete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="top2" prop="second">
+                    <el-input style="width: 200px;" placeholder="请输入话题id" v-model.number="squareConfigData.second"
+                              type="number"
+                              auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click.native="squareConfigVisible = false">取消</el-button>
+                <el-button type="primary" @click.native="squareConfigSubmit">确定</el-button>
+            </div>
+        </el-dialog>
+
+
         <!--为帖子点赞-->
         <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
 
@@ -188,6 +220,11 @@
                     first: '',
                     second: '',
                     third: ''
+                },
+                squareConfigVisible: false, // 广场置顶配置
+                squareConfigData: {
+                    first: '',
+                    second: ''
                 },
                 isShowComment: false, //显示、隐藏评论列表
                 likeVisible: false, // 显示、隐藏点赞界面
@@ -281,6 +318,35 @@
                     })
                 });
             },
+            squareConfig() { //显示广场置顶配置弹窗
+                let _self = this;
+                _self.squareConfigVisible = true;
+                httpGet('topSquareConfigDetail', '', _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.squareConfigData = {
+                            first: data[0],
+                            second: data[1]
+                        };
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            squareConfigSubmit() { // 提交广场置顶配置
+                let _self = this;
+                let paras = new FormData();
+                paras.append("ids", [_self.squareConfigData.first, _self.squareConfigData.second]);
+                httpPost('topSquareConfig', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('更改配置成功');
+                        _self.squareConfigVisible = false;
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
             showForm(row) { //显示详情表单
                 this.isShowForm = true;
                 this.topicData = row;
@@ -297,7 +363,7 @@
             videoClose() {
                 this.videoHtml = '';
             },
-            topicDel (row) { // 话题删除、恢复
+            topicDel(row) { // 话题删除、恢复
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);
@@ -313,7 +379,7 @@
                     }
                 })
             },
-            topicTop (row) { // 话题置顶
+            topicTop(row) { // 话题置顶
                 let _self = this;
                 let paras = new FormData();
                 paras.append("id", row.id);

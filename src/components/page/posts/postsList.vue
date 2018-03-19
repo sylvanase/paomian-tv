@@ -362,6 +362,7 @@
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
+                        row.isNoRecommend = Number(!row.isNoRecommend);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -373,9 +374,11 @@
             }
         },
         mounted() {
-            if (this.$route.params.uid) {
-                this.filters.uid = this.$route.params.uid;
+            if (this.$route.query.uid) {
+                this.filters.kw = this.$route.query.uid;
+                this.filters.type = '1';
             }
+
             this.fetchList();
         }
     }

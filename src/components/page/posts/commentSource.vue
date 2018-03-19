@@ -1,7 +1,7 @@
 <template>
     <el-dialog title="评论库列表" :value="value" v-model="visible" @close="resetFormData">
         <el-tabs v-model="activeName" @tab-click="changeTab" style="margin-top: -30px;">
-            <el-tab-pane label="列表" name="list">
+            <el-tab-pane label="通用评论" name="list">
                 <el-row :gutter="20" style="margin-top: 0;">
                     <el-col v-if="relationData.play !== null" :span="12">
                         关联剧本：{{ relationData.play }}
@@ -28,6 +28,7 @@
                                 <el-option label="按剧本搜" value="2"></el-option>
                                 <el-option label="按片段搜" value="3"></el-option>
                                 <el-option label="按音乐搜" value="4"></el-option>
+                                <el-option label="非通用评论" value="5"></el-option>
                             </el-select>
                         </el-form-item>
                         <el-form-item>
@@ -96,6 +97,16 @@
                             </el-select>
                         </template>
                     </el-form-item>
+                    <el-form-item label="所属分类" prop="attrIds">
+                        <template>
+                            <el-select style="width: 50%;" v-model="formData.attrIds" multiple
+                                       placeholder="选择评论所属分类">
+                                <el-option v-for="item in attrList" :key="item.id" :label="item.text"
+                                           :value="item.id">
+                                </el-option>
+                            </el-select>
+                        </template>
+                    </el-form-item>
                     <el-form-item>
                         <el-button size="small" type="primary" @click.native="addComment" :loading="formLoading">提交
                         </el-button>
@@ -143,7 +154,8 @@
                     text: '',
                     playIds: [],
                     materialIds: [],
-                    musicIds: []
+                    musicIds: [],
+                    attrIds: []
                 },
                 playloading: false,
                 playList: [],
@@ -152,7 +164,8 @@
                 musicloading: false,
                 musicList: [],
                 oldRowText: '',
-                initNum: 0
+                initNum: 0,
+                attrList: []
             }
         },
         computed: {
@@ -192,6 +205,7 @@
                     if (_self.musicList.length == 0) {
                         _self.fetchMusicList();
                     }
+                    _self.fetchAttrList();
                     _self.resetForm(); // 重置新增评论表单
                 }
             },
@@ -211,13 +225,21 @@
                 let paras = {
                     offset: 0,
                     size: 10,
-                    searchType: _self.filters.type
+                    searchType: _self.filters.type,
+                    keyWord : '',
+                    id:''
                 };
+
+                if(_self.filters.type == '5'){ // 如果类型为5的话，查询所有非通用类型评论
+                    _self.filters.kw = '';
+                }
+
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
                     paras.keyWord = _self.filters.kw;
                 } else {
                     paras.id = _self.filters.kw;
                 }
+
                 paras.offset = (_self.page - 1) * paras.size;
                 _self.tableLoading = true;
                 httpGet('commentListSearch', paras, _self, function (res) {
@@ -363,12 +385,28 @@
                     }
                 })
             },
+            fetchAttrList() { // 获取评论属性
+                let _self = this;
+                let paras = {
+                    offset: 0,
+                    size: 999999
+                };
+                httpGet('commentAttrList', paras, _self, function (res) {
+                    try {
+                        let {data} = res;
+                        _self.attrList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
             resetForm() {
                 this.formData = {
                     playIds: [],
                     materialIds: [],
                     musicIds: [],
-                    text: ''
+                    text: '',
+                    attrIds: []
                 };
                 this.$refs['formData'].resetFields();
             },
@@ -381,6 +419,9 @@
                         paras.append("playIds", _self.formData.playIds);
                         paras.append("materialIds", _self.formData.materialIds);
                         paras.append("musicIds", _self.formData.musicIds);
+                        paras.append("attrIds", _self.formData.attrIds);
+                        paras.append("vpId", _self.postsData.id);
+                        paras.append("vpUid", _self.postsData.uid);
                         _self.formLoading = true;
                         httpPost('commentAdd', paras, _self, function (res) {
                             _self.formLoading = false;
@@ -405,7 +446,8 @@
                     text: '',
                     playIds: [],
                     materialIds: [],
-                    musicIds: []
+                    musicIds: [],
+                    attrIds:[]
                 };
                 _self.playloading = false;
                 _self.playList = [];
@@ -413,6 +455,7 @@
                 _self.materialList = [];
                 _self.musicloading = false;
                 _self.musicList = [];
+                _self.attrList = [];
                 _self.oldRowText = '';
                 _self.initNum = 0;
                 _self.$refs['formData'].resetFields();

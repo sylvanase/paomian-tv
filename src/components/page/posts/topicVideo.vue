@@ -252,6 +252,7 @@
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
+                        row.isNoRecommend = Number(!row.isNoRecommend);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

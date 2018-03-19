@@ -2,7 +2,7 @@
     <el-dialog :title="title" :value="value" v-model="visible" @close="resetFormData">
         <!-- 回复列表 -->
         <div class="reply-container" :style="{ maxHeight: maxHeight + 'px' }">
-            <ul v-loading="tableLoading" style="margin-top: -10px;">
+            <ul v-loading="tableLoading">
                 <li v-for="item in tableList">
                     <el-row :gutter="15">
                         <el-col :span="3">
@@ -233,11 +233,13 @@
     .reply-container ul li {
         border-bottom: 1px solid #eee;
         color: #333;
-        padding: 0 10px;
+        padding: 5px 10px;
     }
 
     .reply-container li img {
-        width: 100%;
+        width: 50px;
+        height: 50px;
+        border: 1px solid #eee;
         border-radius: 50%;
     }
 

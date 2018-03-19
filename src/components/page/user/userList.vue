@@ -66,7 +66,7 @@
             </el-table-column>
             <el-table-column prop="username" min-width="150" label="昵称">
                 <template scope="scope">
-                    <router-link :to="{ name: '帖子列表', params: { uid: scope.row.id }}">{{ scope.row.username }}
+                    <router-link :to="{ name: '帖子列表', query: { uid: scope.row.id }}">{{ scope.row.username }}
                     </router-link>
                 </template>
             </el-table-column>

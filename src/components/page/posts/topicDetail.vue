@@ -48,7 +48,7 @@
             <template v-if="formData.topicType == 3">
                 <el-form-item label="关联音乐">
                     <template>
-                        <el-select style="width: 50%;" filterable :remote-method="handleMusic"
+                        <el-select style="width: 50%;" clearable filterable :remote-method="handleMusic"
                                    :loading="searchMusic.loading" remote v-model="formData.musicId"
                                    placeholder="搜索关联音乐">
                             <el-option v-for="item in searchMusic.list" :key="item.id" :label="item.name"
@@ -144,8 +144,8 @@
                     playAttrId: '', // 关联的剧本属性id
                     musicId: '', // 关联的音乐id
                     materialIds: [], // 关联的片段id数组
-                    isPre: 0, // 片段是否前置
-                    isReco: 0, // 是否进推荐
+                    isPre: false, // 片段是否前置
+                    isReco: true, // 是否进推荐，进推荐传0
                     coverId: '',
                     coverImgUrl: '',
                     videoId: '',
@@ -191,8 +191,8 @@
                         playAttrId: '', // 关联的剧本属性id
                         musicId: '', // 关联的音乐id
                         materialIds: [], // 关联的片段id数组
-                        isPre: '', // 片段是否前置
-                        isReco: Boolean(_data.topicVideoReco),
+                        isPre: false, // 片段是否前置
+                        isReco: !Boolean(_data.topicVideoReco),
                         coverId: _data.coverId,
                         coverImgUrl: _data.coverUrl,
                         videoId: _data.videoId + '',
@@ -273,7 +273,7 @@
                 paras.append("musicId", _self.formData.topicType == 3 ? _self.formData.musicId : '');
                 paras.append("materialIds", _self.formData.topicType == 3 ? _self.formData.materialIds : []);
                 paras.append("isPre", _self.formData.topicType == 3 ? Number(_self.formData.isPre) : '');
-                paras.append("topicVideoReco", Number(_self.formData.isReco));
+                paras.append("topicVideoReco", Number(!_self.formData.isReco));
                 /* 结束 */
                 _self.formLoading = true;
                 httpPost('topicEdit', paras, _self, function (res) {
@@ -438,8 +438,8 @@
                     playAttrId: '', // 关联的剧本属性id
                     musicId: '', // 关联的音乐id
                     materialIds: [], // 关联的片段id数组
-                    isPre: '0', // 片段是否前置
-                    isReco: '0', // 是否进推荐
+                    isPre: false, // 片段是否前置
+                    isReco: true, // 是否进推荐
                     coverId: '',
                     coverImgUrl: '',
                     videoId: '',
@@ -469,8 +469,8 @@
                         playAttrId: '', // 关联的剧本属性id
                         musicId: '', // 关联的音乐id
                         materialIds: [], // 关联的片段id数组
-                        isPre: '0', // 片段是否前置
-                        isReco: '0', // 是否进推荐
+                        isPre: false, // 片段是否前置
+                        isReco: true, // 是否进推荐
                         coverId: '',
                         coverImgUrl: '',
                         videoId: '',

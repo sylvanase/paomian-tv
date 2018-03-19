@@ -54,6 +54,10 @@ export default new Router({
                     component: resolve => require(['../components/page/content/choiceMaterial.vue'], resolve),
                     name: '精选片段'
                 }, {
+                    path: '/preMaterial',
+                    component: resolve => require(['../components/page/content/preMaterial.vue'], resolve),
+                    name: '前置片段'
+                }, {
                     path: '/feedbackMaterial',
                     component: resolve => require(['../components/page/content/feedbackMaterial.vue'], resolve),
                     name: '片段反馈'
@@ -159,9 +163,17 @@ export default new Router({
                     component: resolve => require(['../components/page/marketing/linkList.vue'], resolve),
                     name: '推广链接'
                 },{
+                    path: '/notice',
+                    component: resolve => require(['../components/page/marketing/noticeSend.vue'], resolve),
+                    name: '站内消息'
+                }, {
                     path: '/award',
-                    component: resolve => require(['../components/page/marketing/awardNotice.vue'], resolve),
+                    component: resolve => require(['../components/page/marketing/awardList.vue'], resolve),
                     name: '发奖管理'
+                }, {
+                    path: '/advertisement',
+                    component: resolve => require(['../components/page/marketing/adList.vue'], resolve),
+                    name: '广告位管理'
                 }
             ]
         }, {
