@@ -9,6 +9,8 @@
                     <el-option label="对手戏" value="0"></el-option>
                     <el-option label="蒙太奇" value="1"></el-option>
                     <el-option label="表演型" value="2"></el-option>
+                    <el-option label="漫画-表演型" value="3"></el-option>
+                    <el-option label="漫画-对手戏" value="4"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="相关电影" prop="movieIds">
@@ -130,9 +132,6 @@
                     keyword: [],
                     playType: '0'
                 },
-                playTypeArr: [ // 剧本玩法的枚举类型
-                    'RIVAL_SHOW', 'MONTAGE', 'PERFORM'
-                ],
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
                 avatarLoading: false,
@@ -237,7 +236,7 @@
                         para.append("movieIds", _self.formData.movieIds.join(','));
                         para.append("tagIds", _self.formData.tagIds.join(','));
                         para.append("playAttrIds", _self.formData.playAttrIds.join(','));
-                        para.append("playType", _self.playTypeArr[_self.formData.playType]);
+                        para.append("playType", _self.formData.playType);
                         para.append("kw", _self.formData.keyword.join(' '));
                         httpPost('contentPlayEdit', para, _self, function (res) {
                             _self.formLoading = false;

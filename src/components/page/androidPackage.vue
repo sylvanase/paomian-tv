@@ -66,6 +66,12 @@
                 <el-form-item label="包文件">
                     <input type="file" name="file" id="apkFile"/>
                 </el-form-item>
+                <el-form-item label="版本号">
+                    <input type="text" v-model="formData.version"/>
+                </el-form-item>
+                <el-form-item label="版本code">
+                    <input type="text" v-model="formData.code"/>
+                </el-form-item>
                 <el-form-item label="强更">
                     <el-switch v-model="formData.force"></el-switch>
                 </el-form-item>
@@ -102,7 +108,9 @@
                 formData: {
                     force: false,
                     status: false,
-                    des: ''
+                    des: '',
+                    version: '',
+                    code: ''
                 }
             }
         },
@@ -167,7 +175,9 @@
                 this.formData = {
                     force: false,
                     status: false,
-                    des: ''
+                    des: '',
+                    version: '',
+                    code: ''
                 };
             },
             formSubmit() { //提交表格
@@ -179,6 +189,8 @@
                 }
                 _self.formLoading = true;
                 let paras = new FormData();
+                paras.append("version", _self.formData.version);
+                paras.append("versionCode", _self.formData.code);
                 paras.append("desc", _self.formData.des);
                 paras.append("force", Number(_self.formData.force));
                 paras.append("status", Number(_self.formData.status));

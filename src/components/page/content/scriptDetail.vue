@@ -37,13 +37,27 @@
                                            :value="item.id"></el-option>
                             </el-select>
                         </div>
-                        <div>
+                        <div class="mb-10">
                             <el-select size="small" v-model="item.data.speed" placeholder="请选择速度"
                                        style="width: 150px;">
                                 <el-option label="正常" value="0"></el-option>
                                 <el-option label="很快" value="1"></el-option>
                                 <el-option label="很慢" value="2"></el-option>
                             </el-select>
+                        </div>
+                        <div class="mb-10">
+                            台词文件: <input type="file" :ref="'lrc' + index"  @change="uploadLrc(index)" name="lrc">
+                            <el-progress size="small" style="width: 70%;" :percentage="item.data.lrcPer"></el-progress>
+                            <div v-show="item.data.promptName">
+                               已选台词名称：{{ item.data.promptName }} 
+                            </div>
+                        </div>
+                        <div>
+                            示范视频: <input type="file" :ref="'video' + index" @change="uploadVideo(index)" name="video">
+                            <el-progress size="small" style="width: 70%;" :percentage="item.data.videoPer"></el-progress>
+                            <div v-show="item.data.exampleVideoId">
+                                已选视频id：{{ item.data.exampleVideoId}}
+                            </div>
                         </div>
                     </el-card>
                 </template>
@@ -202,8 +216,21 @@
                     </div>
                 </el-card>
             </el-form-item>
-            <el-form-item label="字幕" style="margin-bottom: -20px;">
+            <el-form-item label="字幕">
                 <el-button type="info" size="small" @click.native="addSubtitle">添加</el-button>
+            </el-form-item>
+            <el-form-item label="完整台词">
+                <input type="file" id="allLrc" @change="uploadLrc()" name="lrc">
+                <el-progress size="small" style="width: 70%;" :percentage="formData.lrcPercent"></el-progress>
+                <div v-show="formData.lrcName">
+                   已选台词名称：<span class="mr-10" v-model="formData.lrcName">{{ formData.lrcName }}</span>
+                </div>
+            </el-form-item>
+            <el-form-item label="完整视频" style="margin-bottom: -20px;">
+                <input type="file" id="allVideo" @change="uploadVideo()" name="video">
+                <el-progress size="small" style="width: 70%;" :percentage="formData.videoPercent"></el-progress>
+                <div v-show="formData.demoId">
+                    已选视频id：<span class="mr-10" v-model="formData.demoId">{{ formData.demoId }}</span></div>
             </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
@@ -234,7 +261,12 @@
                     musicId: '',
                     materialType: '0',
                     materialJson: [],
-                    subtitleJson: []
+                    subtitleJson: [],
+                    lrcUrl: '',
+                    lrcName: '',
+                    demoId : '',
+                    lrcPercent: 0,
+                    VideoPercent: 0
                 },
                 formSelect: false,
                 searchMaterial: { //搜索素材库
@@ -289,6 +321,11 @@
                                     });
                                     materialArr[k].data.materialId = materialArr[k].data.materialId + ',' + materialArr[k].data.materialName;
                                 }
+                                materialArr[k].data.prompt = materialArr[k].data.prompt ? materialArr[k].data.prompt : '';
+                                materialArr[k].data.lrcPer = 0; // 上传的进度条
+                                materialArr[k].data.videoPer = 0;
+                                materialArr[k].data.promptName = materialArr[k].data.promptName ? materialArr[k].data.promptName : '';
+                                materialArr[k].data.exampleVideoId = materialArr[k].data.exampleVideoId ? materialArr[k].data.exampleVideoId : '';
                             }
                             data.subtitleDtoList = data.subtitleDtoList.map(function (item) {
                                 item.wordPositionId = item.wordPositionId + '';
@@ -301,7 +338,10 @@
                                 musicId: data.musicId,
                                 materialType: '0',
                                 materialJson: materialArr,
-                                subtitleJson: data.subtitleDtoList
+                                subtitleJson: data.subtitleDtoList,
+                                lrcUrl: data.prompt,
+                                lrcName: data.promptName,
+                                demoId : data.demoId ? data.demoId : ''
                             }
                         } catch (error) {
                             util.jsErrNotify(error);
@@ -314,6 +354,12 @@
                     clearFile.outerHTML = clearFile.outerHTML;
                 }
                 _self.fileUpload.percentage = 0;
+                if(document.getElementById('allLrc')){
+                    document.getElementById('allLrc').value = '';
+                }
+                if(document.getElementById('allVideo')){
+                    document.getElementById('allVideo').value = '';
+                } 
             }
         },
         methods: {
@@ -325,47 +371,55 @@
                 para.append("playId", _self.formData.playId);
                 para.append("showType", _self.formData.showType);
                 para.append("musicId", _self.formData.musicId);
+                if( _self.formData.lrcUrl != null ){
+                    para.append("completeLinesUrl", _self.formData.lrcUrl);
+                    para.append("completeLinesFileName", _self.formData.lrcName);
+                }
+                para.append("demoId", _self.formData.demoId == undefined ? '' : _self.formData.demoId);
                 //处理需要转换的素材数据
                 let materialObj = _self.formData.materialJson;
                 let materialArr = [];
                 for (var k = 0, length = materialObj.length; k < length; k++) {
                     if (materialObj[k].type == 0) {
                         materialArr.push({
-                            type: materialObj[k].type,
-                            data: {
-                                autoId: k + 1,
-                                speed: materialObj[k].data.speed,
-                                second: materialObj[k].data.second,
-                                filterId: materialObj[k].data.filterId,
-                                muteOrNot: Number(materialObj[k].data.muteOrNot)
+                            'type': materialObj[k].type,
+                            'data': {
+                                'autoId': k + 1,
+                                'speed': materialObj[k].data.speed,
+                                'second': materialObj[k].data.second,
+                                'filterId': materialObj[k].data.filterId,
+                                'muteOrNot': Number(materialObj[k].data.muteOrNot),
+                                'prompt': materialObj[k].data.prompt,
+                                'promptName': materialObj[k].data.promptName,
+                                'exampleVideoId': materialObj[k].data.exampleVideoId
                             }
                         });
                     } else if (materialObj[k].type == 1) {
                         materialArr.push({
-                            type: materialObj[k].type,
-                            data: {
-                                autoId: k + 1,
-                                turnTypeId: materialObj[k].data.turnTypeId
+                            'type': materialObj[k].type,
+                            'data': {
+                                'autoId': k + 1,
+                                'turnTypeId': materialObj[k].data.turnTypeId
                             }
                         });
                     } else if (materialObj[k].type == 2) {
                         let str = materialObj[k].data.materialId;
                         materialArr.push({
-                            type: materialObj[k].type,
-                            data: {
-                                autoId: k + 1,
-                                filterId: materialObj[k].data.filterId,
-                                muteOrNot: Number(materialObj[k].data.muteOrNot),
-                                materialId: str.split(',')[0],
-                                materialName: str.split(',')[1]
+                            'type': materialObj[k].type,
+                            'data': {
+                                'autoId': k + 1,
+                                'filterId': materialObj[k].data.filterId,
+                                'muteOrNot': Number(materialObj[k].data.muteOrNot),
+                                'materialId': str.split(',')[0],
+                                'materialName': str.split(',')[1]
                             }
                         });
                     } else if (materialObj[k].type == 3) {
                         materialArr.push({
-                            type: materialObj[k].type,
-                            data: {
-                                autoId: k + 1,
-                                repeatId: materialObj[k].data.repeatId
+                            'type': materialObj[k].type,
+                            'data': {
+                                'autoId': k + 1,
+                                'repeatId': materialObj[k].data.repeatId
                             }
                         });
                     }
@@ -453,15 +507,20 @@
             },
             addMaterial() { //增加素材组合dom
                 this.formData.materialJson.push({
-                    type: this.formData.materialType,
-                    data: {
-                        speed: '0',
-                        repeatId: 1,
-                        second: 0,
-                        filterId: 0,
-                        muteOrNot: false,
-                        turnTypeId: '0',
-                        materialId: []
+                    'type': this.formData.materialType,
+                    'data': {
+                        'speed': '0',
+                        'repeatId': 1,
+                        'second': 0,
+                        'filterId': 0,
+                        'muteOrNot': false,
+                        'turnTypeId': '0',
+                        'materialId': [],
+                        'prompt': '',
+                        'promptName': '',
+                        'lrcPer': 0,
+                        'videoPer': 0,
+                        'exampleVideoId': ''
                     }
                 });
             },
@@ -573,6 +632,180 @@
             handleMusicChange(value){ //更改背景音乐选择
                 this.searchMusic.id = value;
                 this.formData.musicId = value;
+            },
+            uploadLrc(index){ // 上传台词
+                let _self = this;
+                let file;
+                if(index == undefined){ // 未传递index，为完整台词
+                    file = document.getElementById('allLrc').files[0];
+                } else {
+                    file = _self.$refs['lrc' + index][0].files[0];
+                }
+                if (!file) { //未选择文件
+                    return;
+                }
+
+                const isLrc = file.name.slice(-3) === 'lrc';
+                if (!isLrc) {
+                    if(index == undefined){
+                        document.getElementById('allLrc').value = '';
+                    }else{
+                        _self.$refs['lrc' + index][0].value = '';
+                    }
+                    _self.$message.error('请选择lrc格式的文件');
+                    return;
+                }
+
+                if(index == undefined){
+                    _self.formData.lrcPercent = 0;
+                }else{
+                    _self.formData.materialJson[index].data.lrcPer = 0;
+                }
+
+                let para = {
+                    contentType: file.type,
+                    fileName: file.name
+                };
+                httpGet('lrcSign', para, _self, function (res) { //服务器端获取上传所需签名
+                    try {
+                        let { error, status,data } = res;
+                        Ks3.Ks3.config.baseUrl = data.url;
+                        Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
+                        Ks3.Ks3.config.bucket = data.bucketName;
+                        Ks3.Ks3.putObject({
+                            Key: data.formParam.key,
+                            File: file,
+                            ACL: 'public-read',
+                            ProgressListener: progressFunction, //上传进程
+                            Signature: data.formParam.signature
+                        }, function (err) {
+                            if (err) { //上传失败
+                                _self.$message({
+                                    message: JSON.stringify(err),
+                                    type: 'error'
+                                });
+                                if(index == undefined){
+                                    _self.formData.lrcPercent = 0;
+                                    document.getElementById('allLrc').value = '';
+                                }else{
+                                    _self.$refs['lrc' + index][0].value = '';
+                                    _self.formData.materialJson[index].data.lrcPer = 0;
+                                }
+                            } else { // 上传成功，修改赋值
+                                if(index == undefined){ // 未传递index，为完整台词
+                                    _self.formData.lrcUrl = data.formParam.key;
+                                    _self.formData.lrcName = file.name;
+                                } else {
+                                    _self.formData.materialJson[index].data.prompt = data.formParam.key;
+                                    _self.formData.materialJson[index].data.promptName = file.name;
+                                }   
+                            }
+                        });
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+                function progressFunction(e) {
+                    if (e.lengthComputable) {
+                        let percent = parseInt((e.loaded / e.total) * 100);
+                        if(index == undefined){
+                            _self.formData.lrcPercent = percent;
+                        }else{
+                            _self.formData.materialJson[index].data.lrcPer = percent;
+                        }
+                    }
+                }
+            },
+            uploadVideo(index){ // 上传示范视频
+                let _self = this;
+                let file;
+
+                if(index == undefined){ // 未传递index，为完整视频
+                    file = document.getElementById('allVideo').files[0];
+                } else {
+                    file = _self.$refs['video' + index][0].files[0];
+                }
+                if (!file) { //未选择文件
+                    return;
+                }
+                const isMp4 = file.type === 'video/mp4';
+                if (!isMp4) {
+                    if(index == undefined){
+                        document.getElementById('allVideo').value = '';
+                    }else{
+                        _self.$refs['video' + index][0].value = '';
+                    }
+                    _self.$message.error('请选择mp4格式文件');
+                    return;
+                }
+
+                if(index == undefined){
+                    _self.formData.videoPercent = 0;
+                }else{
+                    _self.formData.materialJson[index].data.videoPer = 0;
+                }
+
+                let para = {
+                    contentType: file.type,
+                    fileName: file.name
+                };
+                httpGet('videoSign', para, _self, function (res) { //服务器端获取上传所需签名
+                    try {
+                        let { error, status,data } = res;
+                        Ks3.Ks3.config.baseUrl = data.url;
+                        Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
+                        Ks3.Ks3.config.bucket = data.bucketName;
+                        Ks3.Ks3.putObject({
+                            Key: data.formParam.key,
+                            File: file,
+                            ACL: 'public-read',
+                            ProgressListener: progressFunction, //上传进程
+                            Signature: data.formParam.signature
+                        }, function (err) {
+                            if (err) { //上传失败
+                                _self.$message({
+                                    message: JSON.stringify(err),
+                                    type: 'error'
+                                });
+                                if(index == undefined){
+                                    _self.formData.videoPercent = 0;
+                                    document.getElementById('allVideo').value = '';
+                                }else{
+                                    _self.$refs['video' + index][0].value = '';
+                                    _self.formData.materialJson[index].data.videoPer = 0;
+                                }
+                            } else { //上传成功回调
+                                let paras = new FormData();
+                                paras.append("objectKey", data.formParam.key);
+                                paras.append("name", file.name);
+                                httpPost('videoUpload', paras, _self, function (res) {
+                                    try {
+                                        let { error, status,data } = res;
+                                        if(index == undefined){ // 未传递index，为完整台词
+                                            _self.formData.demoId = data.id;
+                                        } else {
+                                            _self.formData.materialJson[index].data.exampleVideoId = data.id;
+                                        } 
+                                    } catch (error) {
+                                        util.jsErrNotify(error);
+                                    }
+                                })
+                            }
+                        });
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+                function progressFunction(e) {
+                    if (e.lengthComputable) {
+                        let percent = parseInt((e.loaded / e.total) * 100);
+                        if(index == undefined){
+                            _self.formData.videoPercent = percent;
+                        }else{
+                            _self.formData.materialJson[index].data.videoPer = percent;
+                        }
+                    }
+                }
             }
         },
         watch: {

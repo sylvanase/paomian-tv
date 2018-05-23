@@ -3,7 +3,7 @@
         <el-form :model="likeData" label-width="80px" :rules="likeRules" ref="likeData"
                  style="margin-bottom: -20px;">
             <el-form-item label="数量" prop="num" style="margin-bottom: -20px;">
-                <el-input-number placeholder="单次限制最多1000个" step="1" :min="0" :max="1000"
+                <el-input-number placeholder="请输入点赞数" step="1" :min="0" 
                                  v-model="likeData.num" @keyup.enter.native="formSubmit"></el-input-number>
             </el-form-item>
         </el-form>

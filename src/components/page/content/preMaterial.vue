@@ -22,7 +22,7 @@
         <!--表格-->
         <el-table v-loading="tableLoading" class="table-expand" :data="tableList" stripe border :max-height="tableHeight" style="width: 100%;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
-            <el-table-column prop="materialName" label="片段名称"></el-table-column>
+            <el-table-column prop="name" label="片段名称"></el-table-column>
             <el-table-column prop="typeStr" label="片段类型" width="100">
             </el-table-column>
             <el-table-column label="相关电影">
@@ -32,7 +32,7 @@
             </el-table-column>
             <el-table-column label="片段属性">
                 <template scope="scope">
-                    {{ scope.row.materialAttrs.join(' , ') }}
+                    {{ scope.row.attributeNames.join(' , ') }}
                 </template>
             </el-table-column>
 
@@ -139,9 +139,9 @@
                     return;
                 }
                 if (row.showType == 0 || row.showType == 2) { //横竖屏的播放竖屏资源
-                    _url = row.verticalUrl;
+                    _url = row.vertVideoUrl;
                 } else {
-                    _url = row.horizontalUrl;
+                    _url = row.horiVideoUrl;
                 }
                 this.videoVisible = true;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'

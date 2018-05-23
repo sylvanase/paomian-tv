@@ -10,7 +10,7 @@
                 <input type="file" name="file" id="imgFile"/>
 
                 <div class="el-upload__tip" style="line-height: 20px;">
-                    宽高要求：710*120
+                    宽高要求：750*360
                 </div>
             </el-form-item>
             <el-form-item label="外链" prop="link" style="margin-bottom: -20px;">

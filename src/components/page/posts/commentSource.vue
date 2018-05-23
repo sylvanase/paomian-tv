@@ -232,6 +232,7 @@
 
                 if(_self.filters.type == '5'){ // 如果类型为5的话，查询所有非通用类型评论
                     _self.filters.kw = '';
+                    paras.vpId = _self.postsData.id;
                 }
 
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw

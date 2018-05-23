@@ -9,7 +9,7 @@
             <el-form-item label="banner图" required>
                 <input type="file" name="file" id="topicFile"/>
                 <div class="el-upload__tip" style="line-height: 20px;">
-                    宽高要求：750*330
+                    宽高要求：750*360
                 </div>
             </el-form-item>
             <el-form-item label="外链" prop="link" style="margin-bottom: -20px;">

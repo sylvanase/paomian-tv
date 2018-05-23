@@ -156,18 +156,23 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="280" fixed="right">
+            <el-table-column label="操作" width="300" fixed="right">
                 <template scope="scope">
-                    <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
-                    <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
-                               @click="userDel(scope.row)">
-                        {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
-                    </el-button>
-                    <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
-                               @click="careUser(scope.row)">
-                        {{ scope.row.userCare == 1 ? '取关' : '关注' }}
-                    </el-button>
-                    <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
+                    <el-button-group>
+                        <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
+                                   @click="userDel(scope.row)">
+                            {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
+                        </el-button>
+                        <el-button :type="scope.row.userCare == 1 ? 'danger' : 'info'" size="small"
+                                   @click="careUser(scope.row)">
+                            {{ scope.row.userCare == 1 ? '取关' : '关注' }}
+                        </el-button>
+                        <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
+                        <el-button :disabled="scope.row.isShield == 1 ? true : false" size="small" type="danger" @click="shieldUser(scope.row)">
+                            {{ scope.row.isShield == 1 ? '取消屏蔽' : '屏蔽' }}
+                        </el-button>
+                    </el-button-group>
                 </template>
             </el-table-column>
         </el-table>
@@ -619,6 +624,22 @@
                 this.fanData.id = '';
                 this.fanData.num = 0;
                 this.fanData.loading = false;
+            },
+            shieldUser(row){ // 屏蔽该用户
+                let _self = this;
+                let paras = {
+                    uid: row.id,
+                    operation: Number(!row.isShield)
+                };
+                httpGet('userShield', paras, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        row.isShield = Number(!row.isShield);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
             }
         },
         mounted() {

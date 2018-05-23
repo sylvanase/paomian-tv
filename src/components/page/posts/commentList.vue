@@ -4,7 +4,25 @@
         <el-col :span="24" class="toolbar">
             <el-form :inline="true" :model="filters">
                 <el-form-item>
+                    <el-input v-model="filters.kw" placeholder="ID/关键字" icon="circle-close"
+                              :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-select v-model="filters.attr" multiple @change="fetchList" placeholder="选择分类" style="width: 200px;">
+                        <!-- <el-option label="全部分类" value=""></el-option> -->
+                        <el-option v-for="item in attrList" :key="item.id" :label="item.text"
+                                   :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="fetchList">查询</el-button>
+                </el-form-item>
+                <el-form-item>
                     <el-button type="primary" @click="showForm()">新增</el-button>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="info" @click.native="batchVisible = true">批量添加</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -60,6 +78,19 @@
             </div>
         </el-dialog>
 
+        <!--  批量导入评论  -->
+        <el-dialog title="批量导入评论" v-model="batchVisible" size="tiny" @close="resetBatch">
+            <el-form label-width="80px">
+                <el-form-item label="表格文件" style="margin-bottom: -20px;">
+                    <input type="file" id="comFile" name="excel">
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="batchVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="batchSubmit" :loading="batchLoading">导入</el-button>
+            </div>
+        </el-dialog>
+
     </section>
 </template>
 
@@ -70,6 +101,10 @@
     export default {
         data() {
             return {
+                filters:{
+                    kw: '',
+                    attr: []
+                },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 tableHeight: '100%',
@@ -90,7 +125,9 @@
                     api: 'commentAdd', // 默认调新增接口
                     attrIds: []
                 },
-                attrList: []
+                attrList: [],
+                batchVisible: false, // 显示、隐藏导入表单弹窗
+                batchLoading: false
             }
         },
         methods: {
@@ -101,13 +138,22 @@
             fetchList() {    //获取列表
                 let _self = this;
                 _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
-                let paras = {
+                /*let paras = {
                     offset: 0,
-                    size: 10
-                };
-                paras.offset = (_self.page - 1) * paras.size;
+                    size: 10,
+                    attrIds: _self.filters.attr
+                };*/
+                let paras = new FormData();
+                paras.append('offset', (_self.page - 1) * 10);
+                paras.append('size', 10);
+                paras.append('attrIds', _self.filters.attr);
+                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.append('keyWord', _self.filters.kw);
+                } else {
+                    paras.append('id', _self.filters.kw);
+                }
                 _self.tableLoading = true;
-                httpGet('commentList', paras, _self, function (res) {
+                httpPost('commentList', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
@@ -206,6 +252,37 @@
                         }
                     })
                 });
+            },
+            batchSubmit(){ // 导入评论表格
+                let _self = this,
+                    file = document.getElementById('comFile').files[0];
+                if(file.length == 0){
+                    _self.$message.warning('请选择要上传的excel文件');
+                }
+                let paras = new FormData();
+                paras.append("excelFile", file);
+                _self.batchLoading = true;
+                httpPost('commentExcelAdd', paras, _self, function (res) {
+                    _self.batchLoading = false;
+                    try {
+                        _self.$message.success('导入成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                },function(res){
+                    _self.batchLoading = false;
+                    _self.$message.error(res.data.error);
+                })
+            },
+            resetBatch(){ // 重置input
+                let _self = this;
+                document.getElementById('comFile').value = '';
+                _self.batchLoading = false;
+            },
+            resetSearch() {
+                this.filters.kw = '';
+                this.fetchList();
             }
         },
         mounted() {

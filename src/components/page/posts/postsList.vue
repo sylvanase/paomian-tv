@@ -37,6 +37,13 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
+                    <el-select v-model="filters.checked" @change="fetchList" style="width: 110px;">
+                        <el-option label="审核状态" value=""></el-option>
+                        <el-option label="已审核" value="1"></el-option>
+                        <el-option label="未审核" value="0"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
                     <el-input type="number" v-model="filters.minLikeCount" min="0" max="5000" placeholder="最小赞数"
                               style="width: 100px;"></el-input>
                     <span> - </span>
@@ -55,7 +62,16 @@
         <!--表格-->
         <el-table v-loading="tableLoading" :data="tableList" stripe border :max-height="tableHeight"
                   style="width: 100%;">
-            <el-table-column prop="id" label="id" width="180" fixed></el-table-column>
+            <el-table-column prop="username" label="发帖人" width="150" fixed>
+                <template scope="scope">
+                    <div :ref="'user' + scope.$index">
+                        <router-link target="_blank"  :to="{ name: '用户列表', query: { uid: scope.row.uid }}" @mouseover.native="popUser(scope.row.uid, scope.$index)" @mouseout.native="hideUser(false)">
+                            {{ scope.row.username }}
+                        </router-link>
+                    </div>
+                </template>
+            </el-table-column>
+            <!-- <el-table-column prop="id" label="id" width="180"></el-table-column> -->
             <el-table-column prop="coverUrl" label="封面(点击播放)" width="135">
                 <template scope="scope">
                     <img @click="playVideo(scope.row)" v-if="scope.row.coverUrl !== ''"
@@ -64,23 +80,21 @@
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
-            <el-table-column prop="username" label="发帖人" min-width="150">
-                <template scope="scope">
-                    <!--<router-link target="_blank" :to="{ name: '用户列表', params: { uid: scope.row.uid }}">{{ scope.row.username }}</router-link>-->
-                    <router-link target="_blank" :to="{ name: '用户列表', query: { uid: scope.row.uid }}">{{
-                        scope.row.username }}
-                    </router-link>
-                </template>
-            </el-table-column>
+            
             <el-table-column prop="videoText" min-width="200" label="帖子描述">
                 <template scope="scope">
                     {{ scope.row.topicName ? '#'+ scope.row.topicName + '#' : '' }}{{ scope.row.videoText }}
                 </template>
             </el-table-column>
-            <el-table-column prop="videoInfoPo.likeCount" label="喜欢"></el-table-column>
-            <el-table-column prop="videoInfoPo.commentCount" label="评论数"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
-            <!--<el-table-column prop="lastBarrageTime" label="最后评论时间" min-width="180"></el-table-column>-->
+            <el-table-column prop="checker" label="审核人"></el-table-column>
+            <el-table-column label="显示">
+                <template scope="scope">
+                    <el-tag :type="scope.row.isDel == 0 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.isDel == 0 ? '是' : '否' }}
+                    </el-tag>
+                </template>
+            </el-table-column>
             <el-table-column label="精华" width="80">
                 <template scope="scope">
                     <el-tag :type="scope.row.isEssence == 1 ? 'success' : 'danger'"
@@ -88,11 +102,8 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="来源">
-                <template scope="scope">
-                    {{ scope.row.publishType == 1 ? '后台' : '客户端' }}
-                </template>
-            </el-table-column>
+            <el-table-column prop="videoInfoPo.likeCount" label="喜欢"></el-table-column>
+            <el-table-column prop="videoInfoPo.commentCount" label="评论数"></el-table-column>
             <el-table-column label="观看量">
                 <template scope="scope">
                     {{ scope.row.videoInfoPo == null ? '0' : scope.row.videoInfoPo.viewShowCount }}
@@ -103,19 +114,16 @@
                     {{ scope.row.videoInfoPo.viewUserCount == null ? '0' : scope.row.videoInfoPo.viewUserCount }}
                 </template>
             </el-table-column>
-            <el-table-column label="显示">
+            <el-table-column label="来源">
                 <template scope="scope">
-                    <el-tag :type="scope.row.isDel == 0 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.isDel == 0 ? '是' : '否' }}
-                    </el-tag>
+                    {{ scope.row.publishType == 1 ? '后台' : '客户端' }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="320" fixed="right">
+            <el-table-column label="操作" width="260" fixed="right">
                 <template scope="scope">
-                    <div>
+                    <el-button-group>
                         <el-button size="small" @click="showForm(scope.row, 'detail')">编辑</el-button>
-                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success"
-                                   @click="showAddLike(scope.row)">点赞
+                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success"  @click="showAddLike(scope.row)">点赞
                         </el-button>
                         <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info"
                                    @click="showForm(scope.row, 'comment')">加评论
@@ -125,18 +133,21 @@
                             <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
                             {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
                         </el-button>
-                    </div>
-                    <div class="mt-10">
+                    </el-button-group>
+                    <el-button-group class="mt-10">
                         <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
                                    @click="handleEssence(scope.row)">
                             {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
                         <el-button size="small" @click="showForm(scope.row, 'postsComment')">帖子评论</el-button>
+                        <el-button size="small" :disabled="scope.row.checked == 1 ? true : false" type="danger" @click="checkPost(scope.row)">
+                            {{ scope.row.checked == 1 ? '已审核' : '审核' }}
+                        </el-button>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : 'warning'" size="small"
                                    @click="postsDel(scope.row)">
                             {{ scope.row.isDel == 0 ? '删除' : '恢复' }}
                         </el-button>
-                    </div>
+                    </el-button-group>
                 </template>
             </el-table-column>
         </el-table>
@@ -148,6 +159,60 @@
             </el-pagination>
         </el-col>
 
+        <!-- hover显示用户详情 -->
+        <div v-show="showPopUser" ref="userDetail" style="width: 350px;position: fixed;background-color: #fff;border: 1px solid #eee;border-radius5px;padding: 20px;z-index: 999;" @mouseover="hideUser(true)" @mouseout="hideUser(flase)">
+            <el-row style="padding-bottom: 10px;border-bottom: 1px solid #eee;">
+                <el-col :span="16">
+                    <div>
+                        用户名：{{ userData.name }}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        地&nbsp;&nbsp;址：{{ userData.address }}
+                    </div>
+                    <div style="margin-top: 10px;">
+                        用户分类：{{ userData.category}}
+                    </div style="margin-top: 10px;">
+                    <div style="margin-top: 10px;">
+                        手机号：{{ userData.phone }}
+                    </div style="margin-top: 10px;">
+                    <div>
+                        注册时间：{{ userData.registerTime }}
+                    </div>
+                </el-col>
+                <el-col :span="8">
+                    <img v-if="userData.avatar !== ''" style="width:100px;height: 100px; border-radius: 50%;" :src="userData.avatar" alt="用户头像"/>
+                    <img v-else style="width:100px;height: 100px; border-radius: 50%;" src="../../../../static/img/TV.png" alt="用户头像"/>
+                </el-col>
+            </el-row>
+            <el-row style="padding: 10px;">
+                <el-col :span="12">
+                    粉丝数： {{ userData.fans}}
+                </el-col>
+                <el-col :span="12">
+                    关注数：{{ userData.follow}}
+                </el-col>
+                <el-col :span="12" style="margin-top: 10px;">
+                    喜&nbsp;&nbsp;欢：{{ userData.like}}
+                </el-col>
+                <el-col :span="12" style="margin-top: 10px;">
+                    帖子数：{{ userData.posts}}
+                </el-col>
+            </el-row> 
+            <el-row>
+                <el-col :span="24">
+                    <el-button size="small" @click="showUserForm()">编辑</el-button>
+                    <el-button :type="userData.userCare == 1 ? 'danger' : 'info'" size="small"
+                        @click="careUser()">
+                        {{ userData.userCare == 1 ? '取关' : '关注' }}
+                    </el-button>
+                    <el-button size="small" @click="addFan()">加粉丝</el-button>
+                    <el-button :disabled="userData.isShield == 1 ? true : false" size="small" type="danger" @click="shieldUser">
+                        {{ userData.isShield == 1 ? '取消屏蔽' : '屏蔽' }}
+                    </el-button>
+                </el-col>
+            </el-row>  
+        </div>
+
         <!--帖子编辑-->
         <v-detail :postsData="postsData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
@@ -156,23 +221,37 @@
             <div style="text-align: center;" v-html="videoHtml"></div>
         </el-dialog>
 
-        <!--为帖子加评论-->
-        <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
-
-        <!--为帖子加弹幕-->
-        <!--<v-barrage :postsData="postsData" v-model="isShowBarrage" v-on:refresh="fetchList"></v-barrage>-->
-
-        <!--帖子弹幕列表-->
-        <!--<v-barrage-list :postsData="postsData" v-model="isShowPostsBarrage" v-on:refresh="fetchList"></v-barrage-list>-->
-
-        <!--为帖子点赞-->
-        <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
-
         <!--为评论点赞-->
         <v-comment-like :commentId="commentId" v-model="comLikeVisible"></v-comment-like>
 
         <!--帖子评论列表-->
         <v-comment-list :postsData="postsData" v-model="isShowPostsComment" v-on:like="showCommentLike" v-on:refresh="fetchList"></v-comment-list>
+
+
+        <!--为帖子加评论-->
+        <v-comment-add :postsData="postsData" v-model="isShowComment" v-on:refresh="fetchList"></v-comment-add>
+
+        <!--编辑用户-->
+        <v-user-detail :userId="userData.id" :category="userCatList" v-model="isShowUser"></v-user-detail>
+
+        <!--为帖子点赞-->
+        <v-like-add :postsId="addLikeId" v-model="likeVisible" v-on:refresh="fetchList"></v-like-add>
+
+        <!--增加粉丝-->
+        <el-dialog :title="fanData.title" v-model="fanVisible" @close="resetFan" size="tiny">
+            <el-form :model="fanData" label-width="80px" :rules="fanRules" ref="fanData" style="margin-bottom: -20px;">
+                <el-form-item label="粉丝数量" prop="num" style="margin-bottom: -20px;">
+                    <el-input-number placeholder="单次限制最多100个" step="1" :min="1" :max="100"
+                                     v-model="fanData.num"></el-input-number>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="fanVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="fanSubmit" :loading="fanData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
+
     </section>
 </template>
 
@@ -184,6 +263,7 @@
     import vCommentList from './postsCommentList.vue'
     import vLikeAdd from './likeAdd.vue'
     import vCommentLike from './commentLike.vue' // 为评论点赞
+    import vUserDetail from '../user/userDetail.vue'
 
     export default {
         components: {
@@ -191,7 +271,8 @@
             vCommentAdd,
             vCommentList,
             vLikeAdd,
-            vCommentLike
+            vCommentLike,
+            vUserDetail,
         },
         data() {
             let validateNum = (rule, value, callback) => {
@@ -213,7 +294,8 @@
                     isDel: '',
                     isEssence: '',
                     minLikeCount: '',
-                    maxLikeCount: ''
+                    maxLikeCount: '',
+                    checked: ''
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
@@ -225,13 +307,43 @@
                 isShowPostsComment: false, //显示、隐藏视频评论列表
                 postsData: {},
                 postsId: '', //帖子id
-                isShowVideo: false, //显示、隐藏话题视频列表
+                // isShowVideo: false, //显示、隐藏话题视频列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
                 likeVisible: false, // 显示、隐藏点赞界面
                 addLikeId: '',  // 点赞的帖子id
                 comLikeVisible: false, // 显示、隐藏评论点赞界面
-                commentId: '' // 需要点赞的评论id
+                commentId: '', // 需要点赞的评论id
+                showPopUser: false, // 显示用户详情悬浮
+                userData: { // 用户详情
+                    id: '',
+                    avatar: '',
+                    name:'',
+                    address:'',
+                    category: [],
+                    phone: '',
+                    registerTime: '',
+                    fans: 0,
+                    like: 0,
+                    posts: 0,
+                    follow: 0,
+                    isShield: '',
+                    userCare: ''
+                },
+                userCatList: [],
+                _timer: '', // 显示用户详情弹窗的定时器
+                isShowUser: false, // 显示、隐藏用户编辑页
+                isShowFan: false, //显示、隐藏粉丝列表
+                isShowFollow: false, //显示、隐藏关注列表
+                isShowVideo: false, //显示、隐藏帖子列表
+                isShowLike: false, //显示、隐藏喜欢列表
+                fanVisible: false,
+                fanData: { // 为用户增加粉丝
+                    title: '',
+                    loading: false,
+                    num: 0,
+                    id: ''
+                },
             }
         },
         methods: {
@@ -253,7 +365,8 @@
                     minLikeCount: _self.filters.minLikeCount,
                     maxLikeCount: _self.filters.maxLikeCount,
                     kw: '',
-                    id: ''
+                    id: '',
+                    checked: _self.filters.checked
                 };
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
                     paras.kw = _self.filters.kw;
@@ -371,6 +484,137 @@
             showCommentLike(row) {
                 this.comLikeVisible = true;
                 this.commentId = row.id
+            },
+            popUser(uid, index){  // 显示用户详情
+                let _self = this,
+                    domLinkStyle = _self.$refs['user' + index].childNodes[0].getBoundingClientRect(), // 表格内用户昵称dom
+                    domPop = _self.$refs['userDetail']; // 用户详情dom
+                // 获取用户详情
+                httpGet('userList', {id: uid}, _self, function (res) {
+                    try {
+                        let data = res.data.content[0];
+                        _self.userData = {
+                            id: uid,
+                            name: data.username,
+                            avatar: data.avatarUrl,
+                            registerTime: util.timestampFormat(data.createTime),
+                            address: data.address,
+                            category: data.userAttrNames.join(' , '),
+                            phone: data.phone,
+                            fans: data.fansCount,
+                            like: data.likeCount,
+                            posts: data.postCount,
+                            follow: data.carsCount,
+                            isShield: data.isShield,
+                            userCare: data.userCare
+                        };
+                        domPop.style.top = (domLinkStyle.top + 10) + 'px';
+                        domPop.style.left = 270 + 'px';
+                        _self.showPopUser = true;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            hideUser(is){ // 隐藏用户详情
+                let _self = this;
+                if(!is){ // 隐藏详情
+                    _self._timer = setTimeout(function(){
+                        _self.showPopUser = is;
+                    }, 1000);
+                } else { // 不隐藏
+                    clearTimeout(_self._timer);
+                    _self.showPopUser = is;
+                }  
+            },
+            showUserForm() { //显示用户编辑页
+                this.isShowUser = true;
+            },
+            fetchCat() { // 获取用户分类
+                let _self = this;
+                let paras = {
+                    offset: 0,
+                    size: 9999
+                };
+                httpGet('userCategory', paras, _self, function (res) {
+                    try {
+                        let {data} = res;
+                        _self.userCatList = data.content;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            checkPost(row){ // 审核帖子
+                let _self = this;
+                httpGet('postsCheck', {id: row.id, text: '',advice: 0}, _self, function (res) {
+                    try {
+                        let {error, status, data} = res;
+                        _self.$message.success('操作成功');
+                        _self.fetchList();
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            careUser() { // 关注用户
+                let _self = this;
+                let paras = new FormData();
+                paras.append("uid", userData.id);
+                paras.append("status", Number(!userData.userCare));
+                _self.tableLoading = true;
+                httpPost('userCare', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('操作成功');
+                        userData.userCare = Number(!userData.userCare);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            shieldUser(){ // 屏蔽该用户
+                let _self = this;
+                let paras = {
+                    uid: userData.id,
+                    operation: Number(!userData.isShield)
+                };
+                httpGet('userShield', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('操作成功');
+                        userData.isShield = Number(!userData.isShield);
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            addFan() { // 显示增加粉丝弹窗
+                this.fanVisible = true;
+                this.fanData.id = this.userData.id;
+                this.fanData.title = '为"' + this.userData.name + '"增加粉丝数量'
+            },
+            fanSubmit() { // 提交增加的粉丝数
+                let _self = this;
+                let paras = new FormData();
+                paras.append("num", _self.fanData.num);
+                paras.append("followId", _self.fanData.id);
+                _self.fanData.loading = true;
+                httpPost('userFansAdd', paras, _self, function (res) {
+                    _self.fanData.loading = false;
+                    try {
+                        _self.$message.success('成功增加粉丝' + res.data + '个');
+                        _self.fanVisible = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                }, function (res) {
+                    _self.$message.error(res.data.error);
+                    _self.fanData.loading = false;
+                })
+            },
+            resetFan() { // 重置增加粉丝弹窗中的数据
+                this.fanData.id = '';
+                this.fanData.num = 0;
+                this.fanData.loading = false;
             }
         },
         mounted() {
@@ -380,9 +624,15 @@
             }
 
             this.fetchList();
+            this.fetchCat();
         }
     }
 </script>
 
-<style scoped>
+<style>
+.user-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
 </style>

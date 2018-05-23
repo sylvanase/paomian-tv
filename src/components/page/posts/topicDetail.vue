@@ -59,7 +59,7 @@
                 </el-form-item>
                 <el-form-item label="关联片段">
                     <template>
-                        <el-select style="width: 50%;" filterable :remote-method="handleMaterial" multiple
+                        <el-select style="width: 50%;" clearable filterable :remote-method="handleMaterial"
                                    :loading="searchMaterial.loading" remote v-model="formData.materialIds"
                                    placeholder="搜索关联片段">
                             <el-option v-for="item in searchMaterial.list" :key="item.id" :label="item.name"
@@ -143,7 +143,7 @@
                     playId: '', // 关联的剧本id
                     playAttrId: '', // 关联的剧本属性id
                     musicId: '', // 关联的音乐id
-                    materialIds: [], // 关联的片段id数组
+                    materialIds: '', // 关联的片段id
                     isPre: false, // 片段是否前置
                     isReco: true, // 是否进推荐，进推荐传0
                     coverId: '',
@@ -190,7 +190,7 @@
                         playId: '', // 关联的剧本id
                         playAttrId: '', // 关联的剧本属性id
                         musicId: '', // 关联的音乐id
-                        materialIds: [], // 关联的片段id数组
+                        materialIds: '', // 关联的片段id数组
                         isPre: false, // 片段是否前置
                         isReco: !Boolean(_data.topicVideoReco),
                         coverId: _data.coverId,
@@ -202,7 +202,7 @@
                     };
                     _self.timeVisible = !Boolean(_data.isDel);
                     _self.wordCount(_data.description);
-                    if(_data.topicType != 0 &&  typeof (_data.topicTypeJson) == 'string'){
+                    if (_data.topicType != 0 && typeof (_data.topicTypeJson) == 'string') {
                         _data.topicTypeJson = JSON.parse(_data.topicTypeJson);
                     }
                     if (_data.topicType == 1) { // 单个剧本
@@ -213,7 +213,7 @@
                     }
                     if (_data.topicType == 3) { // 音乐片段
                         _self.formData.musicId = _data.topicTypeJson.musicId; // 音乐id
-                        _self.formData.materialIds = _data.topicTypeJson.materialId; // 片段id
+                        _self.formData.materialIds = _data.topicTypeJson.materialId[0]; // 片段id
                         _self.formData.isPre = Boolean(_data.topicTypeJson.pre); // 是否前置
                     }
 
@@ -271,7 +271,7 @@
                 paras.append("playId", _self.formData.topicType == 1 ? _self.formData.playId : '');
                 paras.append("playAttrId", _self.formData.topicType == 2 ? _self.formData.playAttrId : '');
                 paras.append("musicId", _self.formData.topicType == 3 ? _self.formData.musicId : '');
-                paras.append("materialIds", _self.formData.topicType == 3 ? _self.formData.materialIds : []);
+                paras.append("materialIds", _self.formData.topicType == 3 ? [_self.formData.materialIds] : []);
                 paras.append("isPre", _self.formData.topicType == 3 ? Number(_self.formData.isPre) : '');
                 paras.append("topicVideoReco", Number(!_self.formData.isReco));
                 /* 结束 */
@@ -437,7 +437,7 @@
                     playId: '', // 关联的剧本id
                     playAttrId: '', // 关联的剧本属性id
                     musicId: '', // 关联的音乐id
-                    materialIds: [], // 关联的片段id数组
+                    materialIds: '', // 关联的片段id数组
                     isPre: false, // 片段是否前置
                     isReco: true, // 是否进推荐
                     coverId: '',
@@ -468,7 +468,7 @@
                         playId: '', // 关联的剧本id
                         playAttrId: '', // 关联的剧本属性id
                         musicId: '', // 关联的音乐id
-                        materialIds: [], // 关联的片段id数组
+                        materialIds: '', // 关联的片段id数组
                         isPre: false, // 片段是否前置
                         isReco: true, // 是否进推荐
                         coverId: '',

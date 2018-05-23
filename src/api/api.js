@@ -1,7 +1,11 @@
 import axios from 'axios';
 import qs from 'qs';
-import {Message} from 'element-ui';
-import {Notification} from 'element-ui'
+import {
+    Message
+} from 'element-ui';
+import {
+    Notification
+} from 'element-ui'
 
 let base = '';
 let header = {
@@ -122,6 +126,9 @@ let api = { //接口地址
     userCatAdd: '/user/category/add', // 新增用户分类
     userCatEdit: '/user/category/edit', // 编辑用户分类
     userCatDel: '/user/category/delete', // 删除用户分类
+    userShield: '/user/shield', // 封禁
+
+
 
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表
@@ -147,6 +154,8 @@ let api = { //接口地址
     postsBlocked: '/video/vpid_blocked', // 封禁视频
     postsUnblock: '/video/vpid_relieve', // 解封视频
 
+    postsCheck: '/video/check', // 审核帖子
+
     commentList: '/comment/list', // 评论库列表
     commentListDel: '/comment/delete', // 评论库删除
     commentListSearch: '/comment/add/list', // 为帖子增加评论时，所调用的评论库列表，带有查询参数
@@ -161,6 +170,10 @@ let api = { //接口地址
     commentRobotReplyList: '/comment/robot/reply/list', // 机器人评论库列表
     commentRobotReplyAdd: '/comment/robot/reply/add', // 机器人回复评论
     commentLikeAdd: '/comment/add/like', // 评论点赞
+
+    commentExcelAdd: '/comment/excel/batchAdd', // excel增加评论
+
+    //commentBatchAdd: '/comment/batch/add', // 批量增加评论
 
 
     topicList: '/topic/list', //话题列表
@@ -212,17 +225,17 @@ let api = { //接口地址
     linkEdit: '/link/edit', // 推广链接编辑
     linkDel: '/link/delete', // 推广链接删除
 
-    materialBannerList:'/page/material/list', // 页面素材列表
-    materialOnline:'/page/material/operation', // 页面素材上下线
-    materialBannerDel:'/page/material/delete', // 页面素材删除
-    materialBannerAdd:'/page/material/add', // 页面素材新增
-    materialBannerUpdate:'/page/material/update', // 页面素材时间更新
+    materialBannerList: '/page/material/list', // 页面素材列表
+    materialOnline: '/page/material/operation', // 页面素材上下线
+    materialBannerDel: '/page/material/delete', // 页面素材删除
+    materialBannerAdd: '/page/material/add', // 页面素材新增
+    materialBannerUpdate: '/page/material/update', // 页面素材时间更新
 
-    windowBannerList:'/float/window/list', // 悬浮窗列表
-    windowOnline:'/float/window/operation', // 悬浮窗上下线
-    windowBannerDel:'/float/window/delete', // 悬浮窗删除
-    windowBannerAdd:'/float/window/add', // 悬浮窗新增
-    windowBannerUpdate:'/float/window/update', // 悬浮窗时间更新
+    windowBannerList: '/float/window/list', // 悬浮窗列表
+    windowOnline: '/float/window/operation', // 悬浮窗上下线
+    windowBannerDel: '/float/window/delete', // 悬浮窗删除
+    windowBannerAdd: '/float/window/add', // 悬浮窗新增
+    windowBannerUpdate: '/float/window/update', // 悬浮窗时间更新
 
     noticeSend: '/notice/send', // 发送站内消息
 
@@ -239,9 +252,9 @@ let api = { //接口地址
     imgUpload: '/ks3/video_image_upload', //图片文件上传
     musicSign: '/ks3/signature/music', //音乐文件获取签名
     videoSign: '/ks3/signature/video', //视频文件获取签名
-    videoUpload: 'ks3/video_upload', //视频文件上传
-    musicUpload: 'ks3/music_upload', //音乐文件上传
-
+    videoUpload: '/ks3/video_upload', //视频文件上传
+    musicUpload: '/ks3/music_upload', //音乐文件上传
+    lrcSign: '/ks3/signature/lines', // 台词文件获取签名
 
 };
 
@@ -301,13 +314,13 @@ function httpErrorHandle(vm, res) { // 处理http的错误状态
 }
 
 /*
-* type：根据type获取接口地址
-* params：请求时的参数
-* vm： vue实例
-* callback：请求成功回调
-* errorBack：请求失败时回调，如果没有定义，则进行默认操作
-*
-* */
+ * type：根据type获取接口地址
+ * params：请求时的参数
+ * vm： vue实例
+ * callback：请求成功回调
+ * errorBack：请求失败时回调，如果没有定义，则进行默认操作
+ *
+ * */
 
 
 export const httpGet = (type, params, vm, callback, errorBack) => { //封装的axios的get方法
@@ -411,4 +424,3 @@ export const httpDel = (type, params, vm, callback, errorBack) => { //封装的a
         }
     )
 };
-
