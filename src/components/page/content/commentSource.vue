@@ -101,15 +101,13 @@
             },
             fetchList() {    //获取评论库列表
                 let _self = this;
-                let paras = {
-                    offset: 0,
-                    size: 10,
-                    id: _self.typeData.id,
-                    searchType: _self.type // 查询评论的类型，2为剧本
-                };
-                paras.offset = (_self.page - 1) * paras.size;
+                let paras = new FormData();
+                paras.append('size', 10);
+                paras.append('offset', (_self.page - 1) * 10);
+                paras.append('id', _self.typeData.id);
+                paras.append('searchType', _self.type);
                 _self.tableLoading = true;
-                httpGet('commentListSearch', paras, _self, function (res) {
+                httpPost('commentListSearch', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {data} = res;

@@ -8,6 +8,9 @@
                               :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
+                    <el-button type="primary" @click="fetchList">查询</el-button>
+                </el-form-item>
+                <el-form-item>
                     <el-button type="primary" @click="showForm()">新增</el-button>
                 </el-form-item>
             </el-form>
@@ -95,7 +98,8 @@
                     offset: 0,
                     size: 10,
                     keyWord: '',
-                    id: ''
+                    id: '',
+                    isListQuery: 1
                 };
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
                     paras.keyWord = _self.filters.kw;

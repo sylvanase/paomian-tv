@@ -1,8 +1,14 @@
 <template>
     <el-dialog :title="formTitle" :value="value" v-model="visible" @close="resetFormData">
-        <el-form :model="formData" label-width="80px" :rules="formRules" ref="formData">
+        <el-form :model="formData" label-width="120px" :rules="formRules" ref="formData">
             <el-form-item label="剧本名称" prop="name">
                 <el-input v-model.trim="formData.name" auto-complete="off"></el-input>
+            </el-form-item>
+            <el-form-item required label="ios最低版本号" prop="iosMinVersion">
+                <el-input v-model.trim.number="formData.iosMinVersion" auto-complete="off"></el-input>
+            </el-form-item>
+            <el-form-item required label="安卓最低版本号" prop="andMinVersion">
+                <el-input v-model.trim.number="formData.andMinVersion" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="剧本玩法">
                 <el-select v-model="formData.playType" placeholder="请选择" style="width: 50%;">
@@ -100,6 +106,17 @@
         name: 'vDetail',
         props: ['value', 'playData'],
         data() {
+            let checkNum = (rule, value, callback) => {
+                if(value === ''){
+                    callback(new Error('请输入版本号'));
+                } else {
+                    if(!Number.isInteger(value)){
+                        callback(new Error('版本号必须为整数'));
+                    } else {
+                        callback();
+                    }
+                } 
+            };
             return {
                 visible: false, //默认隐藏
                 showLoading: false,
@@ -113,6 +130,12 @@
                     description: [
                         {required: true, message: '请输入剧本描述', trigger: 'blur'},
                         {min: 1, max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur'}
+                    ],
+                    iosMinVersion: [
+                        {validator:checkNum,trigger:'blur'}
+                    ],
+                    andMinVersion: [
+                        {validator:checkNum,trigger:'blur'}
                     ]
                 },
                 formData: {
@@ -130,7 +153,10 @@
                     playAttrIds: [], //属性id及名称
                     playAttrNames: [],
                     keyword: [],
-                    playType: '0'
+                    playType: '0',
+                    iosMinVersion: '0',
+                    andMinVersion: '0',
+                    status: 0
                 },
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
@@ -238,6 +264,9 @@
                         para.append("playAttrIds", _self.formData.playAttrIds.join(','));
                         para.append("playType", _self.formData.playType);
                         para.append("kw", _self.formData.keyword.join(' '));
+                        para.append("iosMinVersion", _self.formData.iosMinVersion);
+                        para.append("andMinVersion", _self.formData.andMinVersion);
+                        para.append("status", _self.formData.status);
                         httpPost('contentPlayEdit', para, _self, function (res) {
                             _self.formLoading = false;
                             try {
@@ -423,7 +452,8 @@
                     playAttrIds: [], //属性id及名称
                     playAttrNames: [],
                     keyword: [],
-                    playType: '0'
+                    playType: '0',
+                    status: 0
                 };
                 _self.searchMovie.list = [];
                 _self.searchSource.list = [];

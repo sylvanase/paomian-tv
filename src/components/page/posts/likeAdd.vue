@@ -25,10 +25,6 @@
             let validateLike = (rule, value, callback) => {
                 if (value === '') {
                     callback(new Error('请输入赞数量'));
-                } else {
-                    if (value > 100) {
-                        callback(new Error('数量不能超过1000!'));
-                    }
                 }
             };
             return {

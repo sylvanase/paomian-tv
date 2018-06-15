@@ -41,8 +41,8 @@
                     <el-select v-model="filters.suspicion" @change="fetchList" style="width: 150px;">
                         <el-option label="全部嫌疑状态" value=""></el-option>
                         <el-option label="正常" value="0"></el-option>
-                        <el-option label="违规" value="1"></el-option>
-                        <el-option label="待定" value="2"></el-option>
+                        <el-option label="违规" value="2"></el-option>
+                        <el-option label="待定" value="1"></el-option>
                     </el-select>
                 </el-form-item>
                 <!-- <el-form-item>
@@ -81,6 +81,7 @@
                     </el-tag>
                 </template>
             </el-table-column>
+            <el-table-column prop="checker" label="审核人" width="130"></el-table-column>
             <el-table-column prop="status" label="监测状态" width="130"></el-table-column>
             <el-table-column prop="level" label="嫌疑类型" width="130"></el-table-column>
             <el-table-column label="操作" fixed="right" width="140">
@@ -238,7 +239,7 @@
                             util.jsErrNotify(error);
                         }
                     })
-                } 
+                }
             },
             setStart(val) { //格式化日期控件值
                 this.filters.start = val;

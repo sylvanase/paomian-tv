@@ -22,6 +22,13 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
+                    <el-select v-model="filters.status" @change="fetchList" placeholder="剧本状态" style="width: 150px;">
+                        <el-option label="全部状态" value=""></el-option>
+                        <el-option label="上架" value="1"></el-option>
+                        <el-option label="下架" value="0"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
                     <el-button type="primary" @click="fetchList()">查询</el-button>
                 </el-form-item>
                 <el-form-item>
@@ -42,6 +49,13 @@
                         <el-form-item label="剧本描述：">
                             <span>{{ props.row.description }}</span>
                         </el-form-item>
+                        <template v-if="props.row.playType == 3 || props.row.playType == 4">
+                            <el-form-item label="漫画资源：">
+                                <span>{{ props.row.cartoonZipName }}</span>
+                                <input type="file" :ref="'zip' + props.$index">
+                                <el-button size="small" :loading="zipLoading" @click="uploadZip(props.$index, props.row)">上传</el-button>
+                            </el-form-item>
+                        </template>
                         <template v-if="props.row.scriptList.length < 3">
                             <el-form-item label="素材：" v-for="item in props.row.scriptList">
                                 <span class="mr-10">id： {{ item.id }}</span>
@@ -74,10 +88,17 @@
             </el-table-column>
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="name" label="剧本名称"></el-table-column>
-            <el-table-column label="使用统计" width="200">
+            <el-table-column label="使用统计" width="100">
                 <template scope="scope">
                     {{ scope.row.useCount ? scope.row.useCount : '0' }}次/{{ scope.row.userCount ? scope.row.userCount :
                     '0'}}人
+                </template>
+            </el-table-column>
+            <el-table-column label="状态">
+                <template scope="scope">
+                    <el-tag :type="scope.row.status == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.status  == 1? '上架中' : '已下架' }}
+                    </el-tag>
                 </template>
             </el-table-column>
             <el-table-column label="剧本属性">
@@ -85,15 +106,19 @@
                     {{ scope.row.playAttrNames.join(' , ') }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="310">
+            <el-table-column label="操作" width="290">
                 <template scope="scope">
-                    <div class="mt-10">
+                    <el-button-group class="mt-10">
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
                         <el-button size="small" @click="playVideo(scope.row)">预览</el-button>
                         <el-button type="info" size="small" @click="scriptEdit(scope.row, '')">添加素材</el-button>
                         <el-button size="small" @click="showComment(scope.row)">加评论</el-button>
-                    </div>
-                    <div class="mt-10 mb-10">
+                    </el-button-group>
+                    <el-button-group class="mt-10 mb-10">
+                        <el-button :type="scope.row.status == 1 ? 'danger' : 'success'" size="small"
+                                   @click="handleTableLine(scope.row)">
+                            {{ scope.row.status == 1 ? '下架' : '上架' }}
+                        </el-button>
                         <el-button :type="scope.row.isRecommend == 1 ? 'danger' : 'success'" size="small"
                                    @click="handleRecommend(scope.row)">
                             {{ scope.row.isRecommend == 1 ? '取消推荐' : '推荐' }}
@@ -104,7 +129,8 @@
                         </el-button>
                         <el-button type="danger" size="small" @click="handleTableDel(scope.$index, scope.row)">删除
                         </el-button>
-                    </div>
+                        
+                    </el-button-group>
                 </template>
             </el-table-column>
         </el-table>
@@ -154,7 +180,8 @@
                     type: '0',
                     attr: '', //属性
                     kw: '',
-                    id: ''
+                    id: '',
+                    status: '' // 剧本状态
                 },
                 attrSelect: '', //属性列表
                 total: 0, //表格列表数据总数
@@ -172,7 +199,8 @@
                 videoVisible: false,  //播放视频界面 显示、隐藏
                 videoHtml: '',
                 isShowComment: false, //显示、隐藏评论库列表
-                typeData: {}
+                typeData: {},
+                zipLoading: false
             }
         },
         methods: {
@@ -189,7 +217,8 @@
                     offset: 0,
                     size: 10,
                     id: '',
-                    kw: ''
+                    kw: '',
+                    status: _self.filters.status
                 };
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
                     para.kw = _self.filters.kw;
@@ -271,7 +300,7 @@
                 }).catch(() => {
                 });
             },
-            handleTableLine(index, row) {
+            handleTableLine(row) {
                 let _self = this;
                 let para = new FormData();
                 para.append("id", row.id);
@@ -280,7 +309,7 @@
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
-                        _self.fetchList();
+                        row.status = Number(!row.status);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -357,7 +386,34 @@
                 let _self = this;
                 _self.typeData = row;
                 _self.isShowComment = true;
-            }
+            },
+            uploadZip(index, row){ // 上传漫画
+                let _self = this;
+                let file;
+                file = _self.$refs['zip' + index].files[0];
+                if (!file) { //未选择文件
+                    return;
+                }
+                const isZip = file.name.slice(-3) === 'zip';
+                if (!isZip) {
+                    _self.$message.error('请选择zip格式的文件');
+                    return;
+                }
+                let para = new FormData();
+                para.append('zipFile', file);
+                para.append('playId', row.id);
+                _self.zipLoading = true;
+                httpPost('contentPlayZipUpload', para, _self, function (res) { //服务器端获取上传所需签名
+                    try {
+                        let { error, status,data } = res;
+                        _self.zipLoading = false;
+                        _self.$message.success('文件上传成功');
+                        row.cartoonZipName =  data;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
         },
         mounted() {
             this.fetchList();

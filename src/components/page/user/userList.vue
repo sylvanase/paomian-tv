@@ -169,7 +169,7 @@
                             {{ scope.row.userCare == 1 ? '取关' : '关注' }}
                         </el-button>
                         <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
-                        <el-button :disabled="scope.row.isShield == 1 ? true : false" size="small" type="danger" @click="shieldUser(scope.row)">
+                        <el-button size="small" type="danger" @click="shieldUser(scope.row)">
                             {{ scope.row.isShield == 1 ? '取消屏蔽' : '屏蔽' }}
                         </el-button>
                     </el-button-group>

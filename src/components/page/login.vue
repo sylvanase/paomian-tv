@@ -34,6 +34,7 @@
 <script type="es6">
     import util from '../../api/util'
     import { httpPost } from '../../api/api';
+    import { sha256 } from 'js-sha256';
     export default {
         data() {
             return {
@@ -61,9 +62,10 @@
                 const _self = this; //vue实例
                 _self.$refs[formName].validate((valid) => {
                     if (valid) {
+                        var clearPwd = (sha256.digest('paomiantv' + _self.ruleForm.password));
                         var params = {
                             username: _self.ruleForm.username,
-                            password: _self.ruleForm.password,
+                            password: sha256(clearPwd),
                             captcha: _self.ruleForm.captcha
                         };
                         _self.logining = true;

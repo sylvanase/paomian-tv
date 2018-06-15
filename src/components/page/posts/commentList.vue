@@ -31,12 +31,12 @@
                   style="width: 100%;margin-top: 10px;">
             <el-table-column prop="id" label="id" width="100"></el-table-column>
             <el-table-column prop="text" label="评论内容"></el-table-column>
-            <el-table-column label="所属分类">
-                <template scope="props">
-                    <template v-for="(item,index) in props.row.commentAttrDto">
-                        {{ item.text }}{{ index < props.row.commentAttrDto.length - 1 ? '、' : '' }}
+            <el-table-column label="所属分类" prop="attrName">
+                <!-- <template scope="props">
+                    <template v-for="(item,index) in props.row.attrName">
+                        {{ item.text }}{{ index < props.row.attrName.length - 1 ? '、' : '' }}
                     </template>
-                </template>
+                </template> -->
             </el-table-column>
             <el-table-column label="操作" width="180">
                 <template scope="scope">
@@ -81,8 +81,11 @@
         <!--  批量导入评论  -->
         <el-dialog title="批量导入评论" v-model="batchVisible" size="tiny" @close="resetBatch">
             <el-form label-width="80px">
-                <el-form-item label="表格文件" style="margin-bottom: -20px;">
+                <el-form-item label="表格文件" style="margin-bottom: -10px;">
                     <input type="file" id="comFile" name="excel">
+                </el-form-item>
+                <el-form-item label="" style="margin-bottom: -20px;text-align: right;">
+                    <a href="../../../../static/导入评论.xlsx" target="_blank" title="">下载示例文件</a>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -147,9 +150,8 @@
                 paras.append('offset', (_self.page - 1) * 10);
                 paras.append('size', 10);
                 paras.append('attrIds', _self.filters.attr);
-                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
-                    paras.append('keyWord', _self.filters.kw);
-                } else {
+                paras.append('keyWord', _self.filters.kw);
+                if (!isNaN(_self.filters.kw)) { 
                     paras.append('id', _self.filters.kw);
                 }
                 _self.tableLoading = true;
@@ -170,13 +172,10 @@
                 let attrArg = [];
                 if (row) {
                     _self.formTitle = '编辑评论';
-                    for (var k = 0, length = row.commentAttrDto.length; k < length; k++) {
-                        attrArg.push(row.commentAttrDto[k].id);
-                    }
                     _self.formData = {
                         id: row.id,
                         text: row.text,
-                        attrIds: attrArg,
+                        attrIds: row.attrIds,
                         api: 'commentEdit'
                     };
                 }
@@ -224,7 +223,8 @@
                 let _self = this;
                 let paras = {
                     offset: 0,
-                    size: 999999
+                    size: 999999,
+                    isListQuery: 0
                 };
                 httpGet('commentAttrList', paras, _self, function (res) {
                     try {

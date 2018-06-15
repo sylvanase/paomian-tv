@@ -52,7 +52,7 @@ export default {
     /**
      * mock dataModel
      */
-        dataModel() {
+    dataModel() {
         let mock = new MockAdapter(axios);
 
         // mock success request
@@ -70,7 +70,7 @@ export default {
             let {
                 username,
                 password
-                } = JSON.parse(config.data);
+            } = JSON.parse(config.data);
             return new Promise((resolve, reject) => {
                 let user = null;
                 setTimeout(() => {
@@ -102,7 +102,7 @@ export default {
         mock.onGet('/content/movie/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockMovies = _Movies.filter(movie => {
                 if (name && movie.name.indexOf(name) == -1) return false;
                 return true;
@@ -124,7 +124,7 @@ export default {
         mock.onGet('/movie/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Movies = _Movies.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -140,7 +140,7 @@ export default {
             let {
                 id,
                 name
-                } = config.params;
+            } = config.params;
             _Movies.some(u => {
                 if (u.id === id) {
                     u.name = name;
@@ -160,7 +160,7 @@ export default {
         mock.onGet('/movie/add').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             _Movies.push({
                 name: name
             });
@@ -180,7 +180,7 @@ export default {
         mock.onGet('/drama/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockDramas = _Dramas.filter(drama => {
                 if (name && drama.name.indexOf(name) == -1) return false;
                 return true;
@@ -197,7 +197,7 @@ export default {
         mock.onGet('/drama/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Dramas = _Dramas.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -213,7 +213,7 @@ export default {
             let {
                 id,
                 online
-                } = config.params;
+            } = config.params;
             _Dramas.some(u => {
                 if (u.id === id) {
                     u.online = online;
@@ -234,7 +234,7 @@ export default {
         mock.onGet('/tag/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockTags = _Tags.filter(movie => {
                 if (name && movie.name.indexOf(name) == -1) return false;
                 return true;
@@ -251,7 +251,7 @@ export default {
         mock.onGet('/tag/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Tags = _Tags.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -267,7 +267,7 @@ export default {
             let {
                 id,
                 name
-                } = config.params;
+            } = config.params;
             _Tags.some(u => {
                 if (u.id === id) {
                     u.name = name;
@@ -287,7 +287,7 @@ export default {
         mock.onGet('/tag/add').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             _Tags.push({
                 name: name
             });
@@ -305,7 +305,7 @@ export default {
         mock.onGet('/attr/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockAttr = _Attr.filter(movie => {
                 if (name && attr.name.indexOf(name) == -1) return false;
                 return true;
@@ -322,7 +322,7 @@ export default {
         mock.onGet('/attr/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Attr = _Attr.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -339,7 +339,7 @@ export default {
                 id,
                 name,
                 attr,
-                } = config.params;
+            } = config.params;
             _Attr.some(u => {
                 if (u.id === id) {
                     u.name = name;
@@ -361,7 +361,7 @@ export default {
             let {
                 name,
                 attr
-                } = config.params;
+            } = config.params;
             _Attr.push({
                 name: name,
                 attr: attr
@@ -380,7 +380,7 @@ export default {
             let {
                 id,
                 online
-                } = config.params;
+            } = config.params;
             _Attr.some(u => {
                 if (u.id === id) {
                     u.online = online;
@@ -401,7 +401,7 @@ export default {
         mock.onGet('/category/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockCategories = _Categories.filter(movie => {
                 if (name && resource.name.indexOf(name) == -1) return false;
                 return true;
@@ -418,7 +418,7 @@ export default {
         mock.onGet('/category/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Categories = _Categories.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
@@ -435,7 +435,7 @@ export default {
                 id,
                 name,
                 attr
-                } = config.params;
+            } = config.params;
             _Categories.some(u => {
                 if (u.id === id) {
                     u.name = name;
@@ -457,7 +457,7 @@ export default {
             let {
                 name,
                 attr
-                } = config.params;
+            } = config.params;
             _Categories.push({
                 name: name,
                 attr: attr
@@ -476,7 +476,7 @@ export default {
         mock.onGet('/resource/list').reply(config => {
             let {
                 name
-                } = config.params;
+            } = config.params;
             let mockResource = Resource.filter(movie => {
                 if (name && categories.name.indexOf(name) == -1) return false;
                 return true;
@@ -493,7 +493,7 @@ export default {
         mock.onGet('/resource/del').reply(config => {
             let {
                 id
-                } = config.params;
+            } = config.params;
             _Resource = _Resource.filter(u => u.id !== id);
             return new Promise((resolve, reject) => {
                 setTimeout(() => {

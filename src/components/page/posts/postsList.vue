@@ -206,7 +206,7 @@
                         {{ userData.userCare == 1 ? '取关' : '关注' }}
                     </el-button>
                     <el-button size="small" @click="addFan()">加粉丝</el-button>
-                    <el-button :disabled="userData.isShield == 1 ? true : false" size="small" type="danger" @click="shieldUser">
+                    <el-button size="small" type="danger" @click="shieldUser">
                         {{ userData.isShield == 1 ? '取消屏蔽' : '屏蔽' }}
                     </el-button>
                 </el-col>
@@ -218,7 +218,36 @@
 
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
-            <div style="text-align: center;" v-html="videoHtml"></div>
+            <div>
+                视频ID： {{ videoData.id }}    
+            </div>
+            <div class="mt-10" style="text-align: center;" v-html="videoHtml"></div>
+            <div style="text-align: center;">
+                <el-button-group class="mt-10">
+                    <el-button :disabled="videoData.isDel == 1 ? true : false" size="small" type="info"
+                               @click="showForm(videoData, 'comment')">加评论
+                    </el-button>
+                    <el-button size="small" :type="videoData.isNoRecommend == 1 ? 'danger' : 'warning'"
+                               @click="noRecommend(videoData)">
+                        <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                        {{ videoData.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                    </el-button>
+                    <el-button :disabled="videoData.isDel == 1 ? true : false" size="small" type="success"  @click="showAddLike(videoData)">点赞
+                            </el-button>
+                    <el-button :type="videoData.isEssence == 1 ? 'danger' : 'success'" size="small"
+                               @click="handleEssence(videoData)">
+                        {{ videoData.isEssence == 1 ? '取精' : '加精' }}
+                    </el-button>
+                    <el-button size="small" @click="showForm(videoData, 'postsComment')">帖子评论</el-button>
+                    <el-button size="small" :disabled="videoData.checked == 1 ? true : false" type="danger" @click="checkPost(videoData)">
+                        {{ videoData.checked == 1 ? '已审核' : '审核' }}
+                    </el-button>
+                    <el-button :type="videoData.isDel == 0 ? 'danger' : 'warning'" size="small"
+                               @click="postsDel(videoData)">
+                        {{ videoData.isDel == 0 ? '删除' : '恢复' }}
+                    </el-button>
+                </el-button-group>
+            </div>
         </el-dialog>
 
         <!--为评论点赞-->
@@ -275,15 +304,6 @@
             vUserDetail,
         },
         data() {
-            let validateNum = (rule, value, callback) => {
-                if (value === '') {
-                    callback(new Error('请输入赞数量'));
-                } else {
-                    if (value > 100) {
-                        callback(new Error('数量不能超过1000!'));
-                    }
-                }
-            };
             return {
                 filters: {
                     kw: '',
@@ -309,6 +329,7 @@
                 postsId: '', //帖子id
                 // isShowVideo: false, //显示、隐藏话题视频列表
                 videoVisible: false,  //播放视频界面 显示、隐藏
+                videoData: {}, // 播放的视频信息
                 videoHtml: '',
                 likeVisible: false, // 显示、隐藏点赞界面
                 addLikeId: '',  // 点赞的帖子id
@@ -411,6 +432,7 @@
             },
             playVideo(row) { //播放视频
                 this.videoVisible = true;
+                this.videoData = row;
                 this.videoHtml = '<video style="max-width: 100%;max-height:350px;" controls="controls" autoplay="autoplay">'
                     + '<source src="' + row.videoUrl + '" type="video/mp4">对不起，您的浏览器不支持video标签，无法播放视频。</video>';
             },
@@ -426,13 +448,26 @@
                 let paras = new FormData();
                 paras.append("id", row.id);
                 paras.append("status", Number(!row.isEssence));
-                _self.tableLoading = true;
                 httpPost('postsEssence', paras, _self, function (res) {
-                    _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
-                        _self.fetchList();
+                        // 点赞数少于1000，执行点赞操作
+                        if(row.videoInfoPo.likeCount < 1000){
+                            let _self = this,
+                                num = 1000 + Math.floor(Math.random()*100);
+                            let paras = new FormData();
+                            paras.append("vpId", row.id);
+                            paras.append("num", num);
+                            httpPost('postsLike', paras, _self, function (res) {
+                                try {
+                                } catch (error) {
+                                    util.jsErrNotify(error);
+                                }
+                            })
+                            row.videoInfoPo.likeCount += num;
+                        }
+                        row.isEssence = Number(!row.isEssence);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -550,8 +585,8 @@
                 httpGet('postsCheck', {id: row.id, text: '',advice: 0}, _self, function (res) {
                     try {
                         let {error, status, data} = res;
+                        row.checked = 1;
                         _self.$message.success('操作成功');
-                        _self.fetchList();
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -560,13 +595,12 @@
             careUser() { // 关注用户
                 let _self = this;
                 let paras = new FormData();
-                paras.append("uid", userData.id);
-                paras.append("status", Number(!userData.userCare));
-                _self.tableLoading = true;
+                paras.append("uid", _self.userData.id);
+                paras.append("status", Number(!_self.userData.userCare));
                 httpPost('userCare', paras, _self, function (res) {
                     try {
                         _self.$message.success('操作成功');
-                        userData.userCare = Number(!userData.userCare);
+                        _self.userData.userCare = Number(!_self.userData.userCare);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
@@ -575,13 +609,13 @@
             shieldUser(){ // 屏蔽该用户
                 let _self = this;
                 let paras = {
-                    uid: userData.id,
-                    operation: Number(!userData.isShield)
+                    uid: _self.userData.id,
+                    operation: Number(!_self.userData.isShield)
                 };
                 httpGet('userShield', paras, _self, function (res) {
                     try {
                         _self.$message.success('操作成功');
-                        userData.isShield = Number(!userData.isShield);
+                        _self.userData.isShield = Number(!_self.userData.isShield);
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

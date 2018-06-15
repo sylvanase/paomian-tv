@@ -318,15 +318,17 @@
                 let paras = {
                     username: queryString
                 };
-                httpGet('userAtList', paras, _self, function (res) {
-                    _self.searchUser.loading = false;
-                    try {
-                        let {error, status, data} = res;
-                        _self.searchUser.list = data;
-                    } catch (error) {
-                        util.jsErrNotify(error);
-                    }
-                })
+                if(queryString){ // 存在关键字进行搜索
+                   httpGet('userAtList', paras, _self, function (res) {
+                       _self.searchUser.loading = false;
+                       try {
+                           let {error, status, data} = res;
+                           _self.searchUser.list = data;
+                       } catch (error) {
+                           util.jsErrNotify(error);
+                       }
+                   }) 
+                }  
             },
             handleSelectUser(id) { //选择要@的用户
                 let _self = this;

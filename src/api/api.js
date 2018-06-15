@@ -51,6 +51,7 @@ let api = { //接口地址
     contentPlayScriptDetail: '/content/play/script_detail', //剧本素材详情
     contentPlayScriptEdit: '/content/play/script_edit', //剧本素材编辑
     contentPlayScriptDel: '/content/play/script_delete', //剧本素材删除
+    contentPlayZipUpload: '/content/play/cartoonZipUpload', // 漫画剧本文件上传
 
     contentTopPlay: '/content/play/stick', //置顶剧本
     contentCancelTopPlay: '/content/play/cancelStick', //取消置顶剧本
@@ -173,7 +174,7 @@ let api = { //接口地址
 
     commentExcelAdd: '/comment/excel/batchAdd', // excel增加评论
 
-    //commentBatchAdd: '/comment/batch/add', // 批量增加评论
+    commentBatchAdd: '/comment/batch/add', // 批量增加评论
 
 
     topicList: '/topic/list', //话题列表
@@ -255,7 +256,7 @@ let api = { //接口地址
     videoUpload: '/ks3/video_upload', //视频文件上传
     musicUpload: '/ks3/music_upload', //音乐文件上传
     lrcSign: '/ks3/signature/lines', // 台词文件获取签名
-
+    lrcUpload: '/ks3/lrc_upload' // 直传台词文件
 };
 
 function specialCodeHandle(vm, res, callback) { // 服务器端特殊的返回code统一处理

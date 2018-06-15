@@ -23,12 +23,10 @@
                                       :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                         </el-form-item>
                         <el-form-item>
-                            <el-select v-model="filters.type" @change="fetchList" placeholder="请选择">
-                                <el-option label="按评论分类搜" value="1"></el-option>
-                                <el-option label="按剧本搜" value="2"></el-option>
-                                <el-option label="按片段搜" value="3"></el-option>
-                                <el-option label="按音乐搜" value="4"></el-option>
-                                <el-option label="非通用评论" value="5"></el-option>
+                            <el-select v-model="filters.attrIds" multiple @change="fetchList" placeholder="选择分类" style="width: 200px;">
+                                <el-option v-for="item in attrList" :key="item.id" :label="item.text"
+                                           :value="item.id">
+                                </el-option>
                             </el-select>
                         </el-form-item>
                         <el-form-item>
@@ -40,12 +38,13 @@
                 <el-table v-loading="tableLoading" class="tb-edit" :data="tableList" stripe border style="width: 100%;"
                           @selection-change="handleSelectionChange" highlight-current-row>
                     <el-table-column type="selection" width="55"></el-table-column>
-                    <el-table-column prop="id" label="id" width="150"></el-table-column>
-                    <el-table-column prop="text" label="评论内容(点击进行编辑操作)">
+                    <el-table-column prop="id" label="id" width="80"></el-table-column>
+                    <el-table-column prop="attrName" label="分类" width="120"></el-table-column>
+                    <el-table-column prop="text" label="评论内容">
                         <template scope="scope">
-                            <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
+                            <!-- <el-input size="small" minlength="1" v-model.trim="scope.row.text" placeholder="请输入内容"
                                       @change="handleEdit(scope.row)" v-on:focus="handleFocus(scope.row)"
-                                      v-on:blur="handleBlur(scope.row)"></el-input>
+                                      v-on:blur="handleBlur(scope.row)"></el-input> -->
                             <span>{{scope.row.text}}</span>
                         </template>
                     </el-table-column>
@@ -53,8 +52,10 @@
                 <!--工具条-->
                 <el-col :span="24" class="mt-10" style="margin-bottom: 20px;">
                     <el-pagination style="float:right;" @current-change="handleCurrentChange"
-                                   :page-size="10" :current-page="page"
-                                   layout="total, prev, pager, next, jumper" :total="total">
+                                   :page-size="size" :current-page="page"
+                                   :page-sizes="[10, 30, 100]"
+                                   @size-change="handleSizeChange"
+                                   layout="total, sizes, prev, pager, next, jumper" :total="total">
                     </el-pagination>
                 </el-col>
             </el-tab-pane>
@@ -64,7 +65,7 @@
                     <el-form-item label="评论内容" prop="text">
                         <el-input type="textarea" :rows="2" v-model.trim="formData.text" maxlength="128"></el-input>
                     </el-form-item>
-                    <el-form-item label="关联剧本" prop="playIds">
+                    <!-- <el-form-item label="关联剧本" prop="playIds">
                         <template>
                             <el-select style="width: 50%;" filterable :remote-method="fetchPlayList"
                                        :loading="playloading" remote v-model="formData.playIds" multiple
@@ -74,8 +75,8 @@
                                 </el-option>
                             </el-select>
                         </template>
-                    </el-form-item>
-                    <el-form-item label="关联片段" prop="materialIds">
+                    </el-form-item> -->
+                    <!-- <el-form-item label="关联片段" prop="materialIds">
                         <template>
                             <el-select style="width: 50%;" filterable :remote-method="fetchMaterialList"
                                        :loading="materialloading" remote v-model="formData.materialIds" multiple
@@ -85,8 +86,8 @@
                                 </el-option>
                             </el-select>
                         </template>
-                    </el-form-item>
-                    <el-form-item label="关联音乐" prop="musicIds">
+                    </el-form-item> -->
+                    <!-- <el-form-item label="关联音乐" prop="musicIds">
                         <template>
                             <el-select style="width: 50%;" filterable :remote-method="fetchMusicList"
                                        :loading="musicloading" remote v-model="formData.musicIds" multiple
@@ -96,7 +97,7 @@
                                 </el-option>
                             </el-select>
                         </template>
-                    </el-form-item>
+                    </el-form-item> -->
                     <el-form-item label="所属分类" prop="attrIds">
                         <template>
                             <el-select style="width: 50%;" v-model="formData.attrIds" multiple
@@ -112,6 +113,26 @@
                         </el-button>
                     </el-form-item>
                 </el-form>
+            </el-tab-pane>
+            <el-tab-pane label="临时评论" name="temporary">
+                <el-col :span="24" style="margin-top: 0;margin-bottom: 10px;">
+                    <el-button type="primary" size="small" @click="submitTemp()">提交</el-button>
+                    <span>（需要入库时请勾选评论）</span>
+                </el-col>
+                <!--表格-->
+                <el-table :data="temporaryList" stripe border style="width: 100%;" highlight-current-row @selection-change="tempSelectionChange">
+                    <el-table-column type="selection" label="评论入库" :selectable="isSelectable" width="55"></el-table-column>
+                    <el-table-column label="分类" width="230">
+                        <template scope="scope">
+                            <el-input size="small" v-model.trim="scope.row.attrNames" placeholder="多个分类使用中文逗号隔开"></el-input>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="text" label="评论内容">
+                        <template scope="scope">
+                            <el-input size="small" v-model.trim="scope.row.text" placeholder="请输入内容" ></el-input>
+                        </template>
+                    </el-table-column>
+                </el-table>
             </el-tab-pane>
         </el-tabs>
     </el-dialog>
@@ -137,9 +158,10 @@
                 tableLoading: false, //表格的loading符号
                 tableList: [], //表格数据
                 filters: { //搜索筛选条件
-                    type: '1',
+                    attr: [],
                     kw: ''
                 },
+                size: 10,
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
                 multipleCommentIds: [], //添加的评论id集合
@@ -165,7 +187,19 @@
                 musicList: [],
                 oldRowText: '',
                 initNum: 0,
-                attrList: []
+                attrList: [],
+                temporaryList:[ // 初始化临时评论
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0},
+                    {attrNames:'',text:'', isStore: 0}], 
+                temporaryCheck: [] // 被选中的队列
             }
         },
         computed: {
@@ -177,13 +211,14 @@
                 if (_self.initNum == 0) {
                     _self.tableList = [];
                     _self.filters = {
-                        type: '1',
+                        attrIds: [],
                         kw: ''
                     };
                     _self.total = 0;
                     _self.page = 1;
                     _self.multipleCommentIds = [];
                     _self.fetchList();
+                    _self.fetchAttrList();
                     _self.initNum = 1;
                     _self.fetchRelation();
                 }
@@ -196,18 +231,12 @@
                 if (_name == 'list') {
                     _self.fetchList();
                 } else {
-                    if (_self.playList.length == 0) {
-                        _self.fetchPlayList();
-                    }
-                    if (_self.materialList.length == 0) {
-                        _self.fetchMaterialList();
-                    }
-                    if (_self.musicList.length == 0) {
-                        _self.fetchMusicList();
-                    }
-                    _self.fetchAttrList();
                     _self.resetForm(); // 重置新增评论表单
                 }
+            },
+            handleSizeChange(val){
+                this.size = val;
+                this.fetchList();
             },
             handleCurrentChange(val) { //翻页
                 this.page = val;
@@ -222,28 +251,24 @@
             },
             fetchList() {    //获取评论库列表
                 let _self = this;
-                let paras = {
+                /*let paras = {
                     offset: 0,
-                    size: 10,
-                    searchType: _self.filters.type,
+                    size: _self.size,
+                    attrIds: _self.filters.attr,
                     keyWord : '',
                     id:''
-                };
-
-                if(_self.filters.type == '5'){ // 如果类型为5的话，查询所有非通用类型评论
-                    _self.filters.kw = '';
-                    paras.vpId = _self.postsData.id;
+                };*/
+                let paras = new FormData();
+                paras.append('size', _self.size);
+                paras.append('attrIds', _self.filters.attrIds);
+                paras.append('vpId', _self.postsData.id);
+                paras.append('keyWord', _self.filters.kw);
+                if (!isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
+                    paras.append('id', _self.filters.kw);
                 }
-
-                if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
-                    paras.keyWord = _self.filters.kw;
-                } else {
-                    paras.id = _self.filters.kw;
-                }
-
-                paras.offset = (_self.page - 1) * paras.size;
+                paras.append('offset', (_self.page - 1) * _self.size);
                 _self.tableLoading = true;
-                httpGet('commentListSearch', paras, _self, function (res) {
+                httpPost('commentListSearch', paras, _self, function (res) {
                     _self.tableLoading = false;
                     try {
                         let {error, status, data} = res;
@@ -270,6 +295,10 @@
             },
             submit() { //提交所选评论
                 let _self = this;
+                if(_self.multipleCommentIds.length == 0){
+                    _self.$message.warning('请选择需要提交的评论');
+                    return;
+                }
                 let paras = new FormData();
                 paras.append("vpId", _self.postsData.id);
                 paras.append("barrageIds", _self.multipleCommentIds.join(','));
@@ -314,7 +343,7 @@
                     this.handleEdit(row);
                 }
             },
-            fetchPlayList(query) { // 获取剧本数据
+            /*fetchPlayList(query) { // 获取剧本数据
                 let _self = this;
                 _self.playloading = true;
                 let paras = {
@@ -337,8 +366,8 @@
                         util.jsErrNotify(error);
                     }
                 })
-            },
-            fetchMaterialList(query) { // 获取片段数据
+            },*/
+            /*fetchMaterialList(query) { // 获取片段数据
                 let _self = this;
                 _self.materialloading = true;
                 let paras = {
@@ -361,8 +390,8 @@
                         util.jsErrNotify(error);
                     }
                 })
-            },
-            fetchMusicList(query) { // 获取音乐数据
+            },*/
+            /*fetchMusicList(query) { // 获取音乐数据
                 let _self = this;
                 _self.musicloading = true;
                 let paras = {
@@ -385,12 +414,13 @@
                         util.jsErrNotify(error);
                     }
                 })
-            },
+            },*/
             fetchAttrList() { // 获取评论属性
                 let _self = this;
                 let paras = {
                     offset: 0,
-                    size: 999999
+                    size: 999999,
+                    isListQuery: 0
                 };
                 httpGet('commentAttrList', paras, _self, function (res) {
                     try {
@@ -460,6 +490,58 @@
                 _self.oldRowText = '';
                 _self.initNum = 0;
                 _self.$refs['formData'].resetFields();
+            },
+            isSelectable(row){ // 是否可选
+                if(row.text && row.attrNames){
+                    return true;
+                }
+                return false;
+            },
+            submitTemp(){
+                let _self = this;
+                let paras = new FormData();
+                let arr = [];
+                arr = _self.temporaryList.filter(function(item) {
+                    return (item.text !== '');
+                }).map(function(item) {
+                    item.attrNames = (item.attrNames instanceof Array) ? item.attrNames : item.attrNames.split('，');
+                    item.vpId = _self.postsData.id;
+                    item.vpUid = _self.postsData.uid;
+                    return item;
+                });
+                if(arr.length == 0){
+                    _self.$message.warning('没有可提交的评论');
+                    return;
+                }
+                paras.append("commentResourceRequests", JSON.stringify(arr));
+                httpPost("commentBatchAdd", paras, _self, function (res) {
+                    try {
+                        _self.$message.success('提交成功');
+                        _self.temporaryList = [
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0},
+                            {attrNames:'',text:'', isStore: 0}];
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            },
+            tempSelectionChange(rows){ // 选择更改时
+                // 所有临时评论的状态置为0
+                this.temporaryList.map(function(item) {
+                    item.isStore = 0;
+                    return item;
+                })
+                for(var i = 0; i < rows.length; i++){
+                    rows[i].isStore = 1;
+                }
             }
         },
         watch: {
@@ -482,7 +564,7 @@
 </script>
 
 <style>
-    .tb-edit .el-input {
+    /* .tb-edit .el-input {
         display: none
     }
 
@@ -492,5 +574,5 @@
 
     .tb-edit .current-row .el-input + span {
         display: none
-    }
+    } */
 </style>

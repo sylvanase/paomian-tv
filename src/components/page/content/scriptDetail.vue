@@ -47,7 +47,7 @@
                         </div>
                         <div class="mb-10">
                             台词文件: <input type="file" :ref="'lrc' + index"  @change="uploadLrc(index)" name="lrc">
-                            <el-progress size="small" style="width: 70%;" :percentage="item.data.lrcPer"></el-progress>
+                            <!-- <el-progress size="small" style="width: 70%;" :percentage="item.data.lrcPer"></el-progress> -->
                             <div v-show="item.data.promptName">
                                已选台词名称：{{ item.data.promptName }} 
                             </div>
@@ -221,7 +221,7 @@
             </el-form-item>
             <el-form-item label="完整台词">
                 <input type="file" id="allLrc" @change="uploadLrc()" name="lrc">
-                <el-progress size="small" style="width: 70%;" :percentage="formData.lrcPercent"></el-progress>
+                <!-- <el-progress size="small" style="width: 70%;" :percentage="formData.lrcPercent"></el-progress> -->
                 <div v-show="formData.lrcName">
                    已选台词名称：<span class="mr-10" v-model="formData.lrcName">{{ formData.lrcName }}</span>
                 </div>
@@ -655,66 +655,22 @@
                     _self.$message.error('请选择lrc格式的文件');
                     return;
                 }
-
-                if(index == undefined){
-                    _self.formData.lrcPercent = 0;
-                }else{
-                    _self.formData.materialJson[index].data.lrcPer = 0;
-                }
-
-                let para = {
-                    contentType: file.type,
-                    fileName: file.name
-                };
-                httpGet('lrcSign', para, _self, function (res) { //服务器端获取上传所需签名
+                let para = new FormData();
+                para.append('lrcFile', file);
+                httpPost('lrcUpload', para, _self, function (res) { //服务器端获取上传所需签名
                     try {
                         let { error, status,data } = res;
-                        Ks3.Ks3.config.baseUrl = data.url;
-                        Ks3.Ks3.config.AK = data.formParam.KSSAccessKeyId;
-                        Ks3.Ks3.config.bucket = data.bucketName;
-                        Ks3.Ks3.putObject({
-                            Key: data.formParam.key,
-                            File: file,
-                            ACL: 'public-read',
-                            ProgressListener: progressFunction, //上传进程
-                            Signature: data.formParam.signature
-                        }, function (err) {
-                            if (err) { //上传失败
-                                _self.$message({
-                                    message: JSON.stringify(err),
-                                    type: 'error'
-                                });
-                                if(index == undefined){
-                                    _self.formData.lrcPercent = 0;
-                                    document.getElementById('allLrc').value = '';
-                                }else{
-                                    _self.$refs['lrc' + index][0].value = '';
-                                    _self.formData.materialJson[index].data.lrcPer = 0;
-                                }
-                            } else { // 上传成功，修改赋值
-                                if(index == undefined){ // 未传递index，为完整台词
-                                    _self.formData.lrcUrl = data.formParam.key;
-                                    _self.formData.lrcName = file.name;
-                                } else {
-                                    _self.formData.materialJson[index].data.prompt = data.formParam.key;
-                                    _self.formData.materialJson[index].data.promptName = file.name;
-                                }   
-                            }
-                        });
+                        if(index == undefined){ // 未传递index，为完整台词
+                            _self.formData.lrcUrl = data.completeLinesUrl;
+                            _self.formData.lrcName = data.completeLinesFileName;
+                        } else {
+                            _self.formData.materialJson[index].data.prompt = data.completeLinesUrl;
+                            _self.formData.materialJson[index].data.promptName = data.completeLinesFileName;
+                        } 
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
                 })
-                function progressFunction(e) {
-                    if (e.lengthComputable) {
-                        let percent = parseInt((e.loaded / e.total) * 100);
-                        if(index == undefined){
-                            _self.formData.lrcPercent = percent;
-                        }else{
-                            _self.formData.materialJson[index].data.lrcPer = percent;
-                        }
-                    }
-                }
             },
             uploadVideo(index){ // 上传示范视频
                 let _self = this;
