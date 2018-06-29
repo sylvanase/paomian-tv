@@ -123,23 +123,22 @@
                 <template scope="scope">
                     <el-button-group>
                         <el-button size="small" @click="showForm(scope.row, 'detail')">编辑</el-button>
+                        <el-button size="small" @click="showForm(scope.row, 'postsComment')">帖子评论</el-button>
+                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info" @click="showForm(scope.row, 'comment')">加评论
+                        </el-button>
+                    </el-button-group>
+                    <el-button-group class="mt-10">
                         <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="success"  @click="showAddLike(scope.row)">点赞
                         </el-button>
-                        <el-button :disabled="scope.row.isDel == 1 ? true : false" size="small" type="info"
-                                   @click="showForm(scope.row, 'comment')">加评论
+                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small" @click="handleEssence(scope.row)">
+                            {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
                         </el-button>
-                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'"
-                                   @click="noRecommend(scope.row)">
-                            <!--isNoRecommend 1 帖子为不推荐状态，需要取消改状态-->
+                        <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'" @click="noRecommend(scope.row)">
                             {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
                         </el-button>
                     </el-button-group>
                     <el-button-group class="mt-10">
-                        <el-button :type="scope.row.isEssence == 1 ? 'danger' : 'success'" size="small"
-                                   @click="handleEssence(scope.row)">
-                            {{ scope.row.isEssence == 1 ? '取精' : '加精' }}
-                        </el-button>
-                        <el-button size="small" @click="showForm(scope.row, 'postsComment')">帖子评论</el-button>
+                        <el-button size="small" @click="postsTag(scope.row)">帖子标签</el-button>
                         <el-button size="small" :disabled="scope.row.checked == 1 ? true : false" type="danger" @click="checkPost(scope.row)">
                             {{ scope.row.checked == 1 ? '已审核' : '审核' }}
                         </el-button>
@@ -281,6 +280,37 @@
             </div>
         </el-dialog>
 
+        <!-- 新增/编辑帖子标签 -->
+        <el-dialog title="帖子标签" v-model="tagVisible" @close="resetTag" size="tiny">
+            <div style="margin-bottom: 10px;">
+                帖子id：{{ tagData.id }}
+            </div>
+            <el-form :model="tagData" label-width="80px" :rules="tagRules" ref="tagData">
+                <el-form-item label="一级标签" prop="level1">
+                    <el-select v-model="tagData.level1" placeholder="请选择" @change="fetchTagList(2)">
+                        <el-option v-for="item in level1List" :key="item.id" :label="item.tag" :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="二级标签" prop="level2">
+                    <el-select v-model="tagData.level2" :disabled="level2Disabled" placeholder="请选择" @change="fetchTagList(3)">
+                        <el-option v-for="item in level2List" :key="item.id" :label="item.tag" :value="item.id" >
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="三级标签" prop="level3" style="margin-bottom: -20px;">
+                    <el-select v-model="tagData.level3" :disabled="level3Disabled" placeholder="请选择" multiple>
+                        <el-option v-for="item in level3List" :key="item.id" :label="item.tag" :value="item.id">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="tagVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="tagSubmit" :loading="tagData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
     </section>
 </template>
 
@@ -365,6 +395,24 @@
                     num: 0,
                     id: ''
                 },
+                tagVisible: false, // 显示、隐藏为帖子添加标签
+                tagData: {
+                    id: '',
+                    level1: '',
+                    level2: '',
+                    level3: [],
+                    loading: false,
+                    isEdit: false // 是否为编辑帖子标签
+                },
+                tagOldData: {
+                    level2: '',
+                    level3: []
+                },
+                level1List:[],
+                level2List:[],
+                level3List:[],
+                level2Disabled: true,
+                level3Disabled: true
             }
         },
         methods: {
@@ -543,7 +591,7 @@
                             isShield: data.isShield,
                             userCare: data.userCare
                         };
-                        domPop.style.top = (domLinkStyle.top + 10) + 'px';
+                        domPop.style.top = (domLinkStyle.top - 140) + 'px';
                         domPop.style.left = 270 + 'px';
                         _self.showPopUser = true;
                     } catch (error) {
@@ -649,7 +697,105 @@
                 this.fanData.id = '';
                 this.fanData.num = 0;
                 this.fanData.loading = false;
-            }
+            },
+            postsTag(row){
+                let _self = this;
+                _self.tagVisible = true;
+                _self.tagData.id = row.id;
+                _self.fetchTagList(1);
+                httpGet('postsTag', { vpId: row.id }, _self, function (res) {
+                    let { data } = res;
+                    if(data.length > 0){
+                        _self.tagData.isEdit = true; // 更改状态
+                        _self.tagData.level1 = data[0].id;
+                        _self.tagOldData.level2 = data[1].id;
+                        let arr = [];
+                        data.slice(2).map(function(item){
+                            arr.push(item.id);
+                        })
+                        _self.tagOldData.level3 = arr;
+                    }
+                })
+            },
+            fetchTagList(level){ // 加载标签菜单
+                let _self = this;
+                // 清空标签选项，并在加载完成前不可选
+                if(level == 2){
+                    _self.level2Disabled = true;
+                    _self.level3Disabled = true;
+                    _self.tagData.level2 = '';
+                    _self.tagData.level3 = [];
+                } else if(level == 3){
+                    _self.level3Disabled = true;
+                    _self.tagData.level3 = [];
+                    if(_self.tagData.level2 == ''){
+                        return;
+                    }
+                }
+                httpGet('postsTagLevelList', { level: level }, _self, function (res) {
+                    let { data } = res;
+                    if(level == 1){
+                        _self.level1List = data;
+                    } else{
+                        let arr = data.filter(function(item){
+                            if(item.parentId == _self.tagData['level' + (level - 1)]){
+                                return item;
+                            }
+                        });
+                        _self['level'+ level +'List'] = arr; 
+                        // 置为可选
+                        _self['level' + level + 'Disabled'] = false; 
+                        if(_self.tagData.isEdit){ // 编辑状态
+                            if(level == 2){
+                                _self.tagData.level2 = _self.tagOldData.level2;
+                            } else if(level == 3){
+                                _self.tagData.level3 = _self.tagOldData.level3;
+                                _self.tagData.isEdit = false;
+                            }
+                        }
+                    }
+                })
+            },
+            resetTag(){
+                let _self = this;
+                _self.level2Disabled = true;
+                _self.level3Disabled = true;
+                _self.level1List = [];
+                _self.level2List = [];
+                _self.level3List = [];
+                _self.tagData = {
+                    id: '',
+                    level1: '',
+                    level2: '',
+                    level3: [],
+                    loading: false,
+                    isEdit: false
+                };
+                _self.tagOldData = {
+                    level2: '',
+                    level3: []
+                }
+            },
+            tagSubmit() { // 提交帖子标签
+                let _self = this;
+                let arr = [_self.tagData.level1, _self.tagData.level2];
+                let paras = new FormData();
+                paras.append("tagIds", arr.concat(_self.tagData.level3));
+                paras.append("vpId", _self.tagData.id);
+                _self.tagData.loading = true;
+                httpPost('postsTagRelation', paras, _self, function (res) {
+                    _self.tagData.loading = false;
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.tagVisible = false;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                }, function (res) {
+                    _self.$message.error(res.data.error);
+                    _self.tagData.loading = false;
+                })
+            },
         },
         mounted() {
             if (this.$route.query.uid) {

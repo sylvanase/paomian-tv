@@ -56,7 +56,7 @@
             </el-form-item>
             <el-form-item label="所属话题" style="margin-bottom: -20px;">
                 <template>
-                    <el-select :disabled="isEdit" style="width: 50%;" v-model="formData.topicId" filterable remote
+                    <el-select style="width: 50%;" v-model="formData.topicId" filterable remote
                                loading-text="搜索中" placeholder="输入关键词搜索话题" :remote-method="handleTopic"
                                :loading="searchTopic.loading">
                         <el-option v-for="item in searchTopic.list" :key="item.id" :label="item.name"

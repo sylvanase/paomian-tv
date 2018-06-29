@@ -41,11 +41,15 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-select v-model="filters.city" style="width: 180px;" @change="fetchList" filterable
-                               placeholder="请选择城市">
+                    <el-select v-model="filters.city" style="width: 180px;" @change="fetchList" filterable placeholder="请选择城市">
                         <el-option label="全部城市" value="0"></el-option>
-                        <el-option v-for="item in cityFilterList" :key="item.cityId" :label="item.cityName"
-                                   :value="item.cityId"></el-option>
+                        <el-option v-for="item in cityFilterList" :key="item.cityId" :label="item.cityName" :value="item.cityId"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-select v-model="filters.cat" style="width: 180px;" @change="fetchList" filterable placeholder="请选择分类">
+                        <el-option label="全部分类" value=""></el-option>
+                        <el-option v-for="item in catList" :key="item.id" :label="item.name" :value="item.id"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item>
@@ -315,7 +319,8 @@
                     end: '',
                     region: '0',
                     city: '0',
-                    os: ''
+                    os: '',
+                    cat: ''
                 },
                 total: 0, //表格列表数据总数
                 page: 1, //当前页，默认为第一页
@@ -372,7 +377,8 @@
                     startTime: _self.filters.start,
                     endTime: _self.filters.end,
                     regionId: _self.filters.region,
-                    cityId: _self.filters.city
+                    cityId: _self.filters.city,
+                    userAttrId: _self.filters.cat
                 };
                 if (isNaN(_self.filters.kw)) { //输入不为数字，值传入kw
                     paras.username = _self.filters.kw;

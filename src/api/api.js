@@ -121,7 +121,7 @@ let api = { //接口地址
     userMasterVideo: '/user/master/video/list', //主账号下小号视频列表
     userMasterBarrage: '/user/master/video/barrage/list', //主账号下小号发送弹幕列表
     userMasterLike: '/user/master/video/like/list', //主账号下小号点赞列表
-    userFansAdd: '/robot/user/followBatch', // 为用户增加粉丝
+    userFansAdd: '/user/robot/followBatch', // 为用户增加粉丝
     userAtList: '/user/at_list', // @时进行用户查找
     userCategory: '/user/category/list', // 用户分类
     userCatAdd: '/user/category/add', // 新增用户分类
@@ -156,6 +156,12 @@ let api = { //接口地址
     postsUnblock: '/video/vpid_relieve', // 解封视频
 
     postsCheck: '/video/check', // 审核帖子
+    postsTagList: '/tag/select', // 帖子标签库
+    postsTagAdd: '/tag/add', // 帖子标签库新增
+    postsTagLevelList: '/tag/level', // 获取指定level的标签列表
+    postsTag: '/video/tags', // 获取帖子绑定的标签
+    postsTagRelation: '/video/addTagRelation', // 为帖子添加标签
+
 
     commentList: '/comment/list', // 评论库列表
     commentListDel: '/comment/delete', // 评论库删除

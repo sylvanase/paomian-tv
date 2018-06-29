@@ -73,7 +73,7 @@
             </el-table-column>
             <el-table-column prop="username" label="发帖人" min-width="150"></el-table-column>
             <el-table-column prop="createTime" label="发帖时间" min-width="180"></el-table-column>
-            <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column>
+            <!-- <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column> -->
             <el-table-column label="已封禁" width="100">
                 <template scope="scope">
                     <el-tag :type="scope.row.isDel == 1 ? 'success' : 'danger'"
@@ -82,9 +82,9 @@
                 </template>
             </el-table-column>
             <el-table-column prop="checker" label="审核人" width="130"></el-table-column>
-            <el-table-column prop="status" label="监测状态" width="130"></el-table-column>
-            <el-table-column prop="level" label="嫌疑类型" width="130"></el-table-column>
-            <el-table-column label="操作" fixed="right" width="140">
+            <!-- <el-table-column prop="status" label="监测状态" width="130"></el-table-column> -->
+            <!-- <el-table-column prop="level" label="嫌疑类型" width="130"></el-table-column> -->
+            <el-table-column label="操作" fixed="right" width="200">
                 <template scope="scope">
                     <el-button-group>
                         <el-button :type="scope.row.isDel == 0 ? 'danger' : ''" size="small"
@@ -94,6 +94,7 @@
                         <el-button :disabled="scope.row.checked == 1 ? true : false" size="small" type="danger" @click.native="showCheck(scope.row, scope.$index)">
                             {{ scope.row.checked == 1 ? '已审核' : '审核' }}
                         </el-button>
+                        <el-button size="small" @click.native="showDetail(scope.row)">鉴黄详情</el-button>
                     </el-button-group>
                 </template>
             </el-table-column>
@@ -125,6 +126,23 @@
                 <el-button size="small" type="primary" @click.native="checkPost">提交</el-button>
             </div>
         </el-dialog>
+
+        <!-- 鉴黄详情 -->
+        <el-dialog title="鉴黄详情" v-model="detailVisible" @close="detailClose()">
+            <div class="mb-10">
+                视频ID： {{ detailData.id }}
+            </div>
+            <el-row :gutter="10">
+                <el-col :span="6" v-for="item in detailData.evidenceUrls">
+                    <div class="mb-10">
+                        <img style="width:100%;" :src="item" alt="详情图片">
+                    </div>
+                    <div>
+                        可信度：{{ detailData.level }}
+                    </div>
+                </el-col>
+            </el-row>
+        </el-dialog>
     </section>
 </template>
 
@@ -154,7 +172,9 @@
                 videoHtml: '',
                 checkAdvice: '0',
                 checkVisible: false,
-                checkId: {}
+                checkId: {},
+                detailVisible: false, // 鉴黄详情显示、隐藏
+                detailData: {} // 鉴黄详情
             }
         },
         methods: {
@@ -273,6 +293,21 @@
                     }
                 })
             },
+            showDetail(row){
+                this.detailVisible = true;
+                if(row.level == 0){
+                    row.level = '正常';
+                } else if(row.level == 1){
+                    row.level = '疑似';
+                } else if(row.level == 2){
+                    row.level = '确定';
+                }
+                console.log(row);
+                this.detailData = row;
+            },
+            detailClose(){
+                this.detailData = {};
+            }
         },
         mounted() {
             this.fetchList();
