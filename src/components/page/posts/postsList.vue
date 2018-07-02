@@ -80,7 +80,7 @@
                     <span @click="playVideo(scope.row)" v-else>封面为空</span>
                 </template>
             </el-table-column>
-            
+            <el-table-column prop="id" label="帖子id" min-width="180"></el-table-column>
             <el-table-column prop="videoText" min-width="200" label="帖子描述">
                 <template scope="scope">
                     {{ scope.row.topicName ? '#'+ scope.row.topicName + '#' : '' }}{{ scope.row.videoText }}

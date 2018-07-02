@@ -81,6 +81,10 @@ export default new Router({
                 path: '/tag',
                 component: resolve => require(['../components/page/content/tag.vue'], resolve),
                 name: '标签'
+            }, {
+                path: '/qqWatch',
+                component: resolve => require(['../components/page/content/qqWatchList.vue'], resolve),
+                name: 'QQ看点'
             }]
         }, {
             path: '/',

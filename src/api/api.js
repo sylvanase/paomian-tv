@@ -255,6 +255,11 @@ let api = { //接口地址
     adContentDel: '/adPlace/content/delete', // 广告位内容删除
     adContentAdd: '/adPlace/content/add', // 广告位内容新增
 
+    qqWatchList: '/content/qqwatch/list', // QQ看点列表
+    qqWatchAdd: '/content/qqwatch/save', // 新增看点
+    qqWatchDel: '/content/qqwatch/delete', // 删除
+    qqWatchFile: '/content/qqwatch/fileUpload', // 批量增加看点
+
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传
     musicSign: '/ks3/signature/music', //音乐文件获取签名

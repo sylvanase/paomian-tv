@@ -141,11 +141,6 @@
             fetchList() {    //获取列表
                 let _self = this;
                 _self.tableHeight = document.getElementById('container').clientHeight - 77 - 42 - 15;
-                /*let paras = {
-                    offset: 0,
-                    size: 10,
-                    attrIds: _self.filters.attr
-                };*/
                 let paras = new FormData();
                 paras.append('offset', (_self.page - 1) * 10);
                 paras.append('size', 10);

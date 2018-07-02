@@ -306,7 +306,6 @@
                     try {
                         _self.$message.success('增加评论成功');
                         _self.visible = false;
-                        _self.$emit('refresh');
                     } catch (error) {
                         util.jsErrNotify(error);
                     }
