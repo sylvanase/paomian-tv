@@ -25,7 +25,7 @@
                     <el-button type="primary" @click="fetchList">查询</el-button>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="fetchList">新增</el-button>
+                    <el-button type="primary" @click="showForm">新增</el-button>
                 </el-form-item>
                 <el-form-item>
                     <el-button type="info" @click.native="batchVisible = true">批量添加</el-button>
@@ -55,44 +55,20 @@
                     </div>
                 </template>
             </el-table-column>
-            <el-table-column label="数据信息">
-                <template scope="scope">
-                    <div>
-                       播放数：{{ scope.row.vv }} 
-                    </div>
-                    <div>
-                        UV: {{ scope.row.vvUv }}
-                    </div>
-                    <div>
-                        点击数: {{ scope.row.clickCnt }}
-                    </div>
-                    <div>
-                        分享数: {{ scope.row.shareCnt }}
-                    </div>
-                    <div>
-                        分享的UV: {{ scope.row.shareCntUv }}
-                    </div>
-                    <div>
-                        点赞: {{ scope.row.likeCnt }}
-                    </div>
-                    <div>
-                        弹幕: {{ scope.row.commentCnt }}
-                    </div>
-                    <div>
-                        弹幕UV: {{ scope.row.commentCntUv }}
-                    </div>
-                    <div>
-                        biu: {{ scope.row.biuCnt }}
-                    </div>
-                    <div>
-                        biu UV: {{ scope.row.biuCntUv }}
-                    </div>
-                </template>
-            </el-table-column>
+            <el-table-column prop="vv" label="播放数"></el-table-column>
+            <el-table-column prop="vvUv" label="UV"></el-table-column>
+            <el-table-column prop="clickCnt" label="点击数"></el-table-column>
+            <el-table-column prop="shareCnt" label="分享数"></el-table-column>
+            <el-table-column prop="shareCntUv" label="分享UV" width="90"></el-table-column>
+            <el-table-column prop="likeCnt" label="点赞"></el-table-column>
+            <el-table-column prop="commentCnt" label="弹幕"></el-table-column>
+            <el-table-column prop="commentCntUv" label="弹幕UV" width="90"></el-table-column>
+            <el-table-column prop="biuCnt" label="biu"></el-table-column>
+            <el-table-column prop="biuCntUv" label="biu UV" width="90"></el-table-column>
             <el-table-column label="操作" width="100" fixed="right">
                 <template scope="scope">
-                    <el-button type="danger" size="small" @click="handleDel(scope.row)">
-                        删除
+                    <el-button type="danger" :disabled="scope.row.delFlag == 1" size="small" @click="handleDel(scope.row)">
+                        {{ scope.row.delFlag == 1 ? '已删除': '删除' }}
                     </el-button>   
                 </template>
             </el-table-column>
@@ -151,7 +127,7 @@
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-                <el-button size="small" @click.native="formVisible = false">取消</el-button>
+                <el-button size="small" @click.native="isShowForm = false">取消</el-button>
                 <el-button size="small" type="primary" @click.native="formSubmit" :loading="formLoading">提交</el-button>
             </div>
         </el-dialog>
@@ -337,12 +313,13 @@
                 let _self = this;
                 _self.$refs.formData.validate((valid) => {
                     if (valid) {
-                        let paras = new FormData();
-                        paras.append("vpId", _self.formData.id);
-                        paras.append("title", _self.formData.title);
-                        paras.append("intro", _self.formData.text);
-                        paras.append("channel", _self.formData.channel);
-                        paras.append("sharpness", _self.formData.sharpness);
+                        let paras = {
+                            vpId: _self.formData.id,
+                            title: _self.formData.title,
+                            intro: _self.formData.text,
+                            channel: _self.formData.cat,
+                            sharpness: _self.formData.sharpness
+                        };
                         _self.formLoading = true;
                         httpPost('qqWatchAdd', paras, _self, function (res) {
                             _self.formLoading = false;
@@ -351,7 +328,7 @@
                                 _self.$message.success('提交成功');
                                 _self.$refs['formData'].resetFields();
                                 _self.visible = false;
-                                this.fetchList();
+                                _self.fetchList();
                             } catch (error) {
                                 util.jsErrNotify(error);
                             }
