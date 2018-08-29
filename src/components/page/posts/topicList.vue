@@ -33,6 +33,9 @@
                 <el-form-item>
                     <el-button type="primary" @click="squareConfig">广场置顶配置</el-button>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click.native="excelVisible = true">数据导出</el-button>
+                </el-form-item>
             </el-form>
         </el-col>
 
@@ -124,6 +127,23 @@
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
             <div style="text-align: center;" v-html="videoHtml"></div>
+        </el-dialog>
+
+        <!--导出数据-->
+        <el-dialog title="数据导出" v-model="excelVisible" @close="resetExcel" size="tiny">
+            <el-form :model="excelData" label-width="80px" style="margin-bottom: -20px;">
+                <el-form-item label="开始时间">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.start"></el-input>
+                </el-form-item>
+                <el-form-item label="结束时间" style="margin-bottom: -20px;">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.end"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="excelVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="excelSubmit" :loading="excelData.loading">提交
+                </el-button>
+            </div>
         </el-dialog>
 
         <!--配置置顶-->
@@ -229,7 +249,13 @@
                 isShowComment: false, //显示、隐藏评论列表
                 likeVisible: false, // 显示、隐藏点赞界面
                 addLikeId: '',  // 点赞的帖子id
-                postsData: {}
+                postsData: {},
+                excelVisible: false,
+                excelData: {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
             }
         },
         methods: {
@@ -419,6 +445,17 @@
             showAddLike(row) {
                 this.likeVisible = true;
                 this.addLikeId = row.id
+            },
+            resetExcel(){
+                this.excelData = {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
+            },
+            excelSubmit(){
+                let _self = this;
+                window.open(location.origin  + '/topic/export?startDate=' + _self.excelData.start + '&endDate=' + _self.excelData.end);
             }
         },
         mounted() {

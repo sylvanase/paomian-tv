@@ -7,13 +7,13 @@
                     <el-input v-model="filters.kw" placeholder="帖子ID" icon="circle-close" :on-icon-click="resetSearch" @keyup.enter.native="fetchList"></el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-date-picker type="datetime" placeholder="开始时间" v-model="filters.start"
+                    <el-date-picker type="date" placeholder="开始时间" v-model="filters.start"
                                     style="width: 190px;" @change="setStart"></el-date-picker>
                     <span> - </span>
-                    <el-date-picker type="datetime" placeholder="结束时间" v-model="filters.end"
+                    <el-date-picker type="date" placeholder="结束时间" v-model="filters.end"
                                     style="width: 190px;" @change="setEnd"></el-date-picker>
                 </el-form-item>
-                <el-form-item>
+                <!-- <el-form-item>
                     <el-select v-model="filters.status" @change="fetchList" style="width: 150px;">
                         <el-option label="全部处理状态" value=""></el-option>
                         <el-option label="检测成功" value="0"></el-option>
@@ -22,29 +22,29 @@
                         <el-option label="解析错误" value="130"></el-option>
                         <el-option label="数据类型错误" value="140"></el-option>
                     </el-select>
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item>
-                    <el-select v-model="filters.isDel" @change="fetchList" style="width: 150px;">
+                    <el-select v-model="filters.suspicion" @change="fetchList" style="width: 150px;">
                         <el-option label="全部封禁状态" value=""></el-option>
                         <el-option label="正常" value="0"></el-option>
                         <el-option label="已封禁" value="1"></el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item>
+                <!-- <el-form-item>
                     <el-select v-model="filters.checked" @change="fetchList" style="width: 150px;">
                         <el-option label="全部审核状态" value=""></el-option>
                         <el-option label="未审核" value="0"></el-option>
                         <el-option label="已审核" value="1"></el-option>
                     </el-select>
-                </el-form-item>
-                <el-form-item>
+                </el-form-item> -->
+                <!-- <el-form-item>
                     <el-select v-model="filters.suspicion" @change="fetchList" style="width: 150px;">
                         <el-option label="全部嫌疑状态" value=""></el-option>
                         <el-option label="正常" value="0"></el-option>
                         <el-option label="违规" value="2"></el-option>
                         <el-option label="待定" value="1"></el-option>
                     </el-select>
-                </el-form-item>
+                </el-form-item> -->
                 <!-- <el-form-item>
                     <el-select v-model="filters.level" @change="fetchList" style="width: 110px;">
                         <el-option label="全部级别" value=""></el-option>
@@ -76,20 +76,20 @@
             <!-- <el-table-column prop="videoText" min-width="200" label="帖子描述"></el-table-column> -->
             <el-table-column label="已封禁" width="100">
                 <template scope="scope">
-                    <el-tag :type="scope.row.isDel == 1 ? 'success' : 'danger'"
-                            close-transition>{{ scope.row.isDel == 1 ? '是' : '否' }}
+                    <el-tag :type="scope.row.suspicion == 1 ? 'success' : 'danger'"
+                            close-transition>{{ scope.row.suspicion == 1 ? '是' : '否' }}
                     </el-tag>
                 </template>
             </el-table-column>
             <el-table-column prop="checker" label="审核人" width="130"></el-table-column>
             <!-- <el-table-column prop="status" label="监测状态" width="130"></el-table-column> -->
             <!-- <el-table-column prop="level" label="嫌疑类型" width="130"></el-table-column> -->
-            <el-table-column label="操作" fixed="right" width="200">
+            <el-table-column label="操作" fixed="right" width="220">
                 <template scope="scope">
                     <el-button-group>
-                        <el-button :type="scope.row.isDel == 0 ? 'danger' : ''" size="small"
+                        <el-button :type="scope.row.suspicion == 0 ? 'danger' : ''" size="small"
                                    @click="blockedVideo(scope.row)">
-                            {{ scope.row.isDel == 0 ? '封禁' : '解封' }}
+                            {{ scope.row.suspicion == 0 ? '封禁' : '解封' }}
                         </el-button>
                         <el-button :disabled="scope.row.checked == 1 ? true : false" size="small" type="danger" @click.native="showCheck(scope.row, scope.$index)">
                             {{ scope.row.checked == 1 ? '已审核' : '审核' }}
@@ -161,7 +161,7 @@
                     end: '',
                     suspicion: '', // 嫌疑
                     checked: '',
-                    isDel: '',
+                    suspicion: '',
                     checked: ''
                 },
                 total: 0, //表格列表数据总数
@@ -189,13 +189,13 @@
                     offset: 0,
                     size: 10,
                     id: _self.filters.kw,
-                    status: _self.filters.status,
+                    // status: _self.filters.status,
                     startTime: _self.filters.start,
                     endTime: _self.filters.end,
-                    suspicion: _self.filters.suspicion, // 嫌疑
-                    checked: _self.filters.checked,
-                    isDel: _self.filters.isDel,
-                    checked: _self.filters.checked
+                    /*suspicion: _self.filters.suspicion, // 嫌疑
+                    checked: _self.filters.checked,*/
+                    suspicion: _self.filters.suspicion
+                    // checked: _self.filters.checked
                     //level: _self.filters.level
                 };
                 paras.offset = (_self.page - 1) * paras.size;
@@ -230,7 +230,7 @@
             },
             blockedVideo(row) { // 封禁帖子
                 let _self = this;
-                if(row.isDel == 0){ // 未封禁，需要进行封禁操作
+                if(row.suspicion == 0){ // 未封禁，需要进行封禁操作
                     let paras = new FormData();
                     paras.append("vpId", row.id);
                     _self.tableLoading = true;
@@ -239,7 +239,7 @@
                         try {
                             let {error, status, data} = res;
                             _self.$message.success('操作成功');
-                            row.isDel = Number(!row.isDel);
+                            row.suspicion = Number(!row.suspicion);
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -254,7 +254,7 @@
                         try {
                             let {error, status, data} = res;
                             _self.$message.success('操作成功');
-                            row.isDel = Number(!row.isDel);
+                            row.suspicion = Number(!row.suspicion);
                         } catch (error) {
                             util.jsErrNotify(error);
                         }
@@ -281,10 +281,10 @@
                         let {error, status, data} = res;
                         _self.$message.success('操作成功');
                         if( _self.checkAdvice == 1){ // 审核意见为违规，封禁改贴
-                            _self.tableList[index].isDel = 1;
+                            _self.tableList[index].suspicion = 1;
                         }
                         console.log(index);
-                        console.log(_self.tableList[index].isDel);
+                        console.log(_self.tableList[index].suspicion);
                         _self.tableList[index].checked = 1;
                         console.log(_self.tableList[index].checked);
                         _self.checkVisible = false;

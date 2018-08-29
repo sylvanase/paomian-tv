@@ -5,7 +5,7 @@
                 <el-input v-model.trim="formData.name" style="width: 200px;" auto-complete="off"></el-input>
             </el-form-item>
             <el-form-item label="话题简介">
-                <el-input type="textarea" @change="wordCount" maxlength="60" v-model="formData.description"></el-input>
+                <el-input type="textarea" @change="wordCount" maxlength="150" v-model="formData.description"></el-input>
                 <div style="text-align: right;">{{ wordNum }}</div>
             </el-form-item>
             <el-form-item label="话题类型">
@@ -153,7 +153,7 @@
                     end: '',
                     del: ''
                 },
-                wordNum: '0/60', //监测统计字数
+                wordNum: '0/150', //监测统计字数
                 timeVisible: true,
                 searchSource: { //搜索资源
                     loading: false,
@@ -253,7 +253,7 @@
                 }
             },
             change() {
-                this.wordNum = '0/60'; //重置字数统计
+                this.wordNum = '0/150'; //重置字数统计
                 this.visible = false;
             },
             formSubmit() { //提交表单
@@ -326,7 +326,7 @@
                 this.timeVisible = !val;
             },
             wordCount(val) { //监测简介字数
-                this.wordNum = val.length + '/60';
+                this.wordNum = val.length + '/150';
             },
             handlePlay(query) { //搜索剧本
                 let _self = this;
@@ -447,7 +447,7 @@
                     end: '',
                     del: ''
                 };
-                _self.wordNum = '0/60'; //重置字数统计
+                _self.wordNum = '0/150'; //重置字数统计
                 document.getElementById('cover').value = '';
                 _self.topicData = {};
             }
@@ -478,7 +478,7 @@
                         end: '',
                         del: ''
                     };
-                    _self.wordNum = '0/60'; //重置字数统计
+                    _self.wordNum = '0/150'; //重置字数统计
                     document.getElementById('cover').value = '';
                     _self.topicData = {};
                 }

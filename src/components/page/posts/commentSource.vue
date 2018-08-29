@@ -305,7 +305,6 @@
                 httpPost('postsBarrageAdd', paras, _self, function (res) {
                     try {
                         _self.$message.success('增加评论成功');
-                        _self.visible = false;
                     } catch (error) {
                         util.jsErrNotify(error);
                     }

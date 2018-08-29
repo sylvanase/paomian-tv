@@ -56,6 +56,9 @@
                 <el-form-item>
                     <el-button type="primary" @click="showForm('','detail')">新增</el-button>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click.native="excelVisible = true">数据导出</el-button>
+                </el-form-item>
             </el-form>
         </el-col>
 
@@ -135,6 +138,9 @@
                         </el-button>
                         <el-button size="small" :type="scope.row.isNoRecommend == 1 ? 'danger' : 'warning'" @click="noRecommend(scope.row)">
                             {{ scope.row.isNoRecommend == 1 ? '取消不推荐' : '不推荐'}}
+                        </el-button>
+                        <el-button size="small" @click="addToRecommend(scope.row)">
+                            推荐池
                         </el-button>
                     </el-button-group>
                     <el-button-group class="mt-10">
@@ -246,6 +252,23 @@
                         {{ videoData.isDel == 0 ? '删除' : '恢复' }}
                     </el-button>
                 </el-button-group>
+            </div>
+        </el-dialog>
+
+        <!--导出数据-->
+        <el-dialog title="数据导出" v-model="excelVisible" @close="resetExcel" size="tiny">
+            <el-form :model="excelData" label-width="80px" style="margin-bottom: -20px;">
+                <el-form-item label="开始时间">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.start"></el-input>
+                </el-form-item>
+                <el-form-item label="结束时间" style="margin-bottom: -20px;">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.end"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="excelVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="excelSubmit" :loading="excelData.loading">提交
+                </el-button>
             </div>
         </el-dialog>
 
@@ -412,7 +435,13 @@
                 level2List:[],
                 level3List:[],
                 level2Disabled: true,
-                level3Disabled: true
+                level3Disabled: true,
+                excelVisible: false,
+                excelData: {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
             }
         },
         methods: {
@@ -796,13 +825,35 @@
                     _self.tagData.loading = false;
                 })
             },
+            resetExcel(){
+                this.excelData = {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
+            },
+            excelSubmit(){
+                let _self = this;
+                window.open(location.origin + '/video/export?startDate=' + _self.excelData.start + '&endDate=' + _self.excelData.end);
+            },
+            addToRecommend(row){ // 加入推荐池
+                let _self = this;
+                let paras = new FormData();
+                paras.append('vpId', row.id)
+                httpPost('postsRecommendSave', paras, _self, function (res) {
+                    try {
+                        _self.$message.success('操作成功');
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                })
+            }
         },
         mounted() {
             if (this.$route.query.uid) {
                 this.filters.kw = this.$route.query.uid;
                 this.filters.type = '1';
             }
-
             this.fetchList();
             this.fetchCat();
         }

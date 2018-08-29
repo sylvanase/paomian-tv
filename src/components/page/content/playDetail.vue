@@ -33,7 +33,10 @@
             <el-form-item label="剧本描述" prop="description">
                 <el-input type="textarea" v-model.trim="formData.description"></el-input>
             </el-form-item>
-            <el-form-item label="预览视频" required>
+            <el-form-item label="用户视频" prop="postId">
+                <el-input placeholder="输入用户视频id" v-model.trim="formData.postId" ></el-input>
+            </el-form-item>
+            <!-- <el-form-item label="预览视频" required>
                 <template>
                     <el-select style="width: 50%;" v-model="formData.previewId" filterable remote
                                loading-text="搜索中" placeholder="输入关键词搜索视频" :remote-method="handleSource"
@@ -43,7 +46,7 @@
                         </el-option>
                     </el-select>
                 </template>
-            </el-form-item>
+            </el-form-item> -->
             <el-form-item label="视频封面" required>
                 <div class="avatar-uploader" style="width: 80%;" @click="chooseFile">
                     <div class="el-upload el-upload--text">
@@ -144,7 +147,7 @@
                     coverImgUrl: '', //封面url
                     coverId: '',
                     description: '',
-                    previewId: '', //预览视频资源id及name
+                    //previewId: '', //预览视频资源id及name
                     previewName: '',
                     movieIds: [], //电影id及名称
                     movieNames: [],
@@ -156,7 +159,9 @@
                     playType: '0',
                     iosMinVersion: '0',
                     andMinVersion: '0',
-                    status: 0
+                    status: 0,
+                    postId: '',
+                    newScriptId: ''
                 },
                 inputVisible: false, //隐藏、显示关键字输入框
                 inputValue: '',
@@ -213,13 +218,13 @@
                                 }
                             }
 
-                            if (_self.formData.previewId) {
+                            /*if (_self.formData.previewId) {
                                 _self.searchSource.list.push({
                                     name: _self.formData.previewName,
                                     id: _self.formData.previewId
                                 });
                             }
-
+*/
                             if (_self.formData.tagIds.length > 0) {
                                 let array = _self.formData.tagIds;
                                 let arrayName = _self.formData.tagNames;
@@ -258,7 +263,7 @@
                         para.append("name", _self.formData.name);
                         para.append("coverId", _self.formData.coverId);
                         para.append("description", _self.formData.description);
-                        para.append("previewId", _self.formData.previewId);
+                        //para.append("previewId", _self.formData.previewId);
                         para.append("movieIds", _self.formData.movieIds.join(','));
                         para.append("tagIds", _self.formData.tagIds.join(','));
                         para.append("playAttrIds", _self.formData.playAttrIds.join(','));
@@ -267,6 +272,8 @@
                         para.append("iosMinVersion", _self.formData.iosMinVersion);
                         para.append("andMinVersion", _self.formData.andMinVersion);
                         para.append("status", _self.formData.status);
+                        para.append("postId", _self.formData.postId);
+                        para.append("newScriptId", _self.formData.newScriptId);
                         httpPost('contentPlayEdit', para, _self, function (res) {
                             _self.formLoading = false;
                             try {
@@ -443,7 +450,7 @@
                     coverImgUrl: '', //封面url
                     coverId: '',
                     description: '',
-                    previewId: '', //预览视频资源id及name
+                    //previewId: '', //预览视频资源id及name
                     previewName: '',
                     movieIds: [], //电影id及名称
                     movieNames: [],
@@ -453,7 +460,9 @@
                     playAttrNames: [],
                     keyword: [],
                     playType: '0',
-                    status: 0
+                    status: 0,
+                    postId: '',
+                    newScriptId: ''
                 };
                 _self.searchMovie.list = [];
                 _self.searchSource.list = [];

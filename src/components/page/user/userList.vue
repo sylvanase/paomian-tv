@@ -55,6 +55,9 @@
                 <el-form-item>
                     <el-button type="primary" @click="fetchList">查询</el-button>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click.native="excelVisible = true">数据导出</el-button>
+                </el-form-item>
             </el-form>
         </el-col>
 
@@ -160,10 +163,16 @@
                     </el-tag>
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="300" fixed="right">
+            <el-table-column label="操作" width="200" fixed="right">
                 <template scope="scope">
                     <el-button-group>
                         <el-button size="small" @click="showForm(scope.row)">编辑</el-button>
+                        <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
+                        <el-button type="warning" size="small" @click="showVIP(scope.row, scope.$index)">
+                            VIP
+                        </el-button>
+                    </el-button-group>
+                    <el-button-group class="mt-10">
                         <el-button :type="scope.row.userStatus == 0 ? 'danger' : 'warning'" size="small"
                                    @click="userDel(scope.row)">
                             {{ scope.row.userStatus == 0 ? '删除' : '恢复' }}
@@ -172,7 +181,6 @@
                                    @click="careUser(scope.row)">
                             {{ scope.row.userCare == 1 ? '取关' : '关注' }}
                         </el-button>
-                        <el-button size="small" @click="addFan(scope.row)">加粉丝</el-button>
                         <el-button size="small" type="danger" @click="shieldUser(scope.row)">
                             {{ scope.row.isShield == 1 ? '取消屏蔽' : '屏蔽' }}
                         </el-button>
@@ -234,9 +242,46 @@
 
         </el-dialog>-->
 
+        <!--导出数据-->
+        <el-dialog title="数据导出" v-model="excelVisible" @close="resetExcel" size="tiny">
+            <el-form :model="excelData" label-width="80px" style="margin-bottom: -20px;">
+                <el-form-item label="开始时间">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.start"></el-input>
+                </el-form-item>
+                <el-form-item label="结束时间" style="margin-bottom: -20px;">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.end"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="excelVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="excelSubmit" :loading="excelData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
+
         <!--播放弹窗-->
         <el-dialog title="视频播放" v-model="videoVisible" @close="videoClose()">
             <div style="text-align: center;" v-html="videoHtml"></div>
+        </el-dialog>
+
+        <!--用户加减V-->
+        <el-dialog title="用户VIP" v-model="VIPVisible" @close="resetVIP" size="tiny">
+            <el-form :model="VIPData" label-width="80px" >
+                <el-form-item label="加V描述">
+                    <el-input placeholder="请输入加V描述" v-model="VIPData.des"></el-input>
+                </el-form-item>
+                <el-form-item style="margin-bottom: -20px;">
+                    <el-radio-group v-model="VIPData.status">
+                       <el-radio label="1">加V</el-radio>
+                       <el-radio label="0">取消加V</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="VIPVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="VIPSubmit" :loading="VIPData.loading">提交
+                </el-button>
+            </div>
         </el-dialog>
 
         <!--增加粉丝-->
@@ -355,7 +400,21 @@
                         /*{ min: 6, max: 20, message: '密码长度在6到20个字符'}*/
                     ],
                 },
-                postsData: {}
+                postsData: {},
+                VIPVisible: false,
+                VIPData: {
+                    loading: false,
+                    uid: '',
+                    des: '',
+                    status: '0',
+                    index: 0
+                },
+                excelVisible: false,
+                excelData: {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
             }
         },
         methods: {
@@ -646,6 +705,59 @@
                         util.jsErrNotify(error);
                     }
                 })
+            },
+            showVIP(row, index){ // 用户加V，取消加V
+                console.log(row);
+                console.log(index);
+                this.VIPVisible = true;
+                this.VIPData = {
+                    uid: row.id,
+                    des: row.vertifiedReason,
+                    status: row.vertified + '',
+                    index: index
+                };
+            },
+            resetVIP(row){ // 用户加V，取消加V
+                this.VIPData = {
+                    uid: '',
+                    des: '',
+                    status: '0',
+                    loading: false,
+                    index: 0
+                };
+            },
+            VIPSubmit(){
+                let _self = this;
+                let paras = new FormData();
+                paras.append("id", _self.VIPData.uid);
+                paras.append("vertifiedReason", _self.VIPData.des);
+                paras.append("vertified", _self.VIPData.status);
+                _self.VIPData.loading = true;
+                httpPost('userVertified', paras, _self, function (res) {
+                    _self.VIPData.loading = false;
+                    try {
+                        _self.$message.success('操作成功');
+                        _self.VIPVisible = false;
+                        _self.tableList[_self.VIPData.index].vertifiedReason = _self.VIPData.des;
+                        _self.tableList[_self.VIPData.index].vertified = _self.VIPData.status;
+                    } catch (error) {
+                        util.jsErrNotify(error);
+                    }
+                }, function (res) {
+                    _self.$message.error(res.data.error);
+                    _self.VIPData.loading = false;
+                })
+            },
+            resetExcel(){
+                this.excelData = {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
+            },
+            excelSubmit(){
+                let _self = this;
+                window.open(location.origin  + '/user/export?startDate=' + _self.excelData.start + '&endDate=' + _self.excelData.end);
             }
         },
         mounted() {

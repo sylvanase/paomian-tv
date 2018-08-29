@@ -34,6 +34,9 @@
                 <el-form-item>
                     <el-button type="primary" @click="showForm('-1')">新增</el-button>
                 </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click.native="excelVisible = true">数据导出</el-button>
+                </el-form-item>
             </el-form>
         </el-col>
 
@@ -143,6 +146,23 @@
             </el-pagination>
         </el-col>
 
+        <!--导出数据-->
+        <el-dialog title="数据导出" v-model="excelVisible" @close="resetExcel" size="tiny">
+            <el-form :model="excelData" label-width="80px" style="margin-bottom: -20px;">
+                <el-form-item label="开始时间">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.start"></el-input>
+                </el-form-item>
+                <el-form-item label="结束时间" style="margin-bottom: -20px;">
+                    <el-input placeholder="日期格式：xxxx-xx-xx" v-model="excelData.end"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button size="small" @click.native="excelVisible = false">取消</el-button>
+                <el-button size="small" type="primary" @click.native="excelSubmit" :loading="excelData.loading">提交
+                </el-button>
+            </div>
+        </el-dialog>
+
         <!--剧本编辑-->
         <v-detail :playData="playData" v-model="isShowForm" v-on:refresh="fetchList"></v-detail>
 
@@ -200,7 +220,13 @@
                 videoHtml: '',
                 isShowComment: false, //显示、隐藏评论库列表
                 typeData: {},
-                zipLoading: false
+                zipLoading: false,
+                excelVisible: false,
+                excelData: {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
             }
         },
         methods: {
@@ -414,6 +440,17 @@
                     }
                 })
             },
+            resetExcel(){
+                this.excelData = {
+                    loading: false,
+                    start: '',
+                    end: ''
+                }
+            },
+            excelSubmit(){
+                let _self = this;
+                window.open(location.origin + '/content/play/export?startDate=' + _self.excelData.start + '&endDate=' + _self.excelData.end);
+            }
         },
         mounted() {
             this.fetchList();

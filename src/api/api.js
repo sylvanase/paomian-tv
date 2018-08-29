@@ -128,8 +128,7 @@ let api = { //接口地址
     userCatEdit: '/user/category/edit', // 编辑用户分类
     userCatDel: '/user/category/delete', // 删除用户分类
     userShield: '/user/shield', // 封禁
-
-
+    userVertified: '/user/vertified', // 用户加V
 
     regionList: '/user/region_list', //地区列表
     cityList: '/user/city_list', //城市列表
@@ -161,6 +160,10 @@ let api = { //接口地址
     postsTagLevelList: '/tag/level', // 获取指定level的标签列表
     postsTag: '/video/tags', // 获取帖子绑定的标签
     postsTagRelation: '/video/addTagRelation', // 为帖子添加标签
+
+    postsRecommendList: '/video/video_recommend/list', // 推荐池列表
+    postsRecommendSave: '/video/video_recommend/save', // 将帖子加入推荐池
+    postsRecommendDel: '/video/video_recommend/del', // 将帖子移出推荐池
 
 
     commentList: '/comment/list', // 评论库列表
@@ -259,6 +262,12 @@ let api = { //接口地址
     qqWatchAdd: '/content/qqwatch/save', // 新增看点
     qqWatchDel: '/content/qqwatch/delete', // 删除
     qqWatchFile: '/content/qqwatch/fileUpload', // 批量增加看点
+
+    // 数据导出
+    useExport: '/user/export',
+    topicExport: '/topic/export',
+    videoExport: '/video/export',
+    playExport: '/content/play/export',
 
     avatarUpload: '/ks3/user_image_upload', //头像文件上传
     imgUpload: '/ks3/video_image_upload', //图片文件上传

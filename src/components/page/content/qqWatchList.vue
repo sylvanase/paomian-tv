@@ -50,7 +50,7 @@
             <el-table-column prop="createTime" label="上传时间" width="120"></el-table-column>
             <el-table-column label="视频状态" width="120">
                 <template scope="scope">
-                    <div v-if="scope.row.videoStatus != 0">
+                    <div v-if="scope.row.videoStatus != 0 && scope.row.videoStatus != null">
                         {{  options[scope.row.videoStatus - 1].text  }}
                     </div>
                 </template>
@@ -151,7 +151,7 @@
     },{
         id: '6', text: '已发布，等待看点推荐'
     },{
-        id: '7', text: '已发布，已被看点精选'
+        id: '7', text: '已发布，已被看点推荐'
     },{
         id: '8', text: '已发布，已被看点精选'
     },{

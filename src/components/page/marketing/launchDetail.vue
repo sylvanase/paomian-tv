@@ -9,13 +9,13 @@
             <el-form-item label="ios开机图" required>
                 <input type="file" name="file" id="iosFile"/>
                 <div class="el-upload__tip" style="line-height: 20px;">
-                    宽高要求：750*1334
+                    宽高要求：750*1624
                 </div>
             </el-form-item>
             <el-form-item label="android开机图" required>
                 <input type="file" name="file" id="androidFile"/>
                 <div class="el-upload__tip" style="line-height: 20px;">
-                    宽高要求：1080*1920
+                    宽高要求：1080*2520
                 </div>
             </el-form-item>
             <el-form-item label="外链" prop="link" style="margin-bottom: -20px;">

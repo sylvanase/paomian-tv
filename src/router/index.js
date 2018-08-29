@@ -124,6 +124,10 @@ export default new Router({
                 component: resolve => require(['../components/page/posts/topicList.vue'], resolve),
                 name: '话题列表'
             }, {
+                path: '/postsRecommend',
+                component: resolve => require(['../components/page/posts/recommendList.vue'], resolve),
+                name: '推荐池'
+            }, {
                 path: '/illegal',
                 component: resolve => require(['../components/page/posts/illegalList.vue'], resolve),
                 name: '举报贴'
